@@ -82,7 +82,22 @@ Reglas que valida el servidor (aunque se use Swagger directamente): cadena de ca
 
 **Archivos:** se suben primero con `POST /archivos` (STL hasta 80 MB; JPG, PNG y PDF hasta 15 MB) y se guardan en **MongoDB con GridFS**; PostgreSQL guarda la referencia en `solicitud_archivos`. Los que no se usan en 24 h se borran solos.
 
-**Estados:** pendiente de recolecta · validación de QA · recibida · en producción · control de calidad · facturación y empaque · en ruta · entregada · cancelada. Las bandejas de cada área (asignación automática, QA, logística) son la siguiente fase.
+**Estados:** pendiente de recolecta · validación de QA · en revisión de Ingresos · en producción · control de calidad · facturación y empaque · en ruta · entregada · cancelada. El estado se calcula solo según el paso en que va el caso.
+
+## Recorrido y bandejas (Fase 3A)
+
+Al crear un caso se copia el **flujo** de su tipo de trabajo y modalidad como su recorrido (ej. Logística → Ingresos → Yesos → CAD → CAM_FRES → Finalización → QA → Facturación_Cobros → Logística). Siempre hay un paso de Ingresos; un RP empieza con la validación de QA.
+
+| Área | Qué hace en **Mi bandeja** |
+|---|---|
+| Logística | Marca **Recolectado** (analógico) y **Entregado**. Entregado finaliza el caso. |
+| Ingresos | **Aprobar** (o "Material recibido · aprobar"), **Modificar** (asigna del catálogo lo que venía fuera de catálogo, piezas y fecha) o **Cancelar**. Al aprobar se arma el resto del recorrido con el flujo vigente. |
+| Producción | El sistema asigna cada paso a un empleado con esa área y tipo de trabajo, con menos carga y sin pasar su **máximo de trabajos**. Si todos están al tope queda **en cola**; si nadie cubre el paso, **sin técnico**. El técnico ve su total, trabaja **uno a la vez** y el sistema le entrega el siguiente por prioridad (emergencia → VIP → normal, luego fecha de entrega). |
+| QA | **Clasificar RP** (garantía total, parcial sin cobro, parcial con cobro o cobro + motivo) y control de calidad: **Aprobar** o **Devolver** a un paso de producción (por defecto el anterior); el caso repite desde ahí hasta QA. |
+| Facturación | **Registrar factura** (número obligatorio) y empaque. |
+| Admin / supervisor | **Bandeja del laboratorio**: carga por área, colas y casos sin técnico; detalle de cada área con el técnico asignado. Pueden cancelar un caso desde su detalle. |
+
+Las colas se reparten solas cada vez que alguien termina un paso o abre su bandeja. Las áreas especiales se reconocen por su nombre: **Ingresos, Logística, QA y Facturación**; no las renombres a otra cosa. Los casos abiertos creados antes de esta versión arrancan su recorrido desde el primer paso al actualizar.
 
 ## Diseño adaptable
 
@@ -255,5 +270,9 @@ Sin servidor Mongo se puede probar con `MONGO_URL=mongomock://local` (requiere `
 | GET | `/solicitudes`, `/solicitudes/{id}`, `/solicitudes/{id}/archivos/{archivo}` | con sesión (el doctor solo lo suyo) |
 | GET | `/solicitudes/perfil`, `/solicitudes/clientes` | doctor / admin, supervisor, ingresos |
 | POST | `/solicitudes`, `/solicitudes/{id}/reapertura` | doctor, admin, supervisor, ingresos |
-| PATCH | `/solicitudes/{id}/estado` | admin, supervisor |
+| POST | `/solicitudes/{id}/cancelar` | admin, supervisor |
+| GET | `/bandeja` (`?area_id=` para supervisión) | personal del laboratorio |
+| POST | `/pasos/{id}/iniciar`, `/pasos/{id}/terminar` | técnico asignado / integrantes del área |
+| POST | `/pasos/{id}/validar-rp`, `/pasos/{id}/rechazar` | QA |
+| PUT/POST | `/pasos/{id}/modificar`, `/pasos/{id}/cancelar` | Ingresos |
 | GET | `/salud` | público |

@@ -196,7 +196,37 @@ class ReaperturaIn(_EntregaIn):
     motivo: str = Field(min_length=5, max_length=1000, examples=["La corona quedó alta en oclusión"])
 
 
-class EstadoSolicitudIn(BaseModel):
-    estado: Literal["pendiente_recolecta", "validacion_qa", "recibida", "en_produccion", "control_calidad",
-                    "facturacion", "en_ruta", "entregada", "cancelada"]
+class MotivoIn(BaseModel):
+    motivo: str = Field(min_length=3, max_length=250, examples=["Cliente solicitó cancelar"])
+
+
+# ---------------- Bandeja y acciones por paso ----------------
+class TerminarIn(BaseModel):
     nota: str | None = Field(default=None, max_length=300)
+    factura_numero: str | None = Field(default=None, max_length=40, description="Obligatorio en Facturación")
+
+
+class RechazoIn(BaseModel):
+    volver_a_paso_id: int = Field(description="Paso de producción al que regresa (ver pasos_previos en la bandeja)")
+    motivo: str = Field(min_length=3, max_length=250)
+
+
+class ValidacionRpIn(BaseModel):
+    clasificacion: Literal["garantia_total", "garantia_parcial_sin_cobro", "garantia_parcial_con_cobro", "cobro"]
+    motivo_id: int = Field(description="ID de GET /config/arbol → motivos_rp")
+    observacion: str | None = Field(default=None, max_length=300)
+
+
+class ModificacionIn(BaseModel):
+    tipo_trabajo: SeleccionIn
+    material: SeleccionIn
+    unidad: SeleccionIn
+    guia_color: SeleccionIn | None = None
+    color: SeleccionIn | None = None
+    piezas: list[int] = Field(min_length=1)
+    fecha_entrega: date
+    nota: str = Field(min_length=3, max_length=250, description="Qué se corrigió y por qué")
+
+
+class CancelarPasoIn(BaseModel):
+    motivo: str = Field(min_length=3, max_length=250)

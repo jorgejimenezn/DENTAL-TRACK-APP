@@ -127,9 +127,8 @@ class ReaperturaIn(_EntregaIn):
         return " ".join(v.split())
 
 
-class EstadoIn(BaseModel):
-    estado: str
-    nota: str | None = Field(default=None, max_length=300)
+class MotivoIn(BaseModel):
+    motivo: str = Field(min_length=3, max_length=250)
 
 
 # ---------------- Salida ----------------
@@ -169,6 +168,21 @@ class CasoRef(BaseModel):
     creado_en: datetime
 
 
+class RecorridoPaso(BaseModel):
+    id: int
+    orden: int
+    area: str
+    etapa: str
+    etapa_texto: str
+    estado: str
+    tecnico: str | None
+    atendido_por: str | None
+    activado_en: datetime | None
+    terminado_en: datetime | None
+    nota: str | None
+    vuelta: int
+
+
 class SolicitudResumen(BaseModel):
     id: int
     codigo: str
@@ -189,6 +203,7 @@ class SolicitudResumen(BaseModel):
     creado_en: datetime
     caso_origen: str | None
     fuera_catalogo: bool
+    area_actual: str | None = None
 
 
 class SolicitudOut(SolicitudResumen):
@@ -216,6 +231,8 @@ class SolicitudOut(SolicitudResumen):
     reaperturas: list[CasoRef]
     puede_reabrir: bool
     motivo_no_reabrir: str | None
+    factura_numero: str | None
+    recorrido: list[RecorridoPaso]
 
 
 class DireccionPerfil(BaseModel):

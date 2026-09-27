@@ -89,5 +89,5 @@ from app.modelos.configuracion import (  # noqa: E402,F401
     material_guia, material_unidad, tipo_material, usuario_area_tipo,
 )
 from app.modelos.solicitud import (  # noqa: E402,F401
-    ESTADOS, ESTADOS_CERRADOS, Correlativo, Solicitud, SolicitudArchivo, SolicitudHistorial,
+    ESTADOS, ESTADOS_CERRADOS, Correlativo, Solicitud, SolicitudArchivo, SolicitudHistorial, SolicitudPaso,
 )

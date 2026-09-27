@@ -13,15 +13,16 @@ from sqlalchemy.orm import Session, selectinload
 from app.core.dependencias import Actor
 from app.core.errores import Conflicto, ErrorNegocio, NoEncontrado
 from app.esquemas.solicitud import (ArchivoOut, CasoRef, ClienteBreve, DireccionPerfil, DireccionSel, DireccionTexto,
-                                    HistorialOut, PerfilSolicitud, ReaperturaIn, SolicitudIn, SolicitudOut,
-                                    SolicitudResumen, ValorOut)
+                                    HistorialOut, PerfilSolicitud, ReaperturaIn, RecorridoPaso, SolicitudIn,
+                                    SolicitudOut, SolicitudResumen, ValorOut)
 from app.modelos import ROL_CLIENTE, Cliente, Direccion, Usuario
-from app.modelos.configuracion import Color, DiaNoLaborable, Flujo, GuiaColor, Material, TipoTrabajo, Unidad
+from app.modelos.configuracion import Color, DiaNoLaborable, Flujo, GuiaColor, Material, MotivoRP, TipoTrabajo, Unidad
 from app.modelos.solicitud import (ESTADOS, ESTADOS_CERRADOS, Correlativo, Solicitud, SolicitudArchivo,
                                    SolicitudHistorial)
 from app.repositorios.archivo_repo import ArchivoRepositorio
 from app.servicios.auditoria_servicio import AuditoriaServicio
 from app.servicios.configuracion_servicio import ZONA, CalendarioServicio
+from app.servicios.recorrido import NOMBRE_ETAPA, Motor
 
 # Personal que puede ingresar solicitudes a nombre de un cliente (pedidos por teléfono, etc.)
 ROLES_CAPTURA = {"admin", "supervisor", "ingresos"}
@@ -275,11 +276,11 @@ class SolicitudServicio:
         }
 
     def _guardar(self, solicitud: Solicitud, archivos: list[dict], nota: str, actor: Actor) -> Solicitud:
-        solicitud.historial.append(SolicitudHistorial(estado=solicitud.estado, nota=nota, usuario_id=actor.id))
         for a in archivos:
             solicitud.archivos.append(SolicitudArchivo(mongo_id=a["id"], nombre=a["nombre"], tipo=a["tipo"],
                                                        tamano=a["tamano"]))
         self.sesion.add(solicitud)
+        Motor(self.sesion).iniciar(solicitud, actor.id, nota)  # arma el recorrido y activa el primer paso
         self.sesion.commit()
         self.archivos.enlazar([a["id"] for a in archivos], solicitud.id)
         return solicitud
@@ -328,21 +329,16 @@ class SolicitudServicio:
             "cliente": cliente.razon_social})
         return self.obtener(solicitud.id, actor)
 
-    def cambiar_estado(self, solicitud_id: int, estado: str, nota: str | None, actor: Actor) -> SolicitudOut:
+    def cancelar(self, solicitud_id: int, motivo: str, actor: Actor) -> SolicitudOut:
         if actor.rol not in ROLES_ESTADO:
-            raise ErrorNegocio("Solo administración o supervisión pueden cambiar el estado manualmente", 403)
-        if estado not in ESTADOS:
-            raise ErrorNegocio("Estado no válido")
+            raise ErrorNegocio("Solo administración o supervisión pueden cancelar un caso en cualquier etapa", 403)
         solicitud = self._visible(solicitud_id, actor)
-        if solicitud.estado == estado:
-            raise ErrorNegocio("La solicitud ya está en ese estado")
-        anterior = solicitud.estado
-        solicitud.estado = estado
-        solicitud.historial.append(SolicitudHistorial(estado=estado, nota=(nota or "").strip() or "Cambio manual",
-                                                      usuario_id=actor.id))
+        if solicitud.estado in ESTADOS_CERRADOS:
+            raise ErrorNegocio("El caso ya está cerrado")
+        Motor(self.sesion).cancelar(solicitud, actor.id, f"Cancelado: {motivo}")
         self.sesion.commit()
-        self.auditoria.registrar("estado", "solicitud", solicitud.id, actor, {
-            "codigo": solicitud.codigo, "cambios": {"estado": [ESTADOS[anterior][0], ESTADOS[estado][0]]}})
+        self.auditoria.registrar("cancelar", "solicitud", solicitud.id, actor,
+                                 {"codigo": solicitud.codigo, "motivo": motivo})
         return self.obtener(solicitud.id, actor)
 
     # ================= Consultas =================
@@ -356,12 +352,14 @@ class SolicitudServicio:
             modalidad=s.modalidad, emergencia=s.emergencia,
             prioridad=None if self._es_doctor(actor) else s.prioridad,  # el nivel del cliente no se muestra al doctor
             fecha_entrega=s.fecha_entrega, creado_en=s.creado_en,
-            caso_origen=s.caso_origen.codigo if s.caso_origen else None, fuera_catalogo=s.fuera_catalogo)
+            caso_origen=s.caso_origen.codigo if s.caso_origen else None, fuera_catalogo=s.fuera_catalogo,
+            area_actual=(lambda p: p.area.nombre if p else None)(Motor.paso_actual(s)))
 
     def listar(self, actor: Actor, vigentes: bool | None = None, estado: str | None = None,
                tipo_caso: str | None = None, q: str | None = None, cliente_id: int | None = None,
                limite: int = 200) -> list[SolicitudResumen]:
-        consulta = select(Solicitud).options(selectinload(Solicitud.cliente), selectinload(Solicitud.caso_origen))
+        consulta = select(Solicitud).options(selectinload(Solicitud.cliente), selectinload(Solicitud.caso_origen),
+                                             selectinload(Solicitud.pasos))
         if self._es_doctor(actor):
             consulta = consulta.where(Solicitud.cliente_id == self._cliente_del_doctor(actor).id)
         elif cliente_id:
@@ -392,8 +390,12 @@ class SolicitudServicio:
         return SolicitudOut(
             **self._resumen(s, actor), clinica=s.cliente.clinica, creado_por=nombre(s.creado_por),
             caso_origen_id=s.caso_origen_id, reapertura_tipo=s.reapertura_tipo,
-            reapertura_motivo=s.reapertura_motivo, qa_clasificacion=s.qa_clasificacion,
-            qa_motivo=None, qa_observacion=s.qa_observacion, referencia_clinica=s.referencia_clinica,
+            reapertura_motivo=s.reapertura_motivo,
+            qa_clasificacion={"garantia_total": "Garantía total", "garantia_parcial_sin_cobro": "Garantía parcial sin cobro",
+                              "garantia_parcial_con_cobro": "Garantía parcial con cobro",
+                              "cobro": "Cobro"}.get(s.qa_clasificacion),
+            qa_motivo=s.qa_motivo_id and self.sesion.get(MotivoRP, s.qa_motivo_id).nombre,
+            qa_observacion=s.qa_observacion, referencia_clinica=s.referencia_clinica,
             requiere_recolecta=s.requiere_recolecta,
             tipo_trabajo=_valor(s.tipo_trabajo_id, s.tipo_trabajo), material=_valor(s.material_id, s.material),
             unidad=_valor(s.unidad_id, s.unidad), guia_color=_valor(s.guia_id, s.guia),
@@ -409,4 +411,11 @@ class SolicitudServicio:
                                     usuario=nombre(h.usuario), fecha=h.fecha) for h in s.historial],
             reaperturas=[CasoRef(id=r.id, codigo=r.codigo, estado=r.estado, estado_texto=ESTADOS[r.estado][0],
                                  creado_en=r.creado_en) for r in reaperturas],
-            puede_reabrir=puede, motivo_no_reabrir=motivo)
+            puede_reabrir=puede, motivo_no_reabrir=motivo, factura_numero=s.factura_numero,
+            recorrido=[RecorridoPaso(
+                id=p.id, orden=p.orden, area=p.area.nombre, etapa=p.etapa, etapa_texto=NOMBRE_ETAPA[p.etapa],
+                estado=p.estado, activado_en=p.activado_en, terminado_en=p.terminado_en, nota=p.nota, vuelta=p.vuelta,
+                # los nombres del personal no se muestran al doctor
+                tecnico=None if self._es_doctor(actor) else nombre(p.tecnico),
+                atendido_por=None if self._es_doctor(actor) else nombre(p.atendido_por))
+                for p in s.pasos if p.estado != "omitido"])

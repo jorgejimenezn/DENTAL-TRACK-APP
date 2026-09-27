@@ -404,3 +404,48 @@ html,body{overflow-x:clip}
 .piezas-lista{display:flex;flex-wrap:wrap;gap:4px}
 .piezas-lista span{font-size:12px;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--azul-suave);color:var(--azul-texto)}
 a.btn{text-decoration:none}
+
+/* ================= Bandeja de trabajo ================= */
+.bandeja-seccion{margin-bottom:22px}
+.bandeja-seccion > h2{font-size:16px;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bandeja-seccion > h2 .sub{font-weight:400;font-size:12px;color:var(--texto-3)}
+.produccion-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:900px){.produccion-grid{grid-template-columns:1fr}}
+.trabajos{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+@media (max-width:400px){.trabajos{grid-template-columns:1fr}}
+.trabajo{background:var(--panel);border:1px solid var(--panel-borde);border-radius:var(--radio);padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.trabajo.urgente{border-color:rgba(207,34,46,.7);box-shadow:0 0 0 1px rgba(207,34,46,.35) inset}
+.trabajo.actual{border-color:var(--azul);box-shadow:0 0 0 1px var(--azul) inset}
+.trabajo .cabeza{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.trabajo .cabeza a{font-size:15px}
+.trabajo .cabeza .fecha{margin-left:auto;font-size:12px;color:var(--texto-2);white-space:nowrap}
+.trabajo .cabeza .fecha.tarde{color:var(--rojo-texto);font-weight:700}
+.trabajo .linea{font-size:13px;color:var(--texto-2);overflow-wrap:anywhere}
+.trabajo .linea b{color:var(--texto);font-weight:600}
+.trabajo .nota-caso{font-size:12px;background:var(--campo);border:1px solid var(--panel-borde);border-radius:8px;padding:8px 10px;color:#d6d6d6;overflow-wrap:anywhere}
+.trabajo .botones{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.trabajo .botones .btn{flex:1 1 auto}
+.etiqueta-seccion{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--texto-3);margin-bottom:8px}
+.vacio-card{border:1px dashed var(--campo-borde);border-radius:var(--radio);padding:22px;text-align:center;color:var(--texto-3)}
+.espera{display:flex;flex-direction:column;gap:6px}
+.espera a{display:flex;gap:10px;align-items:center;background:var(--campo);border:1px solid var(--panel-borde);border-radius:8px;padding:8px 12px;text-decoration:none;color:var(--texto);font-size:13px;flex-wrap:wrap}
+.espera a span{color:var(--texto-3);font-size:12px}
+.espera a .fecha{margin-left:auto}
+.areas-resumen{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.area-tile{background:var(--panel);border:1px solid var(--panel-borde);border-radius:var(--radio);padding:12px;cursor:pointer;text-align:left;color:var(--texto);font:inherit}
+.area-tile:hover{border-color:#777}
+.area-tile.activa{border-color:var(--azul);box-shadow:0 0 0 1px var(--azul) inset}
+.area-tile b{display:block;font-size:22px}
+.area-tile span{display:block;font-size:12px;color:var(--texto-2)}
+.area-tile small{display:block;font-size:11px;margin-top:4px}
+.opciones-radio{display:flex;flex-direction:column;gap:8px}
+.opciones-radio label{display:flex;gap:10px;align-items:center;border:1px solid var(--campo-borde);border-radius:8px;padding:10px 12px;cursor:pointer;background:var(--campo);font-size:13px}
+.opciones-radio label:has(input:checked){border-color:var(--azul);background:var(--azul-suave)}
+.opciones-radio input{accent-color:var(--azul);width:16px;height:16px}
+.recorrido{list-style:none;display:flex;flex-direction:column;gap:6px}
+.recorrido li{display:flex;align-items:center;gap:10px;font-size:13px;padding:6px 10px;border-radius:8px;background:var(--campo);border:1px solid var(--panel-borde);flex-wrap:wrap}
+.recorrido li .n{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;background:#262626;color:#bbb;flex:none}
+.recorrido li.hecho .n{background:var(--verde);color:#fff}
+.recorrido li.ahora{border-color:var(--azul)}
+.recorrido li.ahora .n{background:var(--azul);color:#fff}
+.recorrido li .quien{margin-left:auto;font-size:12px;color:var(--texto-3)}

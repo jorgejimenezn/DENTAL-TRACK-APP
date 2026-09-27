@@ -67,6 +67,11 @@ def migrar() -> None:
             "UPDATE dias_no_laborables SET hora_corte = '12:00' WHERE motivo ILIKE '%medio día%'",
         ]
 
+    # --- Fase 3: número de factura en la solicitud ---------------------------
+    solicitudes = _columnas(inspector, "solicitudes")
+    if solicitudes and "factura_numero" not in solicitudes:
+        pasos.append("ALTER TABLE solicitudes ADD COLUMN factura_numero VARCHAR(40)")
+
     if not pasos:
         return
     with engine.begin() as conexion:

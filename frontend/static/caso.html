@@ -45,16 +45,18 @@
         <section class="card paso-card">
           <h2>Acciones</h2>
           <div id="acciones"></div>
-          <form id="formEstado" hidden style="margin-top:14px;border-top:1px solid var(--panel-borde);padding-top:14px">
-            <div class="campo"><label>Cambiar estado (administración)</label><select id="nuevoEstado"></select></div>
-            <div class="campo" style="margin-top:10px"><label>Nota</label><input id="notaEstado" maxlength="300" placeholder="Opcional"></div>
-            <button class="btn" style="margin-top:10px;width:100%">Guardar estado</button>
-            <div class="ayuda nota">Temporal: sirve para probar el recorrido hasta que cada área tenga su bandeja.</div>
+          <form id="formCancelar" hidden style="margin-top:14px;border-top:1px solid var(--panel-borde);padding-top:14px">
+            <div class="campo"><label>Cancelar el caso (administración)</label><input id="motivoCancelar" maxlength="250" placeholder="Motivo"></div>
+            <button class="btn rojo-borde" style="margin-top:10px;width:100%">Cancelar caso</button>
           </form>
         </section>
         <section class="card paso-card" id="bloqueReaperturas" hidden>
           <h2>Reaperturas de este caso</h2>
           <div class="lista-items" id="reaperturas"></div>
+        </section>
+        <section class="card paso-card" id="bloqueRecorrido" hidden>
+          <h2>Recorrido</h2>
+          <ul class="recorrido" id="recorrido"></ul>
         </section>
         <section class="card paso-card">
           <h2>Línea de tiempo</h2>

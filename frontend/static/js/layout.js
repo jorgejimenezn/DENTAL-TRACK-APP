@@ -9,6 +9,7 @@ const ICONOS = {
   flujos: '<circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M7 6h10M6 8l5 8M18 8l-5 8"/>',
   asignaciones: '<circle cx="8" cy="8" r="3"/><path d="M3 19c0-2.8 2.2-5 5-5s5 2.2 5 5"/><path d="M15 9l2 2 4-4"/>',
   calendario: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  bandeja: '<path d="M3 13l3-8h12l3 8v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M3 13h5l1 3h6l1-3h5"/>',
   casos: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
 };
 
@@ -25,6 +26,8 @@ const MENU = [
   { href: "calendario.html", texto: "Calendario y reglas", icono: "calendario", roles: ["admin"] },
   { grupo: "Solicitudes", roles: null },
   { href: "nueva-solicitud.html", texto: "Nueva solicitud", icono: "solicitud", roles: ["doctor", "admin", "supervisor", "ingresos"] },
+  { href: "bandeja.html", texto: "Mi bandeja", icono: "bandeja", roles: ["ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"] },
+  { href: "bandeja.html", texto: "Bandeja del laboratorio", icono: "bandeja", roles: ["admin", "supervisor"] },
   { href: "casos.html", texto: "Mis casos", icono: "casos", roles: ["doctor"] },
   { href: "casos.html", texto: "Solicitudes", icono: "casos", roles: ["admin", "supervisor", "ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"] },
 ];

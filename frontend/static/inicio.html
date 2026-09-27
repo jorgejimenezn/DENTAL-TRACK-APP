@@ -48,6 +48,7 @@
            + tarjeta("flujos.html", "Flujos de trabajo", "Pasos por tipo de trabajo y modalidad, con cobertura de técnicos.")
            + tarjeta("asignaciones.html", "Asignaciones", "Tipos de trabajo que atiende cada empleado por área.")
            + tarjeta("calendario.html", "Calendario y reglas", "Horas de corte, días mínimos y días no laborables.")
+           + tarjeta("bandeja.html", "Bandeja del laboratorio", "Carga de cada área, colas y casos sin técnico.")
            + tarjeta("casos.html", "Solicitudes", "Casos nuevos (CN) y reaperturas (RP) de todos los clientes.")
            + tarjeta("nueva-solicitud.html", "Nueva solicitud", "Capturar un caso a nombre de un cliente.");
     } else if (usuario.rol === "doctor") {
@@ -55,16 +56,17 @@
            + tarjeta("casos.html", "Mis casos", "Casos vigentes e historial. Desde un caso entregado puedes pedir una reapertura (RP).")
            + tarjeta(null, "Mi tablero", "Tus casos vigentes en Kanban. Próxima fase.");
     } else if (usuario.rol === "supervisor") {
-      html = tarjeta("casos.html", "Solicitudes", "Casos nuevos y reaperturas; cambio manual de estado.")
+      html = tarjeta("bandeja.html", "Bandeja del laboratorio", "Carga de cada área, colas y casos sin técnico.")
+           + tarjeta("casos.html", "Solicitudes", "Casos nuevos y reaperturas de todos los clientes.")
            + tarjeta("nueva-solicitud.html", "Nueva solicitud", "Capturar un caso a nombre de un cliente.")
-           + tarjeta(null, "Tablero del laboratorio", "Todas las órdenes por área, reasignaciones y pendientes de autorizar. Próxima fase.");
+           + tarjeta(null, "Reasignaciones", "Mover trabajos entre técnicos. Próxima fase.");
     } else if (usuario.rol === "mensajero") {
       html = tarjeta("casos.html", "Solicitudes", "Consulta de casos y direcciones de recolecta y entrega.")
            + tarjeta(null, "Mis rutas", "Recolectas y entregas asignadas por logística. Próxima fase.");
     } else {
-      html = tarjeta("casos.html", "Solicitudes", "Consulta de casos nuevos y reaperturas.")
-           + (usuario.rol === "ingresos" ? tarjeta("nueva-solicitud.html", "Nueva solicitud", "Capturar un caso a nombre de un cliente.") : "")
-           + tarjeta(null, "Mi bandeja", "Órdenes asignadas por el flujo de pasos. Próxima fase.");
+      html = tarjeta("bandeja.html", "Mi bandeja", usuario.rol === "tecnico" ? "Tu trabajo actual y el siguiente que te entrega el sistema por prioridad." : "Casos que esperan a tu área.")
+           + tarjeta("casos.html", "Solicitudes", "Consulta de casos nuevos y reaperturas.")
+           + (usuario.rol === "ingresos" ? tarjeta("nueva-solicitud.html", "Nueva solicitud", "Capturar un caso a nombre de un cliente.") : "");
     }
     $("tarjetas").innerHTML = html;
   }

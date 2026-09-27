@@ -15,8 +15,8 @@ from app.core.dependencias import verificar_clave_interna
 from app.core.errores import ErrorNegocio
 from app.db.mongo import obtener_mongo
 from app.db.datos_prueba import cargar_datos_prueba
-from app.db.semilla import inicializar_base
-from app.rutas import auth, catalogos, clientes, configuracion, empleados, solicitudes
+from app.db.semilla import inicializar_base, preparar_recorridos
+from app.rutas import auth, bandeja, catalogos, clientes, configuracion, empleados, solicitudes
 
 logging.basicConfig(level=logging.INFO)
 
@@ -25,6 +25,7 @@ logging.basicConfig(level=logging.INFO)
 async def ciclo_de_vida(_: FastAPI):
     inicializar_base()
     cargar_datos_prueba()
+    preparar_recorridos()
     try:
         obtener_mongo()["auditoria"].create_index("fecha")
     except Exception as error:
@@ -59,5 +60,5 @@ def salud():
 
 
 protegido = [Depends(verificar_clave_interna)]
-for modulo in (auth, clientes, empleados, catalogos, configuracion, solicitudes):
+for modulo in (auth, clientes, empleados, catalogos, configuracion, solicitudes, bandeja):
     app.include_router(modulo.router, dependencies=protegido)

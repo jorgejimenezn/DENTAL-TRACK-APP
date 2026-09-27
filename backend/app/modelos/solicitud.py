@@ -15,7 +15,7 @@ from app.db.postgres import Base
 ESTADOS = {
     "pendiente_recolecta": ("Pendiente de recolecta", "Ingreso"),
     "validacion_qa": ("Validación de QA", "Ingreso"),
-    "recibida": ("Recibida", "Ingreso"),
+    "recibida": ("En revisión de Ingresos", "Ingreso"),
     "en_produccion": ("En producción", "Producción"),
     "control_calidad": ("Control de calidad", "Producción"),
     "facturacion": ("Facturación y empaque", "Despacho"),
@@ -89,6 +89,7 @@ class Solicitud(Base):
     recolecta_direccion: Mapped[str | None] = mapped_column(String(250), nullable=True)
 
     instrucciones: Mapped[str | None] = mapped_column(Text, nullable=True)
+    factura_numero: Mapped[str | None] = mapped_column(String(40), nullable=True)
 
     cliente: Mapped["Cliente"] = relationship()  # noqa: F821
     creado_por: Mapped["Usuario | None"] = relationship(foreign_keys=[creado_por_id])  # noqa: F821
@@ -97,6 +98,8 @@ class Solicitud(Base):
                                                              cascade="all, delete-orphan")
     historial: Mapped[list["SolicitudHistorial"]] = relationship(order_by="SolicitudHistorial.id",
                                                                  cascade="all, delete-orphan")
+    pasos: Mapped[list["SolicitudPaso"]] = relationship(back_populates="solicitud", order_by="SolicitudPaso.orden",
+                                                        cascade="all, delete-orphan")
 
 
 class SolicitudArchivo(Base):
@@ -122,3 +125,40 @@ class SolicitudHistorial(Base):
     usuario_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     fecha: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     usuario: Mapped["Usuario | None"] = relationship()  # noqa: F821
+
+
+# Estados de un paso del recorrido
+PASO_PENDIENTE = "pendiente"      # todavía no le toca
+PASO_EN_AREA = "en_area"          # áreas de apoyo: lo atiende cualquiera del área (Ingresos, QA, Facturación, Logística)
+PASO_EN_COLA = "en_cola"          # producción: todos los que pueden hacerlo están al tope
+PASO_SIN_TECNICO = "sin_tecnico"  # producción: nadie tiene asignada esa área y tipo de trabajo
+PASO_ASIGNADO = "asignado"        # producción: en la bandeja de un técnico, esperando turno
+PASO_EN_PROCESO = "en_proceso"    # producción: el técnico lo está trabajando (uno a la vez)
+PASO_TERMINADO = "terminado"
+PASO_OMITIDO = "omitido"          # cancelado o reemplazado al rehacer el recorrido
+PASOS_ACTIVOS = {PASO_EN_AREA, PASO_EN_COLA, PASO_SIN_TECNICO, PASO_ASIGNADO, PASO_EN_PROCESO}
+PASOS_CARGA = {PASO_ASIGNADO, PASO_EN_PROCESO}  # cuentan para el tope de trabajos del técnico
+
+
+class SolicitudPaso(Base):
+    """Un paso del recorrido del caso (copiado del flujo de su tipo de trabajo y modalidad)."""
+    __tablename__ = "solicitud_pasos"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    solicitud_id: Mapped[int] = mapped_column(ForeignKey("solicitudes.id", ondelete="CASCADE"), index=True)
+    orden: Mapped[int] = mapped_column(Integer)
+    area_id: Mapped[int] = mapped_column(ForeignKey("areas.id"))
+    etapa: Mapped[str] = mapped_column(String(20))  # recolecta, ingresos, produccion, validacion_rp, qa, facturacion, entrega
+    estado: Mapped[str] = mapped_column(String(15), default=PASO_PENDIENTE, index=True)
+    tecnico_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True, index=True)
+    atendido_por_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
+    activado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    asignado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    iniciado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    terminado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    nota: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    vuelta: Mapped[int] = mapped_column(Integer, default=1)  # sube cuando QA devuelve el caso
+
+    solicitud: Mapped[Solicitud] = relationship(back_populates="pasos")
+    area: Mapped["Area"] = relationship()  # noqa: F821
+    tecnico: Mapped["Usuario | None"] = relationship(foreign_keys=[tecnico_id])  # noqa: F821
+    atendido_por: Mapped["Usuario | None"] = relationship(foreign_keys=[atendido_por_id])  # noqa: F821

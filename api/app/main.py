@@ -13,7 +13,7 @@ from fastapi.responses import RedirectResponse
 from app import backend
 from app.errores_validacion import manejar_validacion
 from app.config import config
-from app.rutas import auth, catalogos, clientes, configuracion, empleados, solicitudes
+from app.rutas import auth, bandeja, catalogos, clientes, configuracion, empleados, solicitudes
 
 
 @asynccontextmanager
@@ -56,5 +56,5 @@ async def salud():
     return {"servicio": "api", "backend_url": config.BACKEND_URL, "backend": estado_backend}
 
 
-for modulo in (auth, clientes, empleados, catalogos, configuracion, solicitudes):
+for modulo in (auth, clientes, empleados, catalogos, configuracion, solicitudes, bandeja):
     app.include_router(modulo.router)

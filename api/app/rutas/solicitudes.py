@@ -8,7 +8,7 @@
 from fastapi import APIRouter, Depends, File, Query, Response, UploadFile
 
 from app.backend import descargar, llamar
-from app.esquemas import EstadoSolicitudIn, ReaperturaIn, SolicitudIn
+from app.esquemas import MotivoIn, ReaperturaIn, SolicitudIn
 from app.seguridad import requiere_rol, usuario_actual
 
 router = APIRouter(tags=["Solicitudes"])
@@ -66,10 +66,9 @@ async def reabrir(solicitud_id: int, datos: ReaperturaIn, u: dict = Depends(usua
     return await llamar("POST", f"/solicitudes/{solicitud_id}/reapertura", u, json=datos.model_dump(mode="json"))
 
 
-@router.patch("/solicitudes/{solicitud_id}/estado",
-              summary="Cambiar estado manualmente (temporal, hasta que existan las bandejas de cada área)")
-async def cambiar_estado(solicitud_id: int, datos: EstadoSolicitudIn, u: dict = Depends(admin_o_supervisor)):
-    return await llamar("PATCH", f"/solicitudes/{solicitud_id}/estado", u, json=datos.model_dump())
+@router.post("/solicitudes/{solicitud_id}/cancelar", summary="Cancelar un caso en cualquier etapa (admin, supervisor)")
+async def cancelar(solicitud_id: int, datos: MotivoIn, u: dict = Depends(admin_o_supervisor)):
+    return await llamar("POST", f"/solicitudes/{solicitud_id}/cancelar", u, json=datos.model_dump())
 
 
 @router.get("/solicitudes/{solicitud_id}/archivos/{archivo_id}", summary="Descargar un archivo de la solicitud")

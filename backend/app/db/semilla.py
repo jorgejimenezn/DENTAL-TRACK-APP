@@ -33,3 +33,11 @@ def inicializar_base():
         sesion.flush()
         sembrar_configuracion(sesion)
         sesion.commit()
+
+
+def preparar_recorridos():
+    """Casos abiertos creados antes del motor de pasos: se les arma su recorrido."""
+    from app.servicios.recorrido import Motor
+    with SesionLocal() as sesion:
+        if Motor(sesion).preparar_existentes():
+            sesion.commit()

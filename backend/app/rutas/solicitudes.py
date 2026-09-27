@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.core.dependencias import Actor, obtener_actor
 from app.db.mongo import obtener_mongo
 from app.db.postgres import obtener_sesion
-from app.esquemas.solicitud import (ArchivoOut, ClienteBreve, EstadoIn, PerfilSolicitud, ReaperturaIn, SolicitudIn,
+from app.esquemas.solicitud import (ArchivoOut, ClienteBreve, MotivoIn, PerfilSolicitud, ReaperturaIn, SolicitudIn,
                                     SolicitudOut, SolicitudResumen)
 from app.repositorios.archivo_repo import ArchivoRepositorio
 from app.rutas.proveedores import servicio_auditoria
@@ -73,10 +73,10 @@ def reabrir(solicitud_id: int, datos: ReaperturaIn, actor: Actor = Depends(obten
     return s.reabrir(solicitud_id, datos, actor)
 
 
-@router.patch("/solicitudes/{solicitud_id}/estado", response_model=SolicitudOut)
-def cambiar_estado(solicitud_id: int, datos: EstadoIn, actor: Actor = Depends(obtener_actor),
-                   s: SolicitudServicio = Depends(_servicio)):
-    return s.cambiar_estado(solicitud_id, datos.estado, datos.nota, actor)
+@router.post("/solicitudes/{solicitud_id}/cancelar", response_model=SolicitudOut)
+def cancelar(solicitud_id: int, datos: MotivoIn, actor: Actor = Depends(obtener_actor),
+             s: SolicitudServicio = Depends(_servicio)):
+    return s.cancelar(solicitud_id, datos.motivo, actor)
 
 
 @router.get("/solicitudes/{solicitud_id}/archivos/{archivo_id}")
