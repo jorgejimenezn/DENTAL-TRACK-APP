@@ -107,6 +107,11 @@
           <div class="campo" id="campoColor"><label>Color <span class="req">*</span></label>
             <select id="color"></select><input class="fdc" id="colorFdc" maxlength="120" placeholder="Describe el color" hidden><div class="msg-error">Requerido.</div></div>
         </div>
+        <div id="bloqueColorPieza" hidden style="margin-top:14px">
+          <label class="check-linea"><input type="checkbox" id="colorPorPieza"> Colores distintos por pieza</label>
+          <div class="ayuda" style="font-size:11px;color:var(--texto-3);margin-top:4px">El color elegido arriba queda como base; aquí cambias el de cada pieza (misma guía).</div>
+          <div class="colores-pieza" id="coloresPieza" hidden></div>
+        </div>
         <div class="aviso azul" id="avisoFdc" hidden>La solicitud incluye elementos fuera de catálogo. El laboratorio la revisará antes de que entre a producción.</div>
       </section>
 

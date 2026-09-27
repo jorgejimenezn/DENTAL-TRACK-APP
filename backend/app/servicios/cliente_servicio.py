@@ -32,6 +32,7 @@ class ClienteServicio:
             clinica=c.clinica, es_red=c.es_red, telefono_celular=c.telefono_celular,
             telefono_fijo=c.telefono_fijo, tipo_documento=c.tipo_documento,
             numero_documento=c.numero_documento, nivel_prioridad=c.nivel_prioridad,
+            cliente_odoo=c.cliente_odoo, credito=c.credito,
             activo=u.activo, creado_en=c.creado_en,
             direcciones=[DireccionOut(id=d.id, departamento=d.departamento, municipio=d.municipio,
                                       direccion=d.direccion, principal=d.principal, activo=d.activo)
@@ -80,6 +81,7 @@ class ClienteServicio:
             telefono_celular=datos.telefono_celular, telefono_fijo=datos.telefono_fijo,
             tipo_documento=datos.tipo_documento, numero_documento=datos.numero_documento,
             nivel_prioridad=datos.nivel_prioridad, direcciones=direcciones,
+            cliente_odoo=(datos.cliente_odoo or "").strip() or None, credito=datos.credito,
         ))
         self.sesion.commit()
         if actor.id is None and accion == "registro":
@@ -107,6 +109,23 @@ class ClienteServicio:
         self.sesion.commit()
         if cambios:
             self.auditoria.registrar("editar", "cliente", cliente.id, actor, {"cambios": cambios})
+        return self.obtener(cliente.id)
+
+    def actualizar_comercial(self, cliente_id: int, cliente_odoo: str | None, credito: bool, actor: Actor) -> ClienteOut:
+        """Ref. de Odoo y crédito. Cualquiera de los roles permitidos activa el crédito; solo el admin lo quita."""
+        cliente = self._obtener(cliente_id)
+        if cliente.credito and not credito and actor.rol != "admin":
+            raise ErrorNegocio("Solo el administrador puede quitar el crédito a un cliente", 403)
+        cambios = {}
+        if cliente.cliente_odoo != cliente_odoo:
+            cambios["cliente_odoo"] = [cliente.cliente_odoo, cliente_odoo]
+        if cliente.credito != credito:
+            cambios["credito"] = [cliente.credito, credito]
+        cliente.cliente_odoo, cliente.credito = cliente_odoo, credito
+        self.sesion.commit()
+        if cambios:
+            self.auditoria.registrar("comercial", "cliente", cliente.id, actor,
+                                     {"cliente": cliente.razon_social, "cambios": cambios})
         return self.obtener(cliente.id)
 
     def cambiar_estado(self, cliente_id: int, activo: bool, actor: Actor) -> ClienteOut:

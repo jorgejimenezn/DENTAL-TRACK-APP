@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, Query
 
 from app.core.dependencias import Actor, obtener_actor
-from app.esquemas.cliente import ClienteActualizar, ClienteCrear, ClienteOut, DireccionIn
+from app.esquemas.cliente import ClienteActualizar, ClienteCrear, ClienteOut, ComercialIn, DireccionIn
 from app.esquemas.comun import EstadoIn, PasswordIn
 from app.rutas.proveedores import servicio_clientes
 from app.servicios.cliente_servicio import ClienteServicio
@@ -61,3 +61,9 @@ def actualizar_direccion(cliente_id: int, direccion_id: int, datos: DireccionIn,
 def eliminar_direccion(cliente_id: int, direccion_id: int, actor: Actor = Depends(obtener_actor),
                        s: ClienteServicio = Depends(servicio_clientes)):
     return s.eliminar_direccion(cliente_id, direccion_id, actor)
+
+
+@router.patch("/{cliente_id}/comercial", response_model=ClienteOut)
+def comercial(cliente_id: int, datos: ComercialIn, actor: Actor = Depends(obtener_actor),
+              s: ClienteServicio = Depends(servicio_clientes)):
+    return s.actualizar_comercial(cliente_id, datos.cliente_odoo, datos.credito, actor)

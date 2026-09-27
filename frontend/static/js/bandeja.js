@@ -41,6 +41,7 @@ function tarjeta(p, { actual = false, mostrarTecnico = false } = {}) {
   if (p.etapa === "validacion_rp") extra.push(`<div class="nota-caso"><b>${p.reapertura_tipo === "garantia" ? "Garantía" : "Modificación"}:</b> ${escapar(p.reapertura_motivo)}</div>`);
   if (p.qa_clasificacion && ["facturacion", "produccion"].includes(p.etapa)) extra.push(`<div class="linea">QA: <b>${escapar(p.qa_clasificacion)}</b></div>`);
   if (["recolecta", "entrega"].includes(p.etapa)) extra.push(`<div class="linea">${p.etapa === "recolecta" ? "Recoger en" : "Entregar en"}: <b>${escapar(p.direccion)}</b></div>`);
+  if (p.etapa === "facturacion") extra.push(`<div class="linea">Cliente Odoo: <b>${escapar(p.cliente_odoo || "sin registrar")}</b> · ${p.credito ? '<span class="badge verde">Crédito: no pasa a Cobros</span>' : '<span class="badge gris">Contado</span>'}</div>`);
   if (p.devolucion) extra.push(`<div class="aviso rojo" style="margin:0"><div><b>Retrabajo:</b> ${escapar(p.devolucion.replace("Devuelto por QA: ", ""))}</div></div>`);
   if (p.instrucciones) extra.push(`<div class="nota-caso">${escapar(p.instrucciones)}</div>`);
   if (ES_RUTA(p) && p.estado === "asignado" && !mostrarTecnico && usuario.rol !== "mensajero") extra.push(`<div class="linea">Mensajero: <b>${escapar(p.tecnico)}</b></div>`);

@@ -78,6 +78,19 @@ class RegistroCliente(_DatosCliente):
 class ClienteCrear(_ClienteBase):
     password: str = Field(min_length=8, max_length=72)
     direcciones: list[DireccionIn] = Field(min_length=1)
+    cliente_odoo: str | None = Field(default=None, max_length=40)
+    credito: bool = False
+
+
+class ComercialIn(BaseModel):
+    """Datos comerciales que también editan Ingresos, Facturación y Supervisión."""
+    cliente_odoo: str | None = Field(default=None, max_length=40, description="Número de cliente en Odoo")
+    credito: bool = Field(default=False, description="Con crédito no pasa por Cobros. Solo el admin puede quitarlo")
+
+    @field_validator("cliente_odoo")
+    @classmethod
+    def limpiar(cls, v: str | None) -> str | None:
+        return " ".join((v or "").split()) or None
 
 
 class ClienteActualizar(_ClienteBase):
@@ -97,6 +110,8 @@ class ClienteOut(BaseModel):
     tipo_documento: str
     numero_documento: str
     nivel_prioridad: int
+    cliente_odoo: str | None = None
+    credito: bool = False
     activo: bool
     creado_en: datetime | None
     direcciones: list[DireccionOut]

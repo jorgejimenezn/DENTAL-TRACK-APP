@@ -131,7 +131,36 @@ function estado() {
     ["Dirección de entrega", !dirEntrega.validar(false)],
   ];
 }
+/* ---------- Color por pieza ---------- */
+const coloresElegidos = {};  // pieza → color_id (se conserva al volver a dibujar)
+let claveColores = "";
+function colorPorPiezaDisponible() {
+  const g = $("guia").value && $("guia").value !== FDC ? guiaActual() : null;
+  return !colorNoAplica && g && g.colores.length && odontograma.lista().length > 1 && $("color").value && $("color").value !== FDC;
+}
+function pintarColoresPieza() {
+  const disponible = colorPorPiezaDisponible();
+  $("bloqueColorPieza").hidden = !disponible;
+  if (!disponible) { $("colorPorPieza").checked = false; $("coloresPieza").hidden = true; claveColores = ""; return; }
+  $("coloresPieza").hidden = !$("colorPorPieza").checked;
+  const piezas = odontograma.lista(), g = guiaActual();
+  const clave = `${g.id}|${piezas.join(",")}|${$("color").value}|${$("colorPorPieza").checked}`;
+  if (clave === claveColores) return;
+  claveColores = clave;
+  $("coloresPieza").innerHTML = piezas.map(n => {
+    const actual = coloresElegidos[n] && g.colores.some(c => c.id == coloresElegidos[n]) ? coloresElegidos[n] : $("color").value;
+    return `<label>${n}<select data-pieza="${n}">${g.colores.map(c => `<option value="${c.id}" ${c.id == actual ? "selected" : ""}>${escapar(c.nombre)}</option>`).join("")}</select></label>`;
+  }).join("");
+}
+$("colorPorPieza").addEventListener("change", () => { claveColores = ""; pintarColoresPieza(); actualizar(); });
+$("coloresPieza").addEventListener("change", e => { const s = e.target.closest("[data-pieza]"); if (s) coloresElegidos[s.dataset.pieza] = Number(s.value); actualizar(); });
+function valorColoresPieza() {
+  if (!$("colorPorPieza").checked || $("bloqueColorPieza").hidden) return [];
+  return [...document.querySelectorAll("#coloresPieza [data-pieza]")].map(s => ({ pieza: Number(s.dataset.pieza), color_id: Number(s.value) }));
+}
+
 function actualizar() {
+  pintarColoresPieza();
   const hayFdc = ["tipo", "material", "unidad", "guia", "color"].some(id => $(id).value === FDC);
   $("avisoFdc").hidden = !hayFdc;
   if (esPersonal) $("rCliente").textContent = perfil?.razon_social || "—";
@@ -141,7 +170,9 @@ function actualizar() {
   $("rTipo").textContent = textoDe("tipo") || "—";
   $("rMaterial").textContent = textoDe("material") || "—";
   $("rUnidad").textContent = textoDe("unidad") || "—";
-  $("rColor").textContent = colorNoAplica ? "No aplica" : (textoDe("color") ? `${textoDe("guia")} · ${textoDe("color")}` : "—");
+  const porPieza = valorColoresPieza();
+  $("rColor").textContent = colorNoAplica ? "No aplica" : (textoDe("color") ? `${textoDe("guia")} · ${textoDe("color")}` : "—")
+    + (porPieza.length ? ` · por pieza: ${[...document.querySelectorAll("#coloresPieza [data-pieza]")].map(s => `${s.dataset.pieza} ${s.options[s.selectedIndex].text}`).join(", ")}` : "");
   $("rPiezas").textContent = odontograma.lista().join(", ") || "—";
   $("rFecha").textContent = fecha.valor() ? fechaCorta(fecha.valor()) : "—";
   $("rDireccion").textContent = dirEntrega.texto();
@@ -187,6 +218,7 @@ $("form").onsubmit = async e => {
     doctor_tratante: $("doctorTratante").value.trim() || null,
     tipo_trabajo: seleccion("tipo"), material: seleccion("material"), unidad: seleccion("unidad"),
     guia_color: colorNoAplica ? null : seleccion("guia"), color: colorNoAplica ? null : seleccion("color"),
+    colores_pieza: colorNoAplica ? [] : valorColoresPieza(),
     piezas: odontograma.lista(),
     fecha_entrega: fecha.valor(),
     emergencia: $("emergencia").checked,

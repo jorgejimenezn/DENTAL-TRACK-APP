@@ -98,6 +98,12 @@ Reglas que valida el servidor (aunque se use Swagger directamente): cadena de ca
 | **Mis métricas** (cada empleado) | Solo sus datos: terminados hoy/semana/30 días, tiempos frente a la meta por área, devueltos por QA y próximos vencimientos. |
 | **Rol Operaciones** | Gerencia de área: solo consulta Dashboard, Cobros y Solicitudes. |
 
+## Clientes: datos comerciales y color por pieza
+
+- **Clientes** también para **Supervisor, Ingresos y Facturación**: consultan, administran **direcciones de entrega** y **datos comerciales**: **Cliente Odoo** (número del sistema de facturación) y **Crédito**. Los datos principales (razón social, NIT, prioridad, acceso) siguen siendo solo del admin. El crédito lo puede activar cualquiera de esos roles, pero **solo el admin lo quita**.
+- Un cliente **con crédito no pasa a Cobros**: al facturar su caso queda como "crédito". Facturación ve en la tarjeta el Cliente Odoo y si es crédito o contado; la orden PDF también los muestra.
+- **Color por pieza**: con una guía del catálogo y dos o más piezas, el doctor puede marcar "Colores distintos por pieza". El color elegido queda como base y cada pieza puede cambiarlo (misma guía). Se ve en el detalle, en las bandejas y en el odontograma de la orden PDF. Una reapertura conserva los colores de sus piezas; si Ingresos cambia la guía, se limpian.
+
 ## Tablero Kanban del doctor
 
 **Mi tablero** es la pantalla principal del doctor (entra ahí al iniciar sesión). Columnas: **Recibido** (recolecta, Ingresos o validación de QA) · **En producción** · **Control de calidad** · **Listo para entrega** (facturación, listo y en ruta) · **Entregado** (últimos 15 días, con botón para reabrir). Cada tarjeta muestra el avance en pasos, la fecha de entrega (en rojo si ya pasó) y si es emergencia o RP. En celular las columnas se deslizan de lado. Admin, supervisor e Ingresos pueden ver el tablero de cualquier cliente en **Tablero por cliente**. API: `GET /solicitudes/tablero`.
@@ -275,6 +281,7 @@ Sin servidor Mongo se puede probar con `MONGO_URL=mongomock://local` (requiere `
 | GET/POST | `/clientes` | admin |
 | GET/PUT | `/clientes/{id}` | admin |
 | PATCH | `/clientes/{id}/estado` | admin |
+| PATCH | `/clientes/{id}/comercial` | admin, supervisor, ingresos, facturación (crédito: solo admin lo quita) |
 | POST | `/clientes/{id}/password` | admin |
 | POST | `/clientes/{id}/direcciones` | admin |
 | PUT/DELETE | `/clientes/{id}/direcciones/{dir}` | admin |

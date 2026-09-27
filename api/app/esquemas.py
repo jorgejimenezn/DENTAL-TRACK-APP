@@ -68,6 +68,13 @@ class RegistroIn(_DatosCliente):
 class ClienteCrear(_ClienteBase):
     password: str = Field(min_length=8, max_length=72)
     direcciones: list[DireccionIn] = Field(min_length=1)
+    cliente_odoo: str | None = Field(default=None, max_length=40, description="Número de cliente en Odoo")
+    credito: bool = False
+
+
+class ComercialIn(BaseModel):
+    cliente_odoo: str | None = Field(default=None, max_length=40, examples=["C-00458"], description="Número de cliente en Odoo")
+    credito: bool = Field(default=False, description="Con crédito no pasa por Cobros. Solo el admin puede quitarlo")
 
 
 class ClienteActualizar(_ClienteBase):
@@ -160,6 +167,11 @@ class SeleccionIn(BaseModel):
     fuera_catalogo: str | None = Field(default=None, max_length=120, examples=[None])
 
 
+class ColorPiezaIn(BaseModel):
+    pieza: int = Field(examples=[11])
+    color_id: int = Field(examples=[3])
+
+
 class DireccionSelIn(BaseModel):
     tipo: Literal["existente", "nueva", "misma_que_entrega"] = Field(examples=["existente"])
     direccion_id: int | None = Field(default=None, examples=[1])
@@ -190,6 +202,7 @@ class SolicitudIn(_EntregaIn):
     unidad: SeleccionIn
     guia_color: SeleccionIn | None = None
     color: SeleccionIn | None = None
+    colores_pieza: list[ColorPiezaIn] = Field(default=[], description="Color distinto por pieza (colores de la misma guía)")
 
 
 class ReaperturaIn(_EntregaIn):

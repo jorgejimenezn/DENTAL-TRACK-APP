@@ -512,3 +512,8 @@ a.btn{text-decoration:none}
 .rango-fechas{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
 .rango-fechas .campo{min-width:150px}
 .meta-tabla input{width:90px;padding:7px 9px;border:1px solid var(--campo-borde);border-radius:8px;background:var(--campo);color:var(--texto);font:inherit}
+
+/* Color por pieza */
+.colores-pieza{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:10px}
+.colores-pieza label{display:flex;align-items:center;gap:8px;background:var(--campo);border:1px solid var(--campo-borde);border-radius:8px;padding:6px 8px;font-size:13px;font-weight:700}
+.colores-pieza select{flex:1;min-width:0;padding:6px;border:1px solid var(--campo-borde);border-radius:6px;background:#111;color:var(--texto);font:inherit;font-weight:400}

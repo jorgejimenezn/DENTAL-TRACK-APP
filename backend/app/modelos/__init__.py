@@ -74,6 +74,9 @@ class Cliente(Base):
     numero_documento: Mapped[str] = mapped_column(String(20), unique=True)
     # Prioridad: 1 = emergencia (se marca en la solicitud), 2 = cliente VIP, 3 = cliente normal
     nivel_prioridad: Mapped[int] = mapped_column(Integer, default=3)
+    # Datos comerciales: referencia del cliente en Odoo y si tiene crédito (no pasa por Cobros)
+    cliente_odoo: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    credito: Mapped[bool] = mapped_column(Boolean, default=False)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     usuario: Mapped[Usuario] = relationship(back_populates="cliente")

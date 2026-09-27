@@ -56,6 +56,8 @@ class PasoBandeja(BaseModel):
     telefono: str | None = None
     receptor: str | None = None
     caja: str | None = None
+    cliente_odoo: str | None = None
+    credito: bool = False
     devolucion: str | None = None  # motivo de QA cuando es un retrabajo
     acciones: list[str]
     pasos_previos: list[PasoPrevio] = []

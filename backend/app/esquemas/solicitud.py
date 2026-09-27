@@ -35,6 +35,17 @@ class Seleccion(BaseModel):
         return self
 
 
+class ColorPiezaIn(BaseModel):
+    pieza: int
+    color_id: int
+
+
+class ColorPiezaOut(BaseModel):
+    pieza: int
+    color_id: int | None
+    color: str
+
+
 class DireccionSel(BaseModel):
     tipo: Literal["existente", "nueva", "misma_que_entrega"]
     direccion_id: int | None = None
@@ -103,6 +114,7 @@ class SolicitudIn(_EntregaIn):
     unidad: Seleccion
     guia_color: Seleccion | None = Field(default=None, description="Nulo cuando el material no usa color")
     color: Seleccion | None = None
+    colores_pieza: list[ColorPiezaIn] = Field(default=[], description="Color distinto por pieza (misma guía del catálogo)")
 
     @field_validator("paciente", "referencia_clinica", "doctor_tratante")
     @classmethod
@@ -213,6 +225,7 @@ class SolicitudResumen(BaseModel):
 
 class SolicitudOut(SolicitudResumen):
     clinica: str | None
+    colores_pieza: list[ColorPiezaOut] = []
     creado_por: str | None
     caso_origen_id: int | None
     reapertura_tipo: str | None

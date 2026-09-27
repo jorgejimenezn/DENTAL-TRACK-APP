@@ -1,5 +1,12 @@
 /* ============ Pantalla de clientes ============ */
-if (!iniciarPagina(["admin"])) throw new Error("sin acceso");
+const usuario = iniciarPagina(["admin", "supervisor", "ingresos", "facturacion"]);
+if (!usuario) throw new Error("sin acceso");
+const esAdmin = usuario.rol === "admin";
+// Supervisor, Ingresos y Facturación: consultan, administran direcciones y datos comerciales
+if (!esAdmin) {
+  $("btnNuevo").hidden = true;
+  document.querySelector(".encabezado p").textContent = "Consulta de clientes, sus direcciones de entrega y sus datos comerciales (Odoo y crédito).";
+}
 
 let clientes = [];
 let modo = "crear";            // crear | editar
@@ -21,13 +28,13 @@ async function cargar() {
     clientes = await api("GET", "/clientes?" + params);
     pintarTabla();
   } catch (error) {
-    $("tabla").innerHTML = `<tr><td colspan="7" class="vacio">${escapar(error.message)}</td></tr>`;
+    $("tabla").innerHTML = `<tr><td colspan="8" class="vacio">${escapar(error.message)}</td></tr>`;
   }
 }
 
 function pintarTabla() {
   if (!clientes.length) {
-    $("tabla").innerHTML = '<tr><td colspan="7" class="vacio">No hay clientes con esos filtros.</td></tr>';
+    $("tabla").innerHTML = '<tr><td colspan="8" class="vacio">No hay clientes con esos filtros.</td></tr>';
     return;
   }
   $("tabla").innerHTML = clientes.map(c => `
@@ -36,11 +43,12 @@ function pintarTabla() {
       <td data-label="Clínica">${escapar(c.clinica || "—")} ${c.es_red ? '<span class="badge azul">Red</span>' : ""}</td>
       <td data-label="Documento">${escapar(c.tipo_documento)}<span class="sub">${escapar(formatoDocumento(c))}</span></td>
       <td data-label="Teléfono">${escapar(c.telefono_celular || "")}${c.telefono_celular && c.telefono_fijo ? "<br>" : ""}${escapar(c.telefono_fijo || "")}</td>
+      <td data-label="Odoo · crédito">${escapar(c.cliente_odoo || "—")}${c.credito ? ' <span class="badge verde">Crédito</span>' : ""}</td>
       <td data-label="Prioridad"><span class="badge ${c.nivel_prioridad === 2 ? "blanco" : "gris"}">${c.nivel_prioridad === 2 ? "2 · VIP" : "3 · Normal"}</span></td>
       <td data-label="Estado"><span class="badge ${c.activo ? "verde" : "rojo"}">${c.activo ? "Activo" : "Inactivo"}</span></td>
       <td class="acciones">
-        <button class="btn chico" data-editar="${c.id}">Editar</button>
-        <button class="btn chico ${c.activo ? "rojo-borde" : "verde-borde"}" data-estado="${c.id}">${c.activo ? "Desactivar" : "Activar"}</button>
+        <button class="btn chico" data-editar="${c.id}">${esAdmin ? "Editar" : "Ver y editar datos"}</button>
+        ${esAdmin ? `<button class="btn chico ${c.activo ? "rojo-borde" : "verde-borde"}" data-estado="${c.id}">${c.activo ? "Desactivar" : "Activar"}</button>` : ""}
       </td>
     </tr>`).join("");
 }
@@ -76,6 +84,8 @@ function limpiarFormulario() {
 $("btnNuevo").onclick = () => {
   modo = "crear"; clienteActual = null; direccionesLocales = [];
   limpiarFormulario();
+  document.querySelectorAll("#formCliente input, #formCliente select").forEach(el => el.disabled = false);
+  $("btnGuardar").textContent = "Guardar cliente";
   $("tituloModal").textContent = "Nuevo cliente";
   $("bloquePassword").hidden = false;
   $("btnResetPass").hidden = true;
@@ -99,6 +109,19 @@ async function abrirEditar(id) {
   $("cCelular").value = c.telefono_celular || ""; $("cFijo").value = c.telefono_fijo || "";
   $("cClinica").value = c.clinica || ""; $("cRed").checked = c.es_red; $("cNivel").value = String(c.nivel_prioridad);
   $("cTipoDoc").value = c.tipo_documento; $("cDocumento").value = c.numero_documento;
+  $("cOdoo").value = c.cliente_odoo || ""; $("cCredito").checked = c.credito;
+  // El crédito, una vez activo, solo lo quita el admin
+  $("cCredito").disabled = c.credito && !esAdmin;
+  $("ayudaCredito").textContent = c.credito && !esAdmin
+    ? "Crédito activo. Solo el administrador puede quitarlo."
+    : "Con crédito, sus casos no pasan a Cobros. Una vez activado, solo el administrador puede quitarlo.";
+  // Fuera del admin, los datos principales son de solo lectura
+  document.querySelectorAll("#formCliente .grid input, #formCliente .grid select").forEach(el => {
+    if (!["cOdoo", "cCredito"].includes(el.id) && !el.closest("#formDireccion")) el.disabled = !esAdmin;
+  });
+  $("btnResetPass").hidden = !esAdmin;
+  $("tituloModal").textContent = esAdmin ? `Editar · ${c.razon_social}` : c.razon_social;
+  $("btnGuardar").textContent = esAdmin ? "Guardar cliente" : "Guardar datos comerciales";
   pintarDirecciones();
   $("modalCliente").showModal();
 }
@@ -139,6 +162,13 @@ function datosCliente() {
 $("formCliente").onsubmit = async e => {
   e.preventDefault();
   $("errorCliente").hidden = true;
+  const comercial = { cliente_odoo: $("cOdoo").value.trim() || null, credito: $("cCredito").checked };
+  if (!esAdmin) {
+    if (comercial.credito && !clienteActual.credito && !confirm(`¿Activar crédito para ${clienteActual.razon_social}? Solo el administrador podrá quitarlo.`)) return;
+    try { await api("PATCH", `/clientes/${clienteActual.id}/comercial`, comercial); toast("Datos comerciales guardados"); $("modalCliente").close(); cargar(); }
+    catch (error) { mostrarErrores($("errorCliente"), error); }
+    return;
+  }
   if (!validarCliente()) { mostrarErrores($("errorCliente"), new Error("Revisa los campos marcados en rojo.")); return; }
   if (modo === "crear" && !direccionesLocales.length) {
     mostrarErrores($("errorCliente"), new Error("Agrega al menos una dirección de entrega.")); return;
@@ -146,10 +176,12 @@ $("formCliente").onsubmit = async e => {
   $("btnGuardar").disabled = true;
   try {
     if (modo === "crear") {
-      await api("POST", "/clientes", { ...datosCliente(), password: $("cPassword").value, direcciones: direccionesLocales });
+      await api("POST", "/clientes", { ...datosCliente(), ...comercial, password: $("cPassword").value, direcciones: direccionesLocales });
       toast("Cliente creado");
     } else {
       await api("PUT", `/clientes/${clienteActual.id}`, datosCliente());
+      if (comercial.cliente_odoo !== (clienteActual.cliente_odoo || null) || comercial.credito !== clienteActual.credito)
+        await api("PATCH", `/clientes/${clienteActual.id}/comercial`, comercial);
       toast("Cambios guardados");
     }
     $("modalCliente").close();

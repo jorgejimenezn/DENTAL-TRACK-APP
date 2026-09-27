@@ -81,10 +81,13 @@ def _celda(etiqueta: str, valor) -> list:
     return [Paragraph(etiqueta.upper(), E["etq"]), Paragraph(_esc(valor), E["val"])]
 
 
-def _odontograma(piezas: list[int], ancho: float) -> Table:
+def _odontograma(piezas: list[int], ancho: float, colores: dict[int, str] | None = None) -> Table:
     sup = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28]
     inf = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38]
-    t = Table([[str(n) for n in sup], [str(n) for n in inf]], colWidths=[ancho / 16] * 16, rowHeights=[7 * mm] * 2)
+    colores = colores or {}
+    celda = lambda n: f"{n}\n{colores[n]}" if n in colores else str(n)  # noqa: E731
+    alto = 10 * mm if colores else 7 * mm
+    t = Table([[celda(n) for n in sup], [celda(n) for n in inf]], colWidths=[ancho / 16] * 16, rowHeights=[alto] * 2)
     estilo = [("FONT", (0, 0), (-1, -1), "Helvetica-Bold", 8), ("ALIGN", (0, 0), (-1, -1), "CENTER"),
               ("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("GRID", (0, 0), (-1, -1), 0.5, LINEA),
               ("TEXTCOLOR", (0, 0), (-1, -1), colors.HexColor("#9a9a9a")), ("LINEAFTER", (7, 0), (7, 1), 1.6, NEGRO),
@@ -168,10 +171,14 @@ def generar_orden(s, generado_por: str) -> bytes:
           _rejilla([[_dato("Cliente", cli.razon_social), _dato("Clínica", cli.clinica or "—"),
                      _dato("Teléfono", telefono or "—")],
                     [_dato("Paciente", s.paciente), _dato("Doctor tratante", s.doctor_tratante or "Titular de la cuenta"),
-                     _dato("Referencia de la clínica", s.referencia_clinica or "—")]], [ancho / 3] * 3)]
+                     _dato("Referencia de la clínica", s.referencia_clinica or "—")],
+                    [_dato("Cliente Odoo", cli.cliente_odoo or "—"), _dato("Condición", "Crédito" if cli.credito else "Contado"),
+                     _dato("NIT / DPI", cli.numero_documento)]], [ancho / 3] * 3)]
 
     # ---------- Trabajo ----------
     color_txt = f"{s.guia} · {s.color}" if s.color else "No aplica"
+    if s.colores_pieza:
+        color_txt += " (base)"
     color_fdc = bool(s.color) and (s.guia_id is None or s.color_id is None)
     h += [Paragraph("TRABAJO", E["seccion"]),
           _rejilla([[_dato("Tipo de trabajo", s.tipo_trabajo, s.tipo_trabajo_id is None),
@@ -180,7 +187,11 @@ def generar_orden(s, generado_por: str) -> bytes:
                      _dato("Guía y color", color_txt, color_fdc)]], [ancho / 4] * 4),
           Spacer(0, 1 * mm),
           Paragraph(f"PIEZAS (FDI) · {len(s.piezas or [])} seleccionada(s): {', '.join(map(str, s.piezas or []))}", E["etq"]),
-          Spacer(0, 1.5 * mm), _odontograma(s.piezas or [], ancho)]
+          *([Paragraph("<b>Color por pieza:</b> " + " · ".join(f"{c['pieza']} {_esc(c['color'])}" for c in s.colores_pieza),
+                       E["texto"])] if s.colores_pieza else []),
+          Spacer(0, 1.5 * mm), _odontograma(s.piezas or [], ancho, ({**{n: s.color for n in (s.piezas or [])},
+                                                 **{c["pieza"]: c["color"] for c in s.colores_pieza}}
+                                                if s.colores_pieza else None))]
     if s.instrucciones:
         caja_inst = Table([[Paragraph(_esc(s.instrucciones).replace("\n", "<br/>"), E["texto"])]], colWidths=[ancho])
         caja_inst.setStyle(TableStyle([("BOX", (0, 0), (-1, -1), 0.6, LINEA), ("LEFTPADDING", (0, 0), (-1, -1), 6),

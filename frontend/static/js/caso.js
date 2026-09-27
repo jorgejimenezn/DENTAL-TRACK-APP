@@ -48,7 +48,8 @@ function pintar() {
     + dato("Tipo de trabajo", valorCat(c.tipo_trabajo))
     + dato("Material", valorCat(c.material))
     + dato("Unidades", valorCat(c.unidad))
-    + dato("Color", c.color ? `${valorCat(c.guia_color)} · ${valorCat(c.color)}` : "No aplica")
+    + dato("Color", c.color ? `${valorCat(c.guia_color)} · ${valorCat(c.color)}${c.colores_pieza.length ? " (base)" : ""}` : "No aplica")
+    + (c.colores_pieza.length ? dato("Color por pieza", c.colores_pieza.map(x => `${x.pieza}: ${escapar(x.color)}`).join(" · "), "ancho") : "")
     + dato("Piezas", `<span class="piezas-lista">${c.piezas.map(p => `<span>${p}</span>`).join("")}</span>`, "ancho")
     + dato("Instrucciones", escapar(c.instrucciones || "Sin instrucciones"), "ancho")
     + dato("Registrado", `${escapar(fechaHora(c.creado_en))}${c.creado_por ? ` por ${escapar(c.creado_por)}` : ""}`, "ancho");

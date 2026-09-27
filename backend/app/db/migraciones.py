@@ -52,6 +52,9 @@ def migrar() -> None:
             "UPDATE clientes SET nivel_prioridad = 3 WHERE nivel_prioridad = 2",
             "UPDATE clientes SET nivel_prioridad = 2 WHERE nivel_prioridad = 1",
         ]
+    if clientes and "cliente_odoo" not in clientes:
+        pasos += ["ALTER TABLE clientes ADD COLUMN cliente_odoo VARCHAR(40)",
+                  "ALTER TABLE clientes ADD COLUMN credito BOOLEAN NOT NULL DEFAULT FALSE"]
     if clientes and not clientes.get("telefono_celular", {}).get("nullable", True):
         pasos.append("ALTER TABLE clientes ALTER COLUMN telefono_celular DROP NOT NULL")
 
@@ -71,6 +74,8 @@ def migrar() -> None:
     solicitudes = _columnas(inspector, "solicitudes")
     if solicitudes and "factura_numero" not in solicitudes:
         pasos.append("ALTER TABLE solicitudes ADD COLUMN factura_numero VARCHAR(40)")
+    if solicitudes and "colores_pieza" not in solicitudes:
+        pasos.append("ALTER TABLE solicitudes ADD COLUMN colores_pieza JSON")
     # --- Caja física asignada por Ingresos -----------------------------------
     if solicitudes and "caja_numero" not in solicitudes:
         pasos += [

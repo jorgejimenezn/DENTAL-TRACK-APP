@@ -197,6 +197,25 @@ class SolicitudServicio:
             ("guia_id", "guia"), ("color_id", "color")))
         return campos
 
+    def _colores_pieza(self, pedidos, guia_id: int | None, piezas: list[int]) -> list[dict] | None:
+        """Valida los colores por pieza: guía del catálogo, colores de esa guía y piezas del caso."""
+        if not pedidos:
+            return None
+        if not guia_id:
+            raise ErrorNegocio("El color por pieza requiere una guía de color del catálogo")
+        vistos, salida = set(), []
+        for c in pedidos:
+            if c.pieza not in piezas:
+                raise ErrorNegocio(f"La pieza {c.pieza} no está seleccionada en el caso")
+            if c.pieza in vistos:
+                raise ErrorNegocio(f"La pieza {c.pieza} tiene más de un color")
+            vistos.add(c.pieza)
+            color = self.sesion.get(Color, c.color_id)
+            if not color or not color.activo or color.guia_id != guia_id:
+                raise ErrorNegocio(f"El color de la pieza {c.pieza} no pertenece a la guía elegida")
+            salida.append({"pieza": c.pieza, "color_id": color.id, "color": color.nombre})
+        return sorted(salida, key=lambda x: x["pieza"])
+
     def _validar_modalidad(self, tipo_id: int | None, nombre_tipo: str, modalidad: str) -> None:
         if not tipo_id:
             return  # fuera de catálogo: el laboratorio lo revisa
@@ -288,6 +307,7 @@ class SolicitudServicio:
     def crear(self, datos: SolicitudIn, actor: Actor) -> SolicitudOut:
         cliente = self._cliente_para_captura(actor, datos.cliente_id)
         catalogo = self._catalogo(datos)
+        catalogo["colores_pieza"] = self._colores_pieza(datos.colores_pieza, catalogo["guia_id"], datos.piezas)
         self._validar_modalidad(catalogo["tipo_trabajo_id"], catalogo["tipo_trabajo"], datos.modalidad)
         comun = self._entrega_comun(cliente, datos, actor)
         solicitud = Solicitud(
@@ -318,6 +338,7 @@ class SolicitudServicio:
         copia = {k: getattr(origen, k) for k in (
             "paciente", "referencia_clinica", "doctor_tratante", "tipo_trabajo_id", "tipo_trabajo", "material_id",
             "material", "unidad_id", "unidad", "guia_id", "guia", "color_id", "color", "fuera_catalogo")}
+        copia["colores_pieza"] = [c for c in (origen.colores_pieza or []) if c["pieza"] in datos.piezas] or None
         solicitud = Solicitud(
             codigo=self._codigo("RP"), tipo_caso="RP", cliente_id=cliente.id, creado_por_id=actor.id,
             estado="validacion_qa", caso_origen_id=origen.id, reapertura_tipo=datos.tipo_reapertura,
@@ -455,6 +476,7 @@ class SolicitudServicio:
             tipo_trabajo=_valor(s.tipo_trabajo_id, s.tipo_trabajo), material=_valor(s.material_id, s.material),
             unidad=_valor(s.unidad_id, s.unidad), guia_color=_valor(s.guia_id, s.guia),
             color=_valor(s.color_id, s.color), fecha_minima=s.fecha_minima,
+            colores_pieza=s.colores_pieza or [],
             entrega=DireccionTexto(departamento=s.entrega_departamento, municipio=s.entrega_municipio,
                                    direccion=s.entrega_direccion),
             recolecta=DireccionTexto(departamento=s.recolecta_departamento, municipio=s.recolecta_municipio,

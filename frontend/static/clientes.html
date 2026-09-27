@@ -27,8 +27,8 @@
       </div>
       <div class="tabla-wrap">
         <table class="responsiva">
-          <thead><tr><th>Cliente</th><th>Clínica</th><th>Documento</th><th>Teléfono</th><th>Prioridad</th><th>Estado</th><th></th></tr></thead>
-          <tbody id="tabla"><tr><td colspan="7" class="cargando">Cargando…</td></tr></tbody>
+          <thead><tr><th>Cliente</th><th>Clínica</th><th>Documento</th><th>Teléfono</th><th>Odoo · crédito</th><th>Prioridad</th><th>Estado</th><th></th></tr></thead>
+          <tbody id="tabla"><tr><td colspan="8" class="cargando">Cargando…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -74,6 +74,14 @@
           <div class="ayuda">Compártela con el doctor; podrá usarla para iniciar sesión.</div></div>
           <div class="campo"><label>&nbsp;</label><button type="button" class="btn" id="btnGenerar">Generar contraseña</button></div>
         </div>
+      </div>
+
+      <div class="seccion-form">Datos comerciales</div>
+      <div class="grid">
+        <div class="campo"><label>Cliente Odoo</label><input id="cOdoo" maxlength="40" placeholder="Número de cliente en el sistema de facturación"></div>
+        <div class="campo"><label>Condición de pago</label>
+          <label class="check-linea" style="margin-top:8px"><input type="checkbox" id="cCredito"> Cliente con crédito</label>
+          <div class="ayuda" id="ayudaCredito">Con crédito, sus casos no pasan a Cobros. Una vez activado, solo el administrador puede quitarlo.</div></div>
       </div>
 
       <div class="seccion-form">Direcciones de entrega</div>

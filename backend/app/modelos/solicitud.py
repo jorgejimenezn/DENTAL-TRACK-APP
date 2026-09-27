@@ -75,6 +75,8 @@ class Solicitud(Base):
     color: Mapped[str | None] = mapped_column(String(120), nullable=True)
     fuera_catalogo: Mapped[bool] = mapped_column(Boolean, default=False)
     piezas: Mapped[list] = mapped_column(JSON, default=list)
+    # Color distinto por pieza: [{"pieza": 11, "color_id": 3, "color": "A2"}] (misma guía). Vacío = todas con "color"
+    colores_pieza: Mapped[list | None] = mapped_column(JSON, nullable=True)
 
     # --- Prioridad y fechas ---
     emergencia: Mapped[bool] = mapped_column(Boolean, default=False)

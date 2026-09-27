@@ -89,7 +89,8 @@ class ProduccionServicio:
             paso_id=p.id, solicitud_id=s.id, codigo=s.codigo, tipo_caso=s.tipo_caso, cliente=s.cliente.razon_social,
             paciente=s.paciente, doctor_tratante=s.doctor_tratante,
             trabajo=" · ".join(x for x in (s.tipo_trabajo, s.material, s.unidad) if x),
-            color=f"{s.guia} · {s.color}" if s.color else None, piezas=s.piezas or [], modalidad=s.modalidad,
+            color=(f"{s.guia} · {s.color}" + (" · por pieza: " + ", ".join(f"{c['pieza']} {c['color']}" for c in s.colores_pieza)
+                                               if s.colores_pieza else "")) if s.color else None, piezas=s.piezas or [], modalidad=s.modalidad,
             emergencia=s.emergencia, prioridad=s.prioridad, fecha_entrega=s.fecha_entrega,
             instrucciones=s.instrucciones, fuera_catalogo=s.fuera_catalogo, area_id=p.area_id, area=p.area.nombre,
             etapa=p.etapa, etapa_texto=NOMBRE_ETAPA[p.etapa], estado=p.estado, tecnico=_nombre(p.tecnico),
@@ -99,6 +100,7 @@ class ProduccionServicio:
             direccion=(f"{s.recolecta_direccion}, {s.recolecta_municipio}" if p.etapa == "recolecta"
                        and s.recolecta_direccion else f"{s.entrega_direccion}, {s.entrega_municipio}"),
             archivos=len(s.archivos), telefono=s.cliente.telefono_celular or s.cliente.telefono_fijo,
+            cliente_odoo=s.cliente.cliente_odoo, credito=s.cliente.credito,
             devolucion=p.nota if p.vuelta > 1 and p.estado != "terminado" else None,
             receptor=p.receptor, caja=f"{s.caja_color} {s.caja_numero}" if s.caja_numero else None,
             acciones=acciones, pasos_previos=previos)
@@ -272,7 +274,7 @@ class ProduccionServicio:
                 raise ErrorNegocio("Ingresa el número de factura")
             s.factura_numero, s.factura_fecha = datos.factura_numero, ahora()
             sin_cobro = s.tipo_caso == "RP" and s.qa_clasificacion in ("garantia_total", "garantia_parcial_sin_cobro")
-            s.pago_estado = "no_aplica" if sin_cobro else "pendiente"
+            s.pago_estado = "no_aplica" if sin_cobro else ("credito" if s.cliente.credito else "pendiente")
             detalle["factura"] = datos.factura_numero
             nota = f"Factura {datos.factura_numero} · empacado"
         elif paso.etapa == "entrega":
@@ -381,9 +383,13 @@ class ProduccionServicio:
             raise ErrorNegocio(f"El {_fecha_texto(datos.fecha_entrega)} no se labora ({bloqueo.motivo})")
         antes = {"trabajo": " · ".join(x for x in (s.tipo_trabajo, s.material, s.unidad, s.guia, s.color) if x),
                  "piezas": ", ".join(map(str, s.piezas or [])), "fecha_entrega": str(s.fecha_entrega)}
+        guia_anterior = s.guia_id
         for campo, valor in catalogo.items():
             setattr(s, campo, valor)
         s.piezas, s.fecha_entrega = datos.piezas, datos.fecha_entrega
+        # colores por pieza: se conservan si sigue la misma guía (solo de las piezas que quedan)
+        s.colores_pieza = ([c for c in (s.colores_pieza or []) if c["pieza"] in datos.piezas] or None
+                           if s.guia_id and s.guia_id == guia_anterior else None)
         despues = {"trabajo": " · ".join(x for x in (s.tipo_trabajo, s.material, s.unidad, s.guia, s.color) if x),
                    "piezas": ", ".join(map(str, s.piezas)), "fecha_entrega": str(s.fecha_entrega)}
         cambios = {k: [antes[k], despues[k]] for k in antes if antes[k] != despues[k]}

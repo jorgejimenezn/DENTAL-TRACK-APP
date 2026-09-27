@@ -41,6 +41,7 @@ const MENU = [
   { href: "bandeja.html", texto: "Bandeja del laboratorio", icono: "bandeja", roles: ["admin", "supervisor"] },
   { href: "tablero.html", texto: "Mi tablero", icono: "tablero", roles: ["doctor"] },
   { href: "casos.html", texto: "Mis casos", icono: "casos", roles: ["doctor"] },
+  { href: "clientes.html", texto: "Clientes", icono: "clientes", roles: ["supervisor", "ingresos", "facturacion"] },
   { href: "tablero.html", texto: "Tablero por cliente", icono: "tablero", roles: ["admin", "supervisor", "ingresos"] },
   { href: "casos.html", texto: "Solicitudes", icono: "casos", roles: ["admin", "supervisor", "operaciones", "ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"] },
   { href: "mis-metricas.html", texto: "Mis métricas", icono: "dashboard", roles: ["ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"] },
