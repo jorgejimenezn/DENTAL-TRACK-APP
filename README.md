@@ -84,6 +84,10 @@ Reglas que valida el servidor (aunque se use Swagger directamente): cadena de ca
 
 **Estados:** pendiente de recolecta · validación de QA · en revisión de Ingresos · en producción · control de calidad · facturación y empaque · en ruta · entregada · cancelada. El estado se calcula solo según el paso en que va el caso.
 
+## Tablero Kanban del doctor
+
+**Mi tablero** es la pantalla principal del doctor (entra ahí al iniciar sesión). Columnas: **Recibido** (recolecta, Ingresos o validación de QA) · **En producción** · **Control de calidad** · **Listo para entrega** (facturación, listo y en ruta) · **Entregado** (últimos 15 días, con botón para reabrir). Cada tarjeta muestra el avance en pasos, la fecha de entrega (en rojo si ya pasó) y si es emergencia o RP. En celular las columnas se deslizan de lado. Admin, supervisor e Ingresos pueden ver el tablero de cualquier cliente en **Tablero por cliente**. API: `GET /solicitudes/tablero`.
+
 ## Recorrido y bandejas (Fase 3A)
 
 Al crear un caso se copia el **flujo** de su tipo de trabajo y modalidad como su recorrido (ej. Logística → Ingresos → Yesos → CAD → CAM_FRES → Finalización → QA → Facturación_Cobros → Logística). Siempre hay un paso de Ingresos; un RP empieza con la validación de QA.

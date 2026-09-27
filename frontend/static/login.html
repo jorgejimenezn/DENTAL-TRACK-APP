@@ -104,7 +104,7 @@
     try {
       const r = await api("POST", "/auth/login", { email, password });
       Sesion.guardar({ token: r.access_token, expira: r.expira_en, usuario: r.usuario });
-      location.href = r.usuario.rol === "admin" ? "clientes.html" : "inicio.html";
+      location.href = { admin: "clientes.html", doctor: "tablero.html" }[r.usuario.rol] || "inicio.html";
     } catch (error) {
       mostrarErrores($("errorLogin"), error);
       $("btnEntrar").disabled = false;

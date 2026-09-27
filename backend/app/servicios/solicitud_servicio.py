@@ -17,7 +17,7 @@ from app.esquemas.solicitud import (ArchivoOut, CasoRef, ClienteBreve, Direccion
                                     SolicitudOut, SolicitudResumen, ValorOut)
 from app.modelos import ROL_CLIENTE, Cliente, Direccion, Usuario
 from app.modelos.configuracion import Color, DiaNoLaborable, Flujo, GuiaColor, Material, MotivoRP, TipoTrabajo, Unidad
-from app.modelos.solicitud import (ESTADOS, ESTADOS_CERRADOS, Correlativo, Solicitud, SolicitudArchivo,
+from app.modelos.solicitud import (COLUMNAS_TABLERO, ESTADOS, ESTADOS_CERRADOS, Correlativo, Solicitud, SolicitudArchivo,
                                    SolicitudHistorial)
 from app.repositorios.archivo_repo import ArchivoRepositorio
 from app.servicios.auditoria_servicio import AuditoriaServicio
@@ -373,13 +373,31 @@ class SolicitudServicio:
             prioridad=None if self._es_doctor(actor) else s.prioridad,  # el nivel del cliente no se muestra al doctor
             fecha_entrega=s.fecha_entrega, creado_en=s.creado_en,
             caso_origen=s.caso_origen.codigo if s.caso_origen else None, fuera_catalogo=s.fuera_catalogo,
-            area_actual=(lambda p: p.area.nombre if p else None)(Motor.paso_actual(s)))
+            area_actual=(lambda p: p.area.nombre if p else None)(Motor.paso_actual(s)),
+            pasos_total=len([p for p in s.pasos if p.estado != "omitido"]),
+            pasos_hechos=len([p for p in s.pasos if p.estado == "terminado"]),
+            entregado_en=next((h.fecha for h in reversed(s.historial) if h.estado == "entregada"), None)
+            if s.estado == "entregada" else None)
+
+    def tablero(self, actor: Actor, dias_entregados: int = 15, q: str | None = None,
+                cliente_id: int | None = None) -> dict:
+        """Kanban: casos vigentes por columna + los entregados en los últimos días."""
+        vigentes = self.listar(actor, vigentes=True, q=q, cliente_id=cliente_id, limite=500)
+        desde = datetime.now(ZONA) - timedelta(days=dias_entregados)
+        entregados = [s for s in self.listar(actor, estado="entregada", q=q, cliente_id=cliente_id, limite=200)
+                      if s.entregado_en and s.entregado_en >= desde]
+        entregados.sort(key=lambda s: s.entregado_en, reverse=True)
+        columnas = {c: [] for c in COLUMNAS_TABLERO}
+        for s in vigentes + entregados:
+            columnas.setdefault(s.columna, []).append(s)
+        return {"columnas": [{"nombre": c, "casos": columnas[c]} for c in COLUMNAS_TABLERO],
+                "dias_entregados": dias_entregados}
 
     def listar(self, actor: Actor, vigentes: bool | None = None, estado: str | None = None,
                tipo_caso: str | None = None, q: str | None = None, cliente_id: int | None = None,
                limite: int = 200) -> list[SolicitudResumen]:
         consulta = select(Solicitud).options(selectinload(Solicitud.cliente), selectinload(Solicitud.caso_origen),
-                                             selectinload(Solicitud.pasos))
+                                             selectinload(Solicitud.pasos), selectinload(Solicitud.historial))
         if self._es_doctor(actor):
             consulta = consulta.where(Solicitud.cliente_id == self._cliente_del_doctor(actor).id)
         elif cliente_id:

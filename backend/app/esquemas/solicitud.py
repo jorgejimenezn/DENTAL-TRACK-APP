@@ -205,6 +205,9 @@ class SolicitudResumen(BaseModel):
     caso_origen: str | None
     fuera_catalogo: bool
     area_actual: str | None = None
+    pasos_total: int = 0
+    pasos_hechos: int = 0
+    entregado_en: datetime | None = None
 
 
 class SolicitudOut(SolicitudResumen):
@@ -260,3 +263,13 @@ class ClienteBreve(BaseModel):
     razon_social: str
     clinica: str | None
     es_red: bool
+
+
+class ColumnaTablero(BaseModel):
+    nombre: str
+    casos: list[SolicitudResumen]
+
+
+class Tablero(BaseModel):
+    columnas: list[ColumnaTablero]
+    dias_entregados: int

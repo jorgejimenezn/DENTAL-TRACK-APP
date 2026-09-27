@@ -10,6 +10,7 @@ const ICONOS = {
   asignaciones: '<circle cx="8" cy="8" r="3"/><path d="M3 19c0-2.8 2.2-5 5-5s5 2.2 5 5"/><path d="M15 9l2 2 4-4"/>',
   calendario: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
   bandeja: '<path d="M3 13l3-8h12l3 8v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M3 13h5l1 3h6l1-3h5"/>',
+  tablero: '<rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/>',
   casos: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
 };
 
@@ -29,7 +30,9 @@ const MENU = [
   { href: "bandeja.html", texto: "Mi bandeja", icono: "bandeja", roles: ["ingresos", "tecnico", "qa", "facturacion", "logistica"] },
   { href: "bandeja.html", texto: "Mis rutas", icono: "bandeja", roles: ["mensajero"] },
   { href: "bandeja.html", texto: "Bandeja del laboratorio", icono: "bandeja", roles: ["admin", "supervisor"] },
+  { href: "tablero.html", texto: "Mi tablero", icono: "tablero", roles: ["doctor"] },
   { href: "casos.html", texto: "Mis casos", icono: "casos", roles: ["doctor"] },
+  { href: "tablero.html", texto: "Tablero por cliente", icono: "tablero", roles: ["admin", "supervisor", "ingresos"] },
   { href: "casos.html", texto: "Solicitudes", icono: "casos", roles: ["admin", "supervisor", "ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"] },
 ];
 // Pantallas que no están en el menú: se marca la opción de la que dependen

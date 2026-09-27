@@ -9,7 +9,7 @@ from app.core.dependencias import Actor, obtener_actor
 from app.db.mongo import obtener_mongo
 from app.db.postgres import obtener_sesion
 from app.esquemas.bandeja import PrioridadIn
-from app.esquemas.solicitud import (ArchivoOut, ClienteBreve, MotivoIn, PerfilSolicitud, ReaperturaIn, SolicitudIn,
+from app.esquemas.solicitud import (ArchivoOut, ClienteBreve, MotivoIn, PerfilSolicitud, Tablero, ReaperturaIn, SolicitudIn,
                                     SolicitudOut, SolicitudResumen)
 from app.repositorios.archivo_repo import ArchivoRepositorio
 from app.rutas.proveedores import servicio_auditoria
@@ -51,6 +51,12 @@ def perfil(cliente_id: int | None = None, actor: Actor = Depends(obtener_actor),
 
 
 # ---------- Solicitudes ----------
+@router.get("/solicitudes/tablero", response_model=Tablero)
+def tablero(dias: int = Query(15, ge=1, le=90), q: str | None = None, cliente_id: int | None = None,
+            actor: Actor = Depends(obtener_actor), s: SolicitudServicio = Depends(_servicio)):
+    return s.tablero(actor, dias, q, cliente_id)
+
+
 @router.get("/solicitudes", response_model=list[SolicitudResumen])
 def listar(vigentes: bool | None = None, estado: str | None = None, tipo_caso: str | None = None,
            q: str | None = None, cliente_id: int | None = None, limite: int = Query(200, ge=1, le=500),

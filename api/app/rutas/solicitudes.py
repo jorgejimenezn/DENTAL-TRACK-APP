@@ -41,6 +41,12 @@ async def perfil(cliente_id: int | None = None, u: dict = Depends(usuario_actual
 
 
 # ---------- Solicitudes ----------
+@router.get("/solicitudes/tablero", summary="Tablero Kanban: vigentes por columna y entregados recientes")
+async def tablero(dias: int = Query(15, ge=1, le=90), q: str | None = None, cliente_id: int | None = None,
+                  u: dict = Depends(usuario_actual)):
+    return await llamar("GET", "/solicitudes/tablero", u, params={"dias": dias, "q": q, "cliente_id": cliente_id})
+
+
 @router.get("/solicitudes", summary="Listar solicitudes (vigentes=true para el tablero, false para el historial)")
 async def listar(vigentes: bool | None = None, estado: str | None = None, tipo_caso: str | None = None,
                  q: str | None = None, cliente_id: int | None = None, limite: int = Query(200, ge=1, le=500),

@@ -13,18 +13,19 @@ from app.db.postgres import Base
 
 # Estado → (texto visible, columna del tablero Kanban del doctor)
 ESTADOS = {
-    "pendiente_recolecta": ("Pendiente de recolecta", "Ingreso"),
-    "validacion_qa": ("Validación de QA", "Ingreso"),
-    "recibida": ("En revisión de Ingresos", "Ingreso"),
-    "en_produccion": ("En producción", "Producción"),
-    "control_calidad": ("Control de calidad", "Producción"),
-    "facturacion": ("Facturación y empaque", "Despacho"),
-    "listo_entrega": ("Listo para entrega", "Despacho"),
-    "en_ruta": ("En ruta de entrega", "Despacho"),
+    "pendiente_recolecta": ("Pendiente de recolecta", "Recibido"),
+    "validacion_qa": ("Validación de QA", "Recibido"),
+    "recibida": ("En revisión de Ingresos", "Recibido"),
+    "en_produccion": ("En producción", "En producción"),
+    "control_calidad": ("Control de calidad", "Control de calidad"),
+    "facturacion": ("Facturación y empaque", "Listo para entrega"),
+    "listo_entrega": ("Listo para entrega", "Listo para entrega"),
+    "en_ruta": ("En ruta de entrega", "Listo para entrega"),
     "entregada": ("Entregada", "Entregado"),
     "cancelada": ("Cancelada", "Cancelado"),
 }
 ESTADOS_CERRADOS = {"entregada", "cancelada"}
+COLUMNAS_TABLERO = ["Recibido", "En producción", "Control de calidad", "Listo para entrega", "Entregado"]
 
 
 class Correlativo(Base):

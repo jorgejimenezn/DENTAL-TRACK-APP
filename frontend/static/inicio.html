@@ -54,7 +54,7 @@
     } else if (usuario.rol === "doctor") {
       html = tarjeta("nueva-solicitud.html", "Nueva solicitud", "Ingresa un caso nuevo (CN), digital o analógico.")
            + tarjeta("casos.html", "Mis casos", "Casos vigentes e historial. Desde un caso entregado puedes pedir una reapertura (RP).")
-           + tarjeta(null, "Mi tablero", "Tus casos vigentes en Kanban. Próxima fase.");
+           + tarjeta("tablero.html", "Mi tablero", "Tus casos vigentes en Kanban, por etapa.");
     } else if (usuario.rol === "supervisor") {
       html = tarjeta("bandeja.html", "Bandeja del laboratorio", "Carga de cada área, colas y casos sin técnico.")
            + tarjeta("casos.html", "Solicitudes", "Casos nuevos y reaperturas de todos los clientes.")

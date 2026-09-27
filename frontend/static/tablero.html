@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi tablero · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="marca" id="marca" aria-hidden="true"></div>
+<div class="app">
+  <aside class="lateral" id="lateral"></aside>
+  <main class="contenido">
+    <div class="encabezado">
+      <div>
+        <h1>Mi tablero</h1>
+        <p id="descripcion">Tus casos vigentes según la etapa en que van.</p>
+      </div>
+      <a class="btn verde" href="nueva-solicitud.html">+ Nueva solicitud</a>
+    </div>
+    <div class="filtros">
+      <div class="campo ancho"><input id="fTexto" placeholder="Buscar por código, paciente o doctor"></div>
+      <div class="campo" id="campoCliente" hidden><select id="fCliente"><option value="">Selecciona un cliente</option></select></div>
+    </div>
+    <div class="error-form" id="errorTablero" hidden></div>
+    <p class="nota" id="ayudaMovil" style="margin:0 0 8px">Desliza de lado para ver todas las columnas.</p>
+    <div class="kanban" id="kanban"><div class="cargando">Cargando…</div></div>
+  </main>
+</div>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/tablero.js"></script>
+</body>
+</html>

@@ -449,3 +449,29 @@ a.btn{text-decoration:none}
 .recorrido li.ahora{border-color:var(--azul)}
 .recorrido li.ahora .n{background:var(--azul);color:#fff}
 .recorrido li .quien{margin-left:auto;font-size:12px;color:var(--texto-3)}
+
+/* ================= Tablero Kanban ================= */
+.kanban{display:grid;grid-template-columns:repeat(5,minmax(200px,1fr));scroll-padding-left:14px;gap:12px;align-items:start;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x mandatory}
+.kanban-col{background:rgba(12,12,12,.85);border:1px solid var(--panel-borde);border-radius:var(--radio);padding:10px;min-height:160px;scroll-snap-align:start}
+.kanban-col > h2{font-size:13px;display:flex;align-items:center;gap:8px;padding:4px 4px 10px;border-bottom:1px solid var(--panel-borde);margin-bottom:10px}
+.kanban-col > h2 .cuenta{margin-left:auto;background:#262626;border-radius:999px;padding:1px 9px;font-size:12px;color:#d6d6d6}
+.kanban-col > h2::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--texto-3)}
+.kanban-col.c1 > h2::before{background:#8fb8ff}.kanban-col.c2 > h2::before{background:var(--azul)}
+.kanban-col.c3 > h2::before{background:#d6a300}.kanban-col.c4 > h2::before{background:var(--verde-texto)}
+.kanban-col.c5 > h2::before{background:var(--verde)}
+.kanban-lista{display:flex;flex-direction:column;gap:8px}
+.kcard{display:block;background:var(--panel);border:1px solid var(--panel-borde);border-radius:9px;padding:10px 11px;text-decoration:none;color:var(--texto);font-size:13px}
+.kcard:hover{border-color:#777}
+.kcard.urgente{border-color:rgba(207,34,46,.7)}
+.kcard .fila{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.kcard .fila .fecha{margin-left:auto;font-size:11px;color:var(--texto-2)}
+.kcard .fila .fecha.tarde{color:var(--rojo-texto);font-weight:700}
+.kcard .pac{font-weight:600;margin-top:6px;overflow-wrap:anywhere}
+.kcard .trab{color:var(--texto-2);font-size:12px;overflow-wrap:anywhere}
+.kcard .estado{font-size:11px;color:var(--texto-3);margin-top:6px}
+.progreso{height:4px;background:#262626;border-radius:4px;margin-top:6px;overflow:hidden}
+.progreso span{display:block;height:100%;background:var(--azul);border-radius:4px}
+.kcard .acciones-k{margin-top:8px;display:flex;gap:6px}
+.kanban-vacio{font-size:12px;color:var(--texto-3);text-align:center;padding:18px 6px;border:1px dashed #2a2a2a;border-radius:8px}
+@media (max-width:1100px){.kanban{grid-template-columns:repeat(5,minmax(250px,78vw))}}
+@media (max-width:640px){.kanban{grid-template-columns:repeat(5,86vw);margin:0 -14px;padding:0 14px 8px}}
