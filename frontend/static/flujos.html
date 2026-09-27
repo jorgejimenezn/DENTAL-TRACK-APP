@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flujos de trabajo · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="marca" id="marca" aria-hidden="true"></div>
+<div class="app">
+  <aside class="lateral" id="lateral"></aside>
+  <main class="contenido">
+    <div class="encabezado">
+      <div>
+        <h1>Flujos de trabajo</h1>
+        <p>Áreas que recorre cada orden según su tipo de trabajo y modalidad. La asignación automática sigue este orden.</p>
+      </div>
+    </div>
+    <div class="error-form" id="avisoCobertura" hidden></div>
+    <div id="lista"><div class="card cargando">Cargando…</div></div>
+  </main>
+</div>
+
+<dialog class="modal" id="modalFlujo">
+  <form id="formFlujo" novalidate>
+    <div class="modal-cabecera"><h2 id="tituloFlujo">Editar flujo</h2><button type="button" class="cerrar" data-cerrar>&times;</button></div>
+    <div class="modal-cuerpo">
+      <div class="error-form" id="errorFlujo" hidden></div>
+      <div class="editor-pasos" id="editorPasos"></div>
+      <div class="agregar-linea">
+        <div class="campo"><select id="selArea"></select></div>
+        <button type="button" class="btn" id="btnAgregarPaso">+ Agregar paso</button>
+      </div>
+      <label class="check-linea" style="margin-top:6px"><input type="checkbox" id="chkActivo" checked> Flujo activo (disponible para nuevas solicitudes)</label>
+      <p class="nota">Usa ↑ ↓ para ordenar. En modalidad analógica, el primer paso suele ser Logística (recolecta).</p>
+    </div>
+    <div class="modal-pie">
+      <button type="button" class="btn" data-cerrar>Cancelar</button>
+      <button type="submit" class="btn verde">Guardar flujo</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/flujos.js"></script>
+</body>
+</html>

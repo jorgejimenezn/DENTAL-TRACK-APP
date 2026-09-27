@@ -47,11 +47,11 @@ function pintar() {
   }
   $("tabla").innerHTML = empleados.map(e => `
     <tr>
-      <td><b>${escapar(e.nombre)} ${escapar(e.apellido)}</b>${e.id === yo.id ? ' <span class="badge gris">Tú</span>' : ""}<span class="sub">${escapar(e.email)}${e.telefono ? " · " + escapar(e.telefono) : ""}</span></td>
-      <td><span class="badge ${e.rol === "admin" ? "blanco" : "gris"}">${NOMBRES_ROL[e.rol] || e.rol}</span></td>
-      <td><div class="chips">${e.areas.length ? e.areas.map(a => `<span class="badge azul">${escapar(a.nombre)}</span>`).join("") : '<span style="color:var(--texto-3)">—</span>'}</div></td>
-      <td>${fechaHora(e.ultimo_acceso)}</td>
-      <td><span class="badge ${e.activo ? "verde" : "rojo"}">${e.activo ? "Activo" : "Inactivo"}</span></td>
+      <td class="principal"><b>${escapar(e.nombre)} ${escapar(e.apellido)}</b>${e.id === yo.id ? ' <span class="badge gris">Tú</span>' : ""}<span class="sub">${escapar(e.email)}${e.telefono ? " · " + escapar(e.telefono) : ""}</span></td>
+      <td data-label="Rol"><span class="badge ${e.rol === "admin" ? "blanco" : "gris"}">${NOMBRES_ROL[e.rol] || e.rol}</span></td>
+      <td data-label="Áreas"><div class="chips">${e.areas.length ? e.areas.map(a => `<span class="badge azul">${escapar(a.nombre)}</span>`).join("") : '<span style="color:var(--texto-3)">—</span>'}</div></td>
+      <td data-label="Último acceso">${fechaHora(e.ultimo_acceso)}</td>
+      <td data-label="Estado"><span class="badge ${e.activo ? "verde" : "rojo"}">${e.activo ? "Activo" : "Inactivo"}</span></td>
       <td class="acciones">
         <button class="btn chico" data-editar="${e.id}">Editar</button>
         ${e.id === yo.id ? "" : `<button class="btn chico ${e.activo ? "rojo-borde" : "verde-borde"}" data-estado="${e.id}">${e.activo ? "Desactivar" : "Activar"}</button>`}

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendario y reglas · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="marca" id="marca" aria-hidden="true"></div>
+<div class="app">
+  <aside class="lateral" id="lateral"></aside>
+  <main class="contenido">
+    <div class="encabezado">
+      <div>
+        <h1>Calendario y reglas de entrega</h1>
+        <p>Horas de corte, días mínimos y días en que el laboratorio no trabaja.</p>
+      </div>
+    </div>
+
+    <div class="dos-columnas">
+      <div>
+        <section class="card" style="margin-bottom:16px">
+          <h2 style="font-size:16px;margin-bottom:4px">Reglas de entrega</h2>
+          <p class="nota" style="margin:0 0 14px">Después de la hora de corte, la solicitud cuenta desde el siguiente día hábil. Sábados y domingos no son hábiles.</p>
+          <div class="error-form" id="errorReglas" hidden></div>
+          <form id="formReglas" class="grid" novalidate>
+            <div class="campo"><label>Corte lunes a viernes</label><input type="time" id="pCorteSemana" required></div>
+            <div class="campo"><label>Corte sábado</label><input type="time" id="pCorteSabado" required></div>
+            <div class="campo"><label>Mínimo digital (días hábiles)</label><input type="number" id="pMinDigital" min="0" max="30" required></div>
+            <div class="campo"><label>Mínimo analógico (días hábiles)</label><input type="number" id="pMinAnalogo" min="0" max="30" required></div>
+            <div class="campo"><label>Mínimo emergencia (días hábiles)</label><input type="number" id="pMinEmergencia" min="0" max="30" required></div>
+            <div class="campo" style="display:flex;align-items:flex-end"><button class="btn verde" style="width:100%">Guardar reglas</button></div>
+          </form>
+        </section>
+
+        <section class="card">
+          <h2 style="font-size:16px;margin-bottom:4px">Probar la regla</h2>
+          <p class="nota" style="margin:0 0 14px">Calcula la primera fecha de entrega que vería el doctor.</p>
+          <div class="grid">
+            <div class="campo"><label>Modalidad</label><select id="tModalidad"><option value="digital">Digital</option><option value="analogo">Analógico</option></select></div>
+            <div class="campo"><label>Fecha y hora de registro</label><input type="datetime-local" id="tAhora"></div>
+            <label class="check-linea span2"><input type="checkbox" id="tEmergencia"> Trabajo de emergencia (prioridad 1)</label>
+          </div>
+          <div id="resultadoPrueba" class="aviso-prueba" style="margin-top:14px"></div>
+        </section>
+      </div>
+
+      <section class="card">
+        <h2 style="font-size:16px;margin-bottom:12px">Días no laborables</h2>
+        <div class="filtros" style="align-items:flex-end">
+          <div class="campo"><label>Año</label><select id="fAnio"></select></div>
+          <button class="btn" id="btnFeriados" style="flex:2 1 220px">Cargar feriados de Guatemala</button>
+        </div>
+        <div class="error-form" id="errorCal" hidden></div>
+        <form id="formDia" class="agregar-linea" novalidate>
+          <div class="campo" style="flex:0 1 170px"><input type="date" id="dFecha" required></div>
+          <div class="campo"><input id="dMotivo" placeholder="Motivo (asueto, feriado, inventario…)" maxlength="120" required></div>
+          <button class="btn verde">Bloquear</button>
+        </form>
+        <div class="lista-items lista-fechas" id="listaDias"><div class="cargando">Cargando…</div></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/calendario.js"></script>
+</body>
+</html>

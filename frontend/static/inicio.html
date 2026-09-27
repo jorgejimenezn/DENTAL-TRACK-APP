@@ -43,7 +43,11 @@
     if (usuario.rol === "admin") {
       html = tarjeta("clientes.html", "Clientes", "Doctores, clínicas, direcciones y prioridad.")
            + tarjeta("empleados.html", "Empleados", "Usuarios del laboratorio, roles y áreas.")
-           + tarjeta("bitacora.html", "Bitácora", "Accesos y cambios registrados en MongoDB.");
+           + tarjeta("bitacora.html", "Bitácora", "Accesos y cambios registrados en MongoDB.")
+           + tarjeta("catalogos.html", "Catálogos", "Tipos de trabajo, materiales, unidades, guías, colores, motivos y áreas.")
+           + tarjeta("flujos.html", "Flujos de trabajo", "Pasos por tipo de trabajo y modalidad, con cobertura de técnicos.")
+           + tarjeta("asignaciones.html", "Asignaciones", "Tipos de trabajo que atiende cada empleado por área.")
+           + tarjeta("calendario.html", "Calendario y reglas", "Horas de corte, días mínimos y días no laborables.");
     } else if (usuario.rol === "doctor") {
       html = tarjeta("nueva-solicitud.html", "Nueva solicitud", "Prototipo del formulario de ingreso.")
            + tarjeta(null, "Mi tablero", "Tus casos vigentes en Kanban. Próxima fase.")

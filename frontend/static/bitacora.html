@@ -26,11 +26,11 @@
       <div class="filtros">
         <div class="campo"><select id="fEntidad">
           <option value="">Todo</option><option value="sesion">Inicios de sesión</option>
-          <option value="cliente">Clientes</option><option value="empleado">Empleados</option></select></div>
+          <option value="cliente">Clientes</option><option value="empleado">Empleados</option><option value="configuracion">Configuración</option></select></div>
         <div class="campo"><select id="fLimite"><option>50</option><option selected>100</option><option>300</option></select></div>
       </div>
       <div class="tabla-wrap">
-        <table>
+        <table class="responsiva">
           <thead><tr><th>Fecha</th><th>Acción</th><th>Sobre</th><th>Realizado por</th><th>Detalle</th></tr></thead>
           <tbody id="tabla"><tr><td colspan="5" class="cargando">Cargando…</td></tr></tbody>
         </table>
@@ -50,16 +50,27 @@
     desactivar: ["Desactivación", "rojo"], cambiar_password: ["Cambio de contraseña", "gris"],
     agregar_direccion: ["Dirección agregada", "azul"], editar_direccion: ["Dirección editada", "gris"],
     eliminar_direccion: ["Dirección quitada", "rojo"], carga_datos_prueba: ["Carga de datos de prueba", "azul"],
+    relaciones: ["Relaciones de catálogo", "azul"], flujo: ["Flujo de trabajo", "azul"], asignacion: ["Asignación", "azul"],
+    calendario: ["Calendario", "gris"], parametros: ["Reglas de entrega", "gris"],
   };
-  const ENTIDADES = { sesion: "Sesión", cliente: "Cliente", empleado: "Empleado", sistema: "Sistema" };
+  const ENTIDADES = { sesion: "Sesión", cliente: "Cliente", empleado: "Empleado", sistema: "Sistema", configuracion: "Configuración" };
 
+  function valorTexto(v) {
+    if (v === null || v === undefined) return "—";
+    if (Array.isArray(v)) return v.map(valorTexto).join(", ");
+    if (typeof v === "object") return Object.entries(v).map(([k, x]) => `${k}: ${valorTexto(x)}`).join(" · ");
+    if (typeof v === "boolean") return v ? "Sí" : "No";
+    return String(v);
+  }
   function textoDetalle(d) {
     if (!d || !Object.keys(d).length) return "—";
-    if (d.cambios) {
-      return Object.entries(d.cambios).map(([campo, [antes, despues]]) =>
-        `<b>${escapar(ETIQUETAS[campo] || campo)}:</b> ${escapar(Array.isArray(antes) ? antes.join(", ") : antes ?? "—")} → ${escapar(Array.isArray(despues) ? despues.join(", ") : despues ?? "—")}`).join("<br>");
+    const { cambios, ...resto } = d;
+    const lineas = Object.entries(resto).map(([k, v]) => `<b>${escapar(ETIQUETAS[k] || k)}:</b> ${escapar(valorTexto(v))}`);
+    if (cambios) {
+      lineas.push(...Object.entries(cambios).map(([campo, [antes, despues]]) =>
+        `<b>${escapar(ETIQUETAS[campo] || campo)}:</b> ${escapar(valorTexto(antes))} → ${escapar(valorTexto(despues))}`));
     }
-    return Object.entries(d).map(([k, v]) => `<b>${escapar(ETIQUETAS[k] || k)}:</b> ${escapar(Array.isArray(v) ? v.join(", ") : v ?? "—")}`).join("<br>");
+    return lineas.join("<br>") || "—";
   }
 
   async function cargar() {
@@ -70,11 +81,11 @@
       $("tabla").innerHTML = eventos.length ? eventos.map(e => {
         const [nombre, color] = ACCIONES[e.accion] || [e.accion, "gris"];
         return `<tr>
-          <td>${fechaHora(e.fecha)}</td>
-          <td><span class="badge ${color}">${escapar(nombre)}</span></td>
-          <td>${escapar(ENTIDADES[e.entidad] || e.entidad)}${e.entidad_id ? ` <span class="sub">#${escapar(e.entidad_id)}</span>` : ""}</td>
-          <td>${escapar(e.actor_email || "—")}</td>
-          <td class="detalle">${textoDetalle(e.detalle)}</td></tr>`;
+          <td data-label="Fecha">${fechaHora(e.fecha)}</td>
+          <td data-label="Acción"><span class="badge ${color}">${escapar(nombre)}</span></td>
+          <td data-label="Sobre">${escapar(ENTIDADES[e.entidad] || e.entidad)}${e.entidad_id ? ` <span class="sub">#${escapar(e.entidad_id)}</span>` : ""}</td>
+          <td data-label="Por">${escapar(e.actor_email || "—")}</td>
+          <td class="detalle" data-label="Detalle">${textoDetalle(e.detalle)}</td></tr>`;
       }).join("") : '<tr><td colspan="5" class="vacio">Sin eventos registrados.</td></tr>';
     } catch (error) {
       $("tabla").innerHTML = `<tr><td colspan="5" class="vacio">${escapar(error.message)}</td></tr>`;
@@ -82,6 +93,10 @@
   }
   ETIQUETAS.motivo = "Motivo"; ETIQUETAS.documento = "Documento"; ETIQUETAS.areas = "Áreas"; ETIQUETAS.es_red = "Red";
   ETIQUETAS.direccion_id = "Dirección #"; ETIQUETAS.origen = "Origen"; ETIQUETAS.empleados = "Empleados"; ETIQUETAS.clientes = "Clientes"; ETIQUETAS.nivel_prioridad = "Prioridad";
+  Object.assign(ETIQUETAS, { catalogo: "Catálogo", tipo: "Tipo", materiales: "Materiales", material: "Material", unidades: "Unidades",
+    guias: "Guías", guia: "Guía", modalidad: "Modalidad", pasos: "Pasos", activo: "Activo", empleado: "Empleado", accion: "Acción",
+    fecha: "Fecha", anio: "Año", agregados: "Agregados", corte_semana: "Corte lun-vie", corte_sabado: "Corte sábado",
+    min_digital: "Mín. digital", min_analogo: "Mín. analógico", min_emergencia: "Mín. emergencia" });
   $("fEntidad").onchange = cargar;
   $("fLimite").onchange = cargar;
   $("btnRecargar").onclick = cargar;

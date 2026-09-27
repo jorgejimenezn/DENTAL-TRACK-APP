@@ -15,7 +15,10 @@ import psycopg
 def main():
     if len(sys.argv) != 3:
         raise SystemExit('Uso: python herramientas/ejecutar_sql.py "<DATABASE_PUBLIC_URL>" <archivo.sql>')
-    url, archivo = sys.argv[1], Path(sys.argv[2])
+    url, archivo = sys.argv[1].strip(), Path(sys.argv[2])
+    if ".railway.internal" in url:
+        raise SystemExit("Esa es la URL interna de Railway (solo funciona dentro de Railway).\n"
+                         "Usa DATABASE_PUBLIC_URL: Railway → Postgres → Variables (dominio .proxy.rlwy.net).")
     sql = archivo.read_text(encoding="utf-8")
 
     with psycopg.connect(url, autocommit=True) as conexion:

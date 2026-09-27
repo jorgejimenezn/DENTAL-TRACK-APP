@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catálogos · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="marca" id="marca" aria-hidden="true"></div>
+<div class="app">
+  <aside class="lateral" id="lateral"></aside>
+  <main class="contenido">
+    <div class="encabezado">
+      <div>
+        <h1>Catálogos</h1>
+        <p>Opciones que verá el doctor al crear una solicitud, motivos de reproceso y áreas del laboratorio.</p>
+      </div>
+    </div>
+
+    <nav class="pestanas" id="pestanas">
+      <button data-tab="tipos" class="activa">Tipos de trabajo</button>
+      <button data-tab="materiales">Materiales</button>
+      <button data-tab="unidades">Unidades</button>
+      <button data-tab="guias">Guías y colores</button>
+      <button data-tab="motivos-rp">Motivos de RP</button>
+      <button data-tab="areas">Áreas</button>
+      <button data-tab="vista">Vista previa</button>
+    </nav>
+
+    <section class="card" id="panel"><div class="cargando">Cargando…</div></section>
+  </main>
+</div>
+
+<!-- Modal de relaciones -->
+<dialog class="modal" id="modalRel">
+  <form id="formRel" novalidate>
+    <div class="modal-cabecera"><h2 id="tituloRel">Relaciones</h2><button type="button" class="cerrar" data-cerrar>&times;</button></div>
+    <div class="modal-cuerpo">
+      <div class="error-form" id="errorRel" hidden></div>
+      <div id="cuerpoRel"></div>
+    </div>
+    <div class="modal-pie">
+      <button type="button" class="btn" data-cerrar>Cancelar</button>
+      <button type="submit" class="btn verde">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/catalogos.js"></script>
+</body>
+</html>

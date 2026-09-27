@@ -16,7 +16,7 @@ from app.core.errores import ErrorNegocio
 from app.db.mongo import obtener_mongo
 from app.db.datos_prueba import cargar_datos_prueba
 from app.db.semilla import inicializar_base
-from app.rutas import auth, catalogos, clientes, empleados
+from app.rutas import auth, catalogos, clientes, configuracion, empleados
 
 logging.basicConfig(level=logging.INFO)
 
@@ -59,5 +59,5 @@ def salud():
 
 
 protegido = [Depends(verificar_clave_interna)]
-for modulo in (auth, clientes, empleados, catalogos):
+for modulo in (auth, clientes, empleados, catalogos, configuracion):
     app.include_router(modulo.router, dependencies=protegido)

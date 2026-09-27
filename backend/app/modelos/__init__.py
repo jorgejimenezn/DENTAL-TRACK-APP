@@ -79,3 +79,10 @@ class Direccion(Base):
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
 
     cliente: Mapped[Cliente] = relationship(back_populates="direcciones")
+
+
+# Modelos de configuración (catálogos, flujos, calendario...). Se importan aquí para registrarlos.
+from app.modelos.configuracion import (  # noqa: E402,F401
+    Color, DiaNoLaborable, Flujo, FlujoPaso, GuiaColor, Material, MotivoRP, Parametro, TipoTrabajo, Unidad,
+    material_guia, material_unidad, tipo_material, usuario_area_tipo,
+)

@@ -93,3 +93,56 @@ class EmpleadoCrear(_EmpleadoBase):
 
 class EmpleadoActualizar(_EmpleadoBase):
     pass
+
+
+# ---------------- Configuración ----------------
+from datetime import date  # noqa: E402
+
+CatalogoSimple = Literal["tipos", "materiales", "unidades", "guias", "motivos-rp", "areas"]
+Modalidad = Literal["digital", "analogo"]
+
+
+class NombreIn(BaseModel):
+    nombre: str = Field(min_length=1, max_length=120, examples=["Corona"])
+
+
+class ItemActualizar(NombreIn):
+    activo: bool = True
+
+
+class IdsIn(BaseModel):
+    ids: list[int] = Field(default=[], description="IDs relacionados (reemplaza la lista completa)")
+
+
+class RelacionesMaterialIn(BaseModel):
+    unidad_ids: list[int] = []
+    guia_ids: list[int] = []
+
+
+class FlujoIn(BaseModel):
+    tipo_trabajo_id: int
+    modalidad: Modalidad
+    activo: bool = True
+    area_ids: list[int] = Field(min_length=1, description="Áreas en el orden en que se recorren")
+
+
+class AsignacionAreaIn(BaseModel):
+    area_id: int
+    tipo_ids: list[int] = Field(default=[], description="Vacío = todos los tipos de trabajo")
+
+
+class AsignacionIn(BaseModel):
+    areas: list[AsignacionAreaIn]
+
+
+class DiaIn(BaseModel):
+    fecha: date
+    motivo: str = Field(min_length=2, max_length=120, examples=["Asueto del laboratorio"])
+
+
+class ParametrosIn(BaseModel):
+    corte_semana: str = Field(examples=["18:00"])
+    corte_sabado: str = Field(examples=["12:00"])
+    min_digital: int = Field(ge=0, le=30, examples=[2])
+    min_analogo: int = Field(ge=0, le=30, examples=[3])
+    min_emergencia: int = Field(ge=0, le=30, examples=[1])

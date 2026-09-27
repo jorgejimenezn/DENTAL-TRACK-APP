@@ -5,6 +5,7 @@ from app.core.config import config
 from app.core.seguridad import cifrar_password
 from app.db.migraciones import migrar
 from app.db.postgres import Base, SesionLocal, engine
+from app.db.semilla_configuracion import sembrar_configuracion
 from app.modelos import Area, Usuario
 
 AREAS_INICIALES = [
@@ -29,4 +30,6 @@ def inicializar_base():
                 email=config.ADMIN_EMAIL.lower(), password_hash=cifrar_password(config.ADMIN_PASSWORD),
                 rol="admin", activo=True,
             ))
+        sesion.flush()
+        sembrar_configuracion(sesion)
         sesion.commit()

@@ -5,6 +5,10 @@ const ICONOS = {
   empleados: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/>',
   bitacora: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/>',
   solicitud: '<path d="M12 5v14M5 12h14"/>',
+  catalogos: '<rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  flujos: '<circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M7 6h10M6 8l5 8M18 8l-5 8"/>',
+  asignaciones: '<circle cx="8" cy="8" r="3"/><path d="M3 19c0-2.8 2.2-5 5-5s5 2.2 5 5"/><path d="M15 9l2 2 4-4"/>',
+  calendario: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
 };
 
 const MENU = [
@@ -13,6 +17,11 @@ const MENU = [
   { href: "clientes.html", texto: "Clientes", icono: "clientes", roles: ["admin"] },
   { href: "empleados.html", texto: "Empleados", icono: "empleados", roles: ["admin"] },
   { href: "bitacora.html", texto: "Bitácora", icono: "bitacora", roles: ["admin"] },
+  { grupo: "Configuración", roles: ["admin"] },
+  { href: "catalogos.html", texto: "Catálogos", icono: "catalogos", roles: ["admin"] },
+  { href: "flujos.html", texto: "Flujos de trabajo", icono: "flujos", roles: ["admin"] },
+  { href: "asignaciones.html", texto: "Asignaciones", icono: "asignaciones", roles: ["admin"] },
+  { href: "calendario.html", texto: "Calendario y reglas", icono: "calendario", roles: ["admin"] },
   { grupo: "Prototipos", roles: ["admin", "doctor"] },
   { href: "nueva-solicitud.html", texto: "Nueva solicitud", icono: "solicitud", roles: ["admin", "doctor"] },
 ];
@@ -44,6 +53,7 @@ function iniciarPagina(rolesPermitidos = null) {
       <button class="btn chico" id="btnSalir">Cerrar sesión</button>
     </div>`;
   $("btnSalir").onclick = () => Sesion.cerrar();
+  prepararMenuMovil(MENU.find(m => m.href === actual)?.texto || "");
   dibujarMarcaAgua();
   return usuario;
 }
@@ -89,4 +99,24 @@ function dibujarMarcaAgua() {
     }
   });
   cont.innerHTML = `<svg viewBox="0 0 420 590"><g stroke="var(--marca-linea)" stroke-width="1" fill="none">${lineas}<polygon points="${contorno.map(p => p.join(",")).join(" ")}" stroke-width="1.6"/></g><g fill="var(--marca-punto)">${puntos.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3"/>`).join("")}</g></svg>`;
+}
+
+/** Barra superior con botón ☰ para celular y tablet (el menú lateral se abre como cajón). */
+function prepararMenuMovil(tituloActual) {
+  if (document.querySelector(".barra-movil")) return;
+  const barra = document.createElement("header");
+  barra.className = "barra-movil";
+  barra.innerHTML = `
+    <button class="btn-menu" type="button" aria-label="Abrir menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <div class="logo">${LOGO}<span>DENTAL TRACK</span></div>
+    <span class="titulo-actual">${escapar(tituloActual)}</span>`;
+  const velo = document.createElement("div");
+  velo.className = "velo-menu";
+  document.body.prepend(velo);
+  document.body.prepend(barra);
+  const cerrar = () => document.body.classList.remove("menu-abierto");
+  barra.querySelector(".btn-menu").onclick = () => document.body.classList.add("menu-abierto");
+  velo.onclick = cerrar;
+  $("lateral").querySelectorAll("a").forEach(a => a.addEventListener("click", cerrar));
+  document.addEventListener("keydown", e => { if (e.key === "Escape") cerrar(); });
 }

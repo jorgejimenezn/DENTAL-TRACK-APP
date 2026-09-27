@@ -32,12 +32,12 @@ function pintarTabla() {
   }
   $("tabla").innerHTML = clientes.map(c => `
     <tr>
-      <td><b>${escapar(c.razon_social)}</b><span class="sub">${escapar(c.nombre_facturacion)}</span><span class="sub">${escapar(c.email)}</span></td>
-      <td>${escapar(c.clinica || "—")} ${c.es_red ? '<span class="badge azul">Red</span>' : ""}</td>
-      <td>${escapar(c.tipo_documento)}<span class="sub">${escapar(formatoDocumento(c))}</span></td>
-      <td>${escapar(c.telefono_celular || "")}${c.telefono_celular && c.telefono_fijo ? "<br>" : ""}${escapar(c.telefono_fijo || "")}</td>
-      <td><span class="badge ${c.nivel_prioridad === 2 ? "blanco" : "gris"}">${c.nivel_prioridad === 2 ? "2 · VIP" : "3 · Normal"}</span></td>
-      <td><span class="badge ${c.activo ? "verde" : "rojo"}">${c.activo ? "Activo" : "Inactivo"}</span></td>
+      <td class="principal"><b>${escapar(c.razon_social)}</b><span class="sub">${escapar(c.nombre_facturacion)}</span><span class="sub">${escapar(c.email)}</span></td>
+      <td data-label="Clínica">${escapar(c.clinica || "—")} ${c.es_red ? '<span class="badge azul">Red</span>' : ""}</td>
+      <td data-label="Documento">${escapar(c.tipo_documento)}<span class="sub">${escapar(formatoDocumento(c))}</span></td>
+      <td data-label="Teléfono">${escapar(c.telefono_celular || "")}${c.telefono_celular && c.telefono_fijo ? "<br>" : ""}${escapar(c.telefono_fijo || "")}</td>
+      <td data-label="Prioridad"><span class="badge ${c.nivel_prioridad === 2 ? "blanco" : "gris"}">${c.nivel_prioridad === 2 ? "2 · VIP" : "3 · Normal"}</span></td>
+      <td data-label="Estado"><span class="badge ${c.activo ? "verde" : "rojo"}">${c.activo ? "Activo" : "Inactivo"}</span></td>
       <td class="acciones">
         <button class="btn chico" data-editar="${c.id}">Editar</button>
         <button class="btn chico ${c.activo ? "rojo-borde" : "verde-borde"}" data-estado="${c.id}">${c.activo ? "Desactivar" : "Activar"}</button>

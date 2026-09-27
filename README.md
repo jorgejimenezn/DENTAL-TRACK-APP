@@ -37,6 +37,25 @@ Proyecto de graduación. Arquitectura en N capas con cinco servicios en Railway 
 - **Registro público de clientes** desde el login (`registro.html`): la cuenta se crea siempre como cliente (rol doctor) con prioridad 3 (normal); el servidor ignora cualquier otro rol o prioridad enviados. Al terminar, la sesión queda iniciada.
 - **Prototipo** del formulario de nueva solicitud (`nueva-solicitud.html`).
 
+## Configuración administrable (Fase 2A)
+
+Todo lo que define cómo trabaja el laboratorio se administra desde el menú **Configuración** (solo administradores) y queda registrado en la bitácora:
+
+| Pantalla | Qué se administra |
+|---|---|
+| **Catálogos** | Tipos de trabajo → materiales → (unidades y guías de color) → colores; motivos de RP; áreas. Activar/desactivar sin borrar historial y vista previa de la cadena. |
+| **Flujos de trabajo** | Pasos (áreas en orden) por tipo de trabajo y modalidad digital/analógica. Cada paso muestra cuántos empleados pueden atenderlo; en rojo si nadie. |
+| **Asignaciones** | Por empleado y área: todos los tipos de trabajo o solo algunos (ej. CAD solo coronas). Las áreas se asignan en Empleados. |
+| **Calendario y reglas** | Horas de corte (lun-vie y sábado), días hábiles mínimos (digital, analógico, emergencia), días no laborables y carga de feriados de Guatemala (Semana Santa calculada por año). Incluye un probador de la fecha mínima de entrega. |
+
+Al primer arranque se cargan datos iniciales de ejemplo (6 tipos de trabajo, 6 materiales, guías VITA Classic y 3D-Master, 12 flujos, 8 motivos de RP y feriados del año actual y el siguiente). Solo se cargan si las tablas están vacías, así que tus cambios nunca se sobrescriben.
+
+La regla de **fecha mínima de entrega** se calcula en el servidor (`GET /config/fecha-minima`) con la hora de Guatemala.
+
+## Diseño adaptable
+
+Todas las pantallas se ajustan a celular, tablet y computadora: en pantallas de hasta 900 px el menú lateral se abre como cajón con el botón ☰, las tablas se convierten en tarjetas en pantallas de hasta 760 px y los formularios modales ocupan toda la pantalla en celular.
+
 ## Estructura
 
 ```
@@ -196,4 +215,8 @@ Sin servidor Mongo se puede probar con `MONGO_URL=mongomock://local` (requiere `
 | POST | `/empleados/{id}/password` | admin |
 | GET | `/areas`, `/departamentos` | cualquiera con sesión |
 | GET | `/auditoria` | admin |
+| GET | `/config/arbol`, `/config/parametros`, `/config/calendario`, `/config/fecha-minima` | cualquiera con sesión |
+| GET/POST/PUT | `/config/catalogos`, `/config/tipos/…`, `/config/materiales/…`, `/config/guias/…`, `/config/colores/…` | admin |
+| GET/PUT | `/config/flujos`, `/config/asignaciones`, `/config/parametros` | admin |
+| POST/DELETE | `/config/calendario`, `/config/calendario/feriados/{anio}` | admin |
 | GET | `/salud` | público |

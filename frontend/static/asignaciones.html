@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asignaciones · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="marca" id="marca" aria-hidden="true"></div>
+<div class="app">
+  <aside class="lateral" id="lateral"></aside>
+  <main class="contenido">
+    <div class="encabezado">
+      <div>
+        <h1>Asignaciones</h1>
+        <p>Qué tipos de trabajo atiende cada empleado en cada una de sus áreas. Las áreas se asignan en <a href="empleados.html">Empleados</a>.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="filtros">
+        <div class="campo ancho"><input id="fTexto" placeholder="Buscar empleado"></div>
+        <div class="campo"><select id="fArea"><option value="">Todas las áreas</option></select></div>
+      </div>
+      <div class="tabla-wrap">
+        <table class="responsiva">
+          <thead><tr><th>Empleado</th><th>Áreas y tipos de trabajo</th><th></th></tr></thead>
+          <tbody id="tabla"><tr><td colspan="3" class="cargando">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+      <p class="nota">"Todos" significa que el empleado recibe cualquier tipo de trabajo que llegue a esa área. Restringir sirve, por ejemplo, para que un técnico de CAD solo reciba coronas y puentes.</p>
+    </div>
+  </main>
+</div>
+
+<dialog class="modal" id="modalAsig">
+  <form id="formAsig" novalidate>
+    <div class="modal-cabecera"><h2 id="tituloAsig">Asignación</h2><button type="button" class="cerrar" data-cerrar>&times;</button></div>
+    <div class="modal-cuerpo">
+      <div class="error-form" id="errorAsig" hidden></div>
+      <div id="cuerpoAsig"></div>
+    </div>
+    <div class="modal-pie">
+      <button type="button" class="btn" data-cerrar>Cancelar</button>
+      <button type="submit" class="btn verde">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/asignaciones.js"></script>
+</body>
+</html>
