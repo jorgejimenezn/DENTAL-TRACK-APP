@@ -14,6 +14,7 @@ from app.errores_validacion import manejar_validacion
 from app.core.dependencias import verificar_clave_interna
 from app.core.errores import ErrorNegocio
 from app.db.mongo import obtener_mongo
+from app.db.datos_prueba import cargar_datos_prueba
 from app.db.semilla import inicializar_base
 from app.rutas import auth, catalogos, clientes, empleados
 
@@ -23,6 +24,7 @@ logging.basicConfig(level=logging.INFO)
 @asynccontextmanager
 async def ciclo_de_vida(_: FastAPI):
     inicializar_base()
+    cargar_datos_prueba()
     try:
         obtener_mongo()["auditoria"].create_index("fecha")
     except Exception as error:

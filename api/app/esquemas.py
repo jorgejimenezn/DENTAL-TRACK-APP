@@ -43,17 +43,26 @@ class DireccionIn(BaseModel):
     principal: bool = False
 
 
-class _ClienteBase(BaseModel):
-    nombre: str
-    apellido: str
+class _DatosCliente(BaseModel):
+    razon_social: str = Field(examples=["Clínica Dental Sonrisa Perfecta S.A."])
+    nombre_facturacion: str = Field(examples=["Sonrisa Perfecta, S.A."])
     email: EmailStr
     clinica: str | None = None
     es_red: bool = False
-    telefono_celular: str = Field(examples=["55551234"])
-    telefono_fijo: str | None = None
+    telefono_celular: str | None = Field(default=None, examples=["55551234"])
+    telefono_fijo: str | None = Field(default=None, examples=["22359012"])
     tipo_documento: Literal["NIT", "DPI"]
     numero_documento: str = Field(examples=["576937-K"])
-    nivel_prioridad: Literal[1, 2] = 2
+
+
+class _ClienteBase(_DatosCliente):
+    nivel_prioridad: Literal[2, 3] = Field(default=3, description="2 = VIP, 3 = normal (1 se reserva para emergencias)")
+
+
+class RegistroIn(_DatosCliente):
+    """Auto-registro: el servidor fija rol doctor y prioridad 3 (normal)."""
+    password: str = Field(min_length=8, max_length=72)
+    direccion: DireccionIn
 
 
 class ClienteCrear(_ClienteBase):
@@ -72,6 +81,8 @@ class _EmpleadoBase(BaseModel):
     nombre: str
     apellido: str
     email: EmailStr
+    telefono: str | None = None
+    direccion: str | None = None
     rol: RolInterno
     area_ids: list[int] = []
 

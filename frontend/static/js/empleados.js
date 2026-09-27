@@ -47,7 +47,7 @@ function pintar() {
   }
   $("tabla").innerHTML = empleados.map(e => `
     <tr>
-      <td><b>${escapar(e.nombre)} ${escapar(e.apellido)}</b>${e.id === yo.id ? ' <span class="badge gris">Tú</span>' : ""}<span class="sub">${escapar(e.email)}</span></td>
+      <td><b>${escapar(e.nombre)} ${escapar(e.apellido)}</b>${e.id === yo.id ? ' <span class="badge gris">Tú</span>' : ""}<span class="sub">${escapar(e.email)}${e.telefono ? " · " + escapar(e.telefono) : ""}</span></td>
       <td><span class="badge ${e.rol === "admin" ? "blanco" : "gris"}">${NOMBRES_ROL[e.rol] || e.rol}</span></td>
       <td><div class="chips">${e.areas.length ? e.areas.map(a => `<span class="badge azul">${escapar(a.nombre)}</span>`).join("") : '<span style="color:var(--texto-3)">—</span>'}</div></td>
       <td>${fechaHora(e.ultimo_acceso)}</td>
@@ -89,6 +89,8 @@ function abrir(empleado = null) {
   $("eNombre").value = empleado?.nombre || "";
   $("eApellido").value = empleado?.apellido || "";
   $("eEmail").value = empleado?.email || "";
+  $("eTelefono").value = empleado?.telefono || "";
+  $("eDireccion").value = empleado?.direccion || "";
   $("eRol").value = empleado?.rol || "tecnico";
   $("eRol").onchange();
   const ids = new Set((empleado?.areas || []).map(a => a.id));
@@ -103,6 +105,7 @@ $("formEmpleado").onsubmit = async ev => {
     nombre: $("eNombre").value.trim().length < 2,
     apellido: $("eApellido").value.trim().length < 2,
     email: !correoValido($("eEmail").value),
+    telefono: !!$("eTelefono").value.trim() && !telefonoValido($("eTelefono").value),
     password: modo === "crear" && $("ePassword").value.length < 8,
   };
   document.querySelectorAll("#formEmpleado [data-campo]").forEach(c => c.classList.toggle("error", !!errores[c.dataset.campo]));
@@ -110,6 +113,7 @@ $("formEmpleado").onsubmit = async ev => {
 
   const datos = {
     nombre: $("eNombre").value.trim(), apellido: $("eApellido").value.trim(), email: $("eEmail").value.trim(),
+    telefono: limpiarNumero($("eTelefono").value) || null, direccion: $("eDireccion").value.trim() || null,
     rol: $("eRol").value, area_ids: [...$("eAreas").querySelectorAll("input:checked")].map(i => +i.value),
   };
   $("btnGuardar").disabled = true;

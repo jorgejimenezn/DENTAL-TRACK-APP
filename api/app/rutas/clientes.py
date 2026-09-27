@@ -9,7 +9,7 @@ router = APIRouter(prefix="/clientes", tags=["Clientes"])
 
 
 @router.get("", summary="Listar clientes")
-async def listar(q: str | None = None, activo: bool | None = None, nivel: int | None = Query(None, ge=1, le=2),
+async def listar(q: str | None = None, activo: bool | None = None, nivel: int | None = Query(None, ge=2, le=3),
                  u: dict = Depends(solo_admin)):
     return await llamar("GET", "/clientes", u, params={"q": q, "activo": activo, "nivel": nivel})
 

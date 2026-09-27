@@ -21,7 +21,8 @@ class EmpleadoServicio:
 
     @staticmethod
     def a_salida(u: Usuario) -> EmpleadoOut:
-        return EmpleadoOut(id=u.id, nombre=u.nombre, apellido=u.apellido, email=u.email, rol=u.rol,
+        return EmpleadoOut(id=u.id, nombre=u.nombre, apellido=u.apellido, email=u.email,
+                           telefono=u.telefono, direccion=u.direccion, rol=u.rol,
                            activo=u.activo, areas=[AreaOut(id=a.id, nombre=a.nombre) for a in u.areas],
                            creado_en=u.creado_en, ultimo_acceso=u.ultimo_acceso)
 
@@ -51,6 +52,7 @@ class EmpleadoServicio:
         if self.usuarios.email_existe(datos.email):
             raise Conflicto("Ya existe un usuario con ese correo")
         u = Usuario(nombre=datos.nombre, apellido=datos.apellido, email=datos.email.lower(),
+                    telefono=datos.telefono, direccion=datos.direccion,
                     password_hash=cifrar_password(datos.password), rol=datos.rol, activo=True)
         u.areas = self._areas(datos.area_ids)
         self.usuarios.agregar(u)
@@ -65,12 +67,12 @@ class EmpleadoServicio:
             raise Conflicto("Ya existe un usuario con ese correo")
         if datos.rol != "admin" and self._es_ultimo_admin(u):
             raise ErrorNegocio("No puedes quitar el rol al único administrador activo")
-        antes = {"nombre": u.nombre, "apellido": u.apellido, "email": u.email, "rol": u.rol,
-                 "areas": [a.nombre for a in u.areas]}
+        campos = ("nombre", "apellido", "email", "telefono", "direccion", "rol")
+        antes = {c: getattr(u, c) for c in campos} | {"areas": [a.nombre for a in u.areas]}
         u.nombre, u.apellido, u.email, u.rol = datos.nombre, datos.apellido, datos.email.lower(), datos.rol
+        u.telefono, u.direccion = datos.telefono, datos.direccion
         u.areas = self._areas(datos.area_ids)
-        despues = {"nombre": u.nombre, "apellido": u.apellido, "email": u.email, "rol": u.rol,
-                   "areas": [a.nombre for a in u.areas]}
+        despues = {c: getattr(u, c) for c in campos} | {"areas": [a.nombre for a in u.areas]}
         self.sesion.commit()
         cambios = {k: [antes[k], despues[k]] for k in antes if antes[k] != despues[k]}
         if cambios:

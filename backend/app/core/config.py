@@ -5,7 +5,7 @@ import os
 class Config:
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/dentaltrack")
     MONGO_URL: str = os.getenv("MONGO_URL", "mongodb://localhost:27017")
-    MONGO_DB: str = os.getenv("MONGO_DB", "dentaltrack")
+    MONGO_DB: str = os.getenv("MONGO_DB") or "dentaltrack"  # vacío también usa el valor por defecto
     # Clave compartida solo entre API y backend (red privada de Railway)
     INTERNAL_KEY: str = os.getenv("INTERNAL_KEY", "cambia-esta-clave-interna")
     # Primer administrador (se crea solo si no existe ningún admin)

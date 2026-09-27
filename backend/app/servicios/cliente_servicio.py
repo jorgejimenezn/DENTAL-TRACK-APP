@@ -4,15 +4,15 @@ from sqlalchemy.orm import Session
 from app.core.dependencias import Actor
 from app.core.errores import Conflicto, ErrorNegocio, NoEncontrado
 from app.core.seguridad import cifrar_password
-from app.esquemas.cliente import ClienteActualizar, ClienteCrear, ClienteOut, DireccionIn, DireccionOut
+from app.esquemas.cliente import (ClienteActualizar, ClienteCrear, ClienteOut, DireccionIn, DireccionOut,
+                                  RegistroCliente)
 from app.modelos import ROL_CLIENTE, Cliente, Direccion, Usuario
 from app.repositorios.cliente_repo import ClienteRepositorio
 from app.repositorios.usuario_repo import UsuarioRepositorio
 from app.servicios.auditoria_servicio import AuditoriaServicio
 
-CAMPOS_USUARIO = ["nombre", "apellido", "email"]
-CAMPOS_CLIENTE = ["clinica", "es_red", "telefono_celular", "telefono_fijo",
-                  "tipo_documento", "numero_documento", "nivel_prioridad"]
+CAMPOS_CLIENTE = ["razon_social", "nombre_facturacion", "clinica", "es_red", "telefono_celular",
+                  "telefono_fijo", "tipo_documento", "numero_documento", "nivel_prioridad"]
 
 
 class ClienteServicio:
@@ -27,7 +27,8 @@ class ClienteServicio:
     def a_salida(c: Cliente) -> ClienteOut:
         u = c.usuario
         return ClienteOut(
-            id=c.id, usuario_id=u.id, nombre=u.nombre, apellido=u.apellido, email=u.email,
+            id=c.id, usuario_id=u.id, razon_social=c.razon_social, nombre_facturacion=c.nombre_facturacion,
+            email=u.email,
             clinica=c.clinica, es_red=c.es_red, telefono_celular=c.telefono_celular,
             telefono_fijo=c.telefono_fijo, tipo_documento=c.tipo_documento,
             numero_documento=c.numero_documento, nivel_prioridad=c.nivel_prioridad,
@@ -57,23 +58,34 @@ class ClienteServicio:
         return self.a_salida(self._obtener(cliente_id))
 
     # ---------- Comandos ----------
-    def crear(self, datos: ClienteCrear, actor: Actor) -> ClienteOut:
+    def registrar(self, datos: RegistroCliente) -> ClienteOut:
+        """Auto-registro desde el login. El rol (doctor) y la prioridad (3) los fija el servidor."""
+        datos_cliente = datos.model_dump(exclude={"direccion"})
+        nuevo = ClienteCrear(**datos_cliente, nivel_prioridad=3, direcciones=[datos.direccion])
+        return self.crear(nuevo, Actor(None, datos.email.lower()), accion="registro")
+
+    def crear(self, datos: ClienteCrear, actor: Actor, accion: str = "crear") -> ClienteOut:
         self._validar_unicos(datos.email, datos.numero_documento)
+        # El usuario de acceso del cliente se muestra con su razón social
         usuario = self.usuarios.agregar(Usuario(
-            nombre=datos.nombre, apellido=datos.apellido, email=datos.email.lower(),
+            nombre=datos.razon_social, apellido="", email=datos.email.lower(),
+            telefono=datos.telefono_celular or datos.telefono_fijo,
             password_hash=cifrar_password(datos.password), rol=ROL_CLIENTE, activo=True,
         ))
         direcciones = [Direccion(**d.model_dump()) for d in datos.direcciones]
         self._normalizar_principal(direcciones)
         cliente = self.clientes.agregar(Cliente(
-            usuario_id=usuario.id, clinica=datos.clinica, es_red=datos.es_red,
+            usuario_id=usuario.id, razon_social=datos.razon_social, nombre_facturacion=datos.nombre_facturacion,
+            clinica=datos.clinica, es_red=datos.es_red,
             telefono_celular=datos.telefono_celular, telefono_fijo=datos.telefono_fijo,
             tipo_documento=datos.tipo_documento, numero_documento=datos.numero_documento,
             nivel_prioridad=datos.nivel_prioridad, direcciones=direcciones,
         ))
         self.sesion.commit()
-        self.auditoria.registrar("crear", "cliente", cliente.id, actor, {
-            "nombre": f"{datos.nombre} {datos.apellido}", "clinica": datos.clinica,
+        if actor.id is None and accion == "registro":
+            actor = Actor(usuario.id, usuario.email)
+        self.auditoria.registrar(accion, "cliente", cliente.id, actor, {
+            "razon_social": datos.razon_social, "nivel_prioridad": datos.nivel_prioridad,
             "documento": f"{datos.tipo_documento} {datos.numero_documento}",
         })
         return self.obtener(cliente.id)
@@ -84,10 +96,10 @@ class ClienteServicio:
         nuevos = datos.model_dump()
         nuevos["email"] = nuevos["email"].lower()
         cambios = {}
-        for campo in CAMPOS_USUARIO:
-            if getattr(cliente.usuario, campo) != nuevos[campo]:
-                cambios[campo] = [getattr(cliente.usuario, campo), nuevos[campo]]
-                setattr(cliente.usuario, campo, nuevos[campo])
+        if cliente.usuario.email != nuevos["email"]:
+            cambios["email"] = [cliente.usuario.email, nuevos["email"]]
+            cliente.usuario.email = nuevos["email"]
+        cliente.usuario.nombre = nuevos["razon_social"]
         for campo in CAMPOS_CLIENTE:
             if getattr(cliente, campo) != nuevos[campo]:
                 cambios[campo] = [getattr(cliente, campo), nuevos[campo]]

@@ -1,0 +1,605 @@
+{
+ "empleados": [
+  {
+   "nombre": "Carlos",
+   "apellido": "Mendoza",
+   "email": "c.mendoza@innovalab.com.gt",
+   "telefono": "45219876",
+   "direccion": "14 Calle 3-45, Zona 10, Ciudad de Guatemala",
+   "rol": "tecnico",
+   "areas": [
+    "Yesos"
+   ],
+   "password_hash": "$2b$12$IjL.u9LjkZhv9LpV9/DaUeIFhy1ST7Z.NoPZlHBRJeU5iVTzUUYvG"
+  },
+  {
+   "nombre": "Juan Carlos",
+   "apellido": "Morales",
+   "email": "j.morales@innovalab.com.gt",
+   "telefono": "54123344",
+   "direccion": "5a Avenida 12-30, Zona 1, Ciudad de Guatemala",
+   "rol": "tecnico",
+   "areas": [
+    "Yesos"
+   ],
+   "password_hash": "$2b$12$IP2I1qpCeuvFD1uKpL3NA.Yn5S66Ii3j1K/z.KclSeCBmHpgjIVOe"
+  },
+  {
+   "nombre": "Luis Fernando",
+   "apellido": "Gómez",
+   "email": "l.gomez@innovalab.com.gt",
+   "telefono": "42315566",
+   "direccion": "Blvrd Principal San Cristóbal, Zona 8 de Mixco",
+   "rol": "tecnico",
+   "areas": [
+    "Diseño"
+   ],
+   "password_hash": "$2b$12$7V2.uClETVMPORBQZ5s5BOGcjL99J6iCNkaeFHU9bz6UKZmH8C7IC"
+  },
+  {
+   "nombre": "Roberto",
+   "apellido": "Estrada",
+   "email": "r.estrada@innovalab.com.gt",
+   "telefono": "58901122",
+   "direccion": "20 Calle 10-15, Zona 14, Ciudad de Guatemala",
+   "rol": "logistica",
+   "areas": [
+    "Logística"
+   ],
+   "password_hash": "$2b$12$KtXVul2XoNFcrgswGM6tFepTBL3j0sdELR8QPzFzcCy5GrIAsefIG"
+  },
+  {
+   "nombre": "Mario Alberto",
+   "apellido": "Ruano",
+   "email": "m.ruano@innovalab.com.gt",
+   "telefono": "31458899",
+   "direccion": "Km 14.5 Carretera a El Salvador, Santa Catarina Pinula",
+   "rol": "logistica",
+   "areas": [
+    "Logística"
+   ],
+   "password_hash": "$2b$12$DDCNqo0zi9/A3jPPgqp5DeIakEr0RqVuEQTS.0rE87bBj8sbB1DPy"
+  },
+  {
+   "nombre": "Diego Alejandro",
+   "apellido": "Ortiz",
+   "email": "d.ortiz@innovalab.com.gt",
+   "telefono": "41027788",
+   "direccion": "4a Calle 2-15, Zona 9, Ciudad de Guatemala",
+   "rol": "tecnico",
+   "areas": [
+    "Diseño",
+    "CAD"
+   ],
+   "password_hash": "$2b$12$YlVSPjdVVWSXZKYFqwZwtOwHnqs/AwgPmvxHSh42v05Klep61khQW"
+  },
+  {
+   "nombre": "Francisco",
+   "apellido": "Cifuentes",
+   "email": "f.cifuentes@innovalab.com.gt",
+   "telefono": "55664433",
+   "direccion": "Calzada Roosevelt 22-43, Zona 7, Ciudad de Guatemala",
+   "rol": "logistica",
+   "areas": [
+    "Logística"
+   ],
+   "password_hash": "$2b$12$t/Od7doF3axQIRMJcBRdZugv10jhGDjaUTJfsU/nmZ3anCEwU0ZXe"
+  },
+  {
+   "nombre": "José Manuel",
+   "apellido": "Castro",
+   "email": "j.castro@innovalab.com.gt",
+   "telefono": "49871100",
+   "direccion": "7a Avenida 3-12, Zona 4, Ciudad de Guatemala",
+   "rol": "tecnico",
+   "areas": [
+    "CAD"
+   ],
+   "password_hash": "$2b$12$kQH41vln09Blc3tPxH9P/OkSQacSeBPI/JK7QEPVHXnkCecgeVpKG"
+  },
+  {
+   "nombre": "Eduardo",
+   "apellido": "Ramírez",
+   "email": "e.ramirez@innovalab.com.gt",
+   "telefono": "53219988",
+   "direccion": "10a Calle 5-20, Zona 13, Ciudad de Guatemala",
+   "rol": "tecnico",
+   "areas": [
+    "CAD"
+   ],
+   "password_hash": "$2b$12$eWfgebtMs1WV0yPB.lXGfeV09OaNKZ00hy92enlQhyGgbBkBB32OS"
+  },
+  {
+   "nombre": "Ricardo Enrique",
+   "apellido": "López",
+   "email": "r.lopez@innovalab.com.gt",
+   "telefono": "47892233",
+   "direccion": "15 Avenida 8-40, Zona 15, Vista Hermosa I",
+   "rol": "tecnico",
+   "areas": [
+    "CAM_IMP"
+   ],
+   "password_hash": "$2b$12$33qvRr113kfYbrKW9kisUuAuSmKLabi5ieHjqWG066C7563AFud9W"
+  },
+  {
+   "nombre": "Sergio Armando",
+   "apellido": "Pineda",
+   "email": "s.pineda@innovalab.com.gt",
+   "telefono": "51234455",
+   "direccion": "C.C. Miraflores, Local 12, Zona 11, Guatemala",
+   "rol": "tecnico",
+   "areas": [
+    "CAM_IMP"
+   ],
+   "password_hash": "$2b$12$ZC2G9ENTZnbti6KYzGMT1ukCd4hTc496CwxJlGWI/R1jKfqjCCpA6"
+  },
+  {
+   "nombre": "Alejandro",
+   "apellido": "Morales",
+   "email": "a.morales@innovalab.com.gt",
+   "telefono": "43567890",
+   "direccion": "6a Calle 1-50, Zona 1, Mixco",
+   "rol": "tecnico",
+   "areas": [
+    "CAM_FRES"
+   ],
+   "password_hash": "$2b$12$kbevphWMCbUDctj34UKCdOBl3G1ngQRlWmnzqLJceKl.8IFxJqCLW"
+  },
+  {
+   "nombre": "Gabriel Antonio",
+   "apellido": "Juárez",
+   "email": "g.juarez@innovalab.com.gt",
+   "telefono": "59876543",
+   "direccion": "12 Calle 4-33, Zona 10, Ciudad de Guatemala",
+   "rol": "tecnico",
+   "areas": [
+    "CAM_FRES",
+    "CAM_IMP"
+   ],
+   "password_hash": "$2b$12$ySrOsZvXH33CTsmS2nMOY.uVX88K3TjO9FIZiR5NobuT2qoeb4eRe"
+  },
+  {
+   "nombre": "Óscar David",
+   "apellido": "Hernández",
+   "email": "o.hernandez@innovalab.com.gt",
+   "telefono": "46543210",
+   "direccion": "2a Avenida 5-60, Zona 9, Ciudad de Guatemala",
+   "rol": "tecnico",
+   "areas": [
+    "Finalización"
+   ],
+   "password_hash": "$2b$12$haVAVr0bbi07/0Jwr/XsWudIVz4.nY/qsCdGWXtdvOuAnfLeU0BGG"
+  },
+  {
+   "nombre": "Héctor Julio",
+   "apellido": "Mejía",
+   "email": "h.mejia@innovalab.com.gt",
+   "telefono": "52345678",
+   "direccion": "Diagonal 6 12-42, Zona 10, Ciudad de Guatemala",
+   "rol": "tecnico",
+   "areas": [
+    "Finalización"
+   ],
+   "password_hash": "$2b$12$OEND.dW2lsW0Nz/adA651eN8/NWhYOoUmTXdp8iHctCZhwsMZuTLa"
+  },
+  {
+   "nombre": "Pablo Andrés",
+   "apellido": "Vásquez",
+   "email": "p.vasquez@innovalab.com.gt",
+   "telefono": "48765432",
+   "direccion": "18 Calle 0-25, Zona 1, Ciudad de Guatemala",
+   "rol": "tecnico",
+   "areas": [
+    "Finalización",
+    "Yesos"
+   ],
+   "password_hash": "$2b$12$QJozAz4l5qZhHD5kEtSojemD4NmCZzUjygw4vhA6zIhd5ucGrdnJ2"
+  },
+  {
+   "nombre": "María José",
+   "apellido": "Hernández",
+   "email": "m.hernandez@innovalab.com.gt",
+   "telefono": "51112233",
+   "direccion": "12 Calle 1-25, Zona 10, Ciudad de Guatemala",
+   "rol": "ingresos",
+   "areas": [
+    "Ingresos"
+   ],
+   "password_hash": "$2b$12$YSjYZRZsrwGBd98zCkaNWOCnqs7qBCUlQajDJrGlmbuNU1Ja4WKwu"
+  },
+  {
+   "nombre": "Ana Sofía",
+   "apellido": "Castillo",
+   "email": "a.castillo@innovalab.com.gt",
+   "telefono": "42223344",
+   "direccion": "6a Avenida 9-80, Zona 1, Ciudad de Guatemala",
+   "rol": "ingresos",
+   "areas": [
+    "Ingresos"
+   ],
+   "password_hash": "$2b$12$dpsuGwgeNUoVrN943oboeeTU6LwUUQqbPy9hVFxnCJpXIX1j/0vxi"
+  },
+  {
+   "nombre": "Claudia Patricia",
+   "apellido": "Ramos",
+   "email": "c.ramos@innovalab.com.gt",
+   "telefono": "53334455",
+   "direccion": "Blvrd Los Próceres 24-69, Zona 10, Guatemala",
+   "rol": "qa",
+   "areas": [
+    "QA"
+   ],
+   "password_hash": "$2b$12$5zx3BXgvfxUbwTFQfLC79OKQw/gpOTIKXjEqWHBgQg8oCP9nRZAmy"
+  },
+  {
+   "nombre": "Gabriela Michelle",
+   "apellido": "Soto",
+   "email": "g.soto@innovalab.com.gt",
+   "telefono": "44445566",
+   "direccion": "15 Calle 3-20, Zona 14, Ciudad de Guatemala",
+   "rol": "qa",
+   "areas": [
+    "QA"
+   ],
+   "password_hash": "$2b$12$7ptaSorFy/glT7lwq9rh.OGnExqzt.S78p/1uRWKZZCxMSOKXgqHS"
+  },
+  {
+   "nombre": "Sofía Alejandra",
+   "apellido": "Flores",
+   "email": "s.flores@innovalab.com.gt",
+   "telefono": "55556677",
+   "direccion": "Km 12 Carretera al Atlántico, Zona 18, Guatemala",
+   "rol": "facturacion",
+   "areas": [
+    "Facturación_Cobros"
+   ],
+   "password_hash": "$2b$12$dwA9s03V1gxjV3mpMwYx1.ujXt9Bnf5V8L6PVLUO2et.AKlgPTRpa"
+  },
+  {
+   "nombre": "Daniela Andrea",
+   "apellido": "Gutiérrez",
+   "email": "d.gutierrez@innovalab.com.gt",
+   "telefono": "46667788",
+   "direccion": "4a Avenida 10-12, Zona 1, Mixco",
+   "rol": "facturacion",
+   "areas": [
+    "Facturación_Cobros"
+   ],
+   "password_hash": "$2b$12$fjimAZosmELw6oTi7Hfqv.PK6uCbS7VOTcMcYgr1j5I0pEMPRYrDS"
+  },
+  {
+   "nombre": "Andrea Lucía",
+   "apellido": "Monzón",
+   "email": "a.monzon@innovalab.com.gt",
+   "telefono": "57778899",
+   "direccion": "7a Calle 14-55, Zona 9, Ciudad de Guatemala",
+   "rol": "tecnico",
+   "areas": [
+    "CAD"
+   ],
+   "password_hash": "$2b$12$Zs2cotnVeUj6XmIhcjBmbOb5KBfa51t3Wb.4kWQTB5XVWHHd/A48u"
+  },
+  {
+   "nombre": "Jorge",
+   "apellido": "Jimenez",
+   "email": "j.jimenez@innovalab.com.gt",
+   "telefono": "57257080",
+   "direccion": null,
+   "rol": "admin",
+   "areas": [],
+   "password_hash": "$2b$12$ScYE0xW4q7exPkhV9YGjGeFwBlSnkdrx4dhohoVfs.iVLbS7fESP."
+  },
+  {
+   "nombre": "Axel",
+   "apellido": "Aguilar",
+   "email": "a.aguilar@innovalab.com.gt",
+   "telefono": "51915256",
+   "direccion": null,
+   "rol": "admin",
+   "areas": [],
+   "password_hash": "$2b$12$TXEKGmqhk7.XC1k.k0YVJe975W4AyRYQRMWywTL7R.4tXgeE7a9h6"
+  }
+ ],
+ "clientes": [
+  {
+   "razon_social": "Dra. Leslie Pérez",
+   "nombre_facturacion": "Leslie Dayana Pérez Morales",
+   "email": "info@clinicsonrisas.gt",
+   "telefono_fijo": "23601234",
+   "tipo_documento": "NIT",
+   "numero_documento": "4589211",
+   "nivel_prioridad": 2,
+   "direccion": {
+    "departamento": "Guatemala",
+    "municipio": "Guatemala",
+    "direccion": "10 Calle 2-45, Zona 10"
+   },
+   "password_hash": "$2b$12$gcDY4rIJLlvP4gtRKrnQheRpa6Sg5L.HAUqYar6C3ZSfbqIiIxyQO"
+  },
+  {
+   "razon_social": "Dr. Marco Tulio Escobar",
+   "nombre_facturacion": "Marco Tulio Escobar Fuentes",
+   "email": "dr.escobar@odonto.gt",
+   "telefono_fijo": "24715678",
+   "tipo_documento": "NIT",
+   "numero_documento": "1245783",
+   "nivel_prioridad": 2,
+   "direccion": {
+    "departamento": "Guatemala",
+    "municipio": "Guatemala",
+    "direccion": "5a Avenida 4-12, Zona 1"
+   },
+   "password_hash": "$2b$12$XrH78pIDajus3Z3iTzpRP.2PItXYf.9p51k//J3B6989CK7YSQkJS"
+  },
+  {
+   "razon_social": "Clínica Dental Sonrisa Perfecta S.A.",
+   "nombre_facturacion": "Sonrisa Perfecta, S.A.",
+   "email": "contacto@sonrisaperfecta.gt",
+   "telefono_fijo": "22359012",
+   "tipo_documento": "NIT",
+   "numero_documento": "8974527",
+   "nivel_prioridad": 2,
+   "direccion": {
+    "departamento": "Guatemala",
+    "municipio": "Mixco",
+    "direccion": "Blvrd San Cristóbal 1-89, Zona 8 Mixco"
+   },
+   "password_hash": "$2b$12$JyuVFBn6/61ytKV8tLm11OXCA2TjnRys9fN6rVu2rd2pEfIRCRhtG"
+  },
+  {
+   "razon_social": "Dr. Jorge Luis Mendoza",
+   "nombre_facturacion": "Jorge Luis Mendoza Castillo",
+   "email": "mendoza.dental@gmail.com",
+   "telefono_fijo": "23324321",
+   "tipo_documento": "NIT",
+   "numero_documento": "3216543",
+   "nivel_prioridad": 2,
+   "direccion": {
+    "departamento": "Guatemala",
+    "municipio": "Guatemala",
+    "direccion": "7a Avenida 12-50, Zona 9"
+   },
+   "password_hash": "$2b$12$X4EyKUIfuSFK.oh1mVHP8uy8KEBDCT7ic5HjwG0VWa0EJiQGqqY.y"
+  },
+  {
+   "razon_social": "Dra. Karen Vanessa Orozco",
+   "nombre_facturacion": "Karen Vanessa Orozco Pineda",
+   "email": "dra.orozco@gmail.com",
+   "telefono_fijo": "24318765",
+   "tipo_documento": "NIT",
+   "numero_documento": "6543219",
+   "nivel_prioridad": 2,
+   "direccion": {
+    "departamento": "Guatemala",
+    "municipio": "Guatemala",
+    "direccion": "14 Calle 3-10, Zona 13"
+   },
+   "password_hash": "$2b$12$YgCT.tpeAwrP42pNaJh3l.18R6R.8kt2o2J4kc3Hwlc1mhI2/CbZq"
+  },
+  {
+   "razon_social": "Centro Odontológico Integral C&H",
+   "nombre_facturacion": "Centro Odontológico C&H, S.A.",
+   "email": "c.odontologicoh@gmail.com",
+   "telefono_fijo": "23854433",
+   "tipo_documento": "NIT",
+   "numero_documento": "9871233",
+   "nivel_prioridad": 2,
+   "direccion": {
+    "departamento": "Guatemala",
+    "municipio": "Guatemala",
+    "direccion": "Diagonal 6 10-01, Zona 10"
+   },
+   "password_hash": "$2b$12$bIJVDyRFQq0bxpZ4Xe5W..K3M/I8AXNN/COYmF40lK2jmoi5vXBL6"
+  },
+  {
+   "razon_social": "Dr. Esteban Rivas Duarte",
+   "nombre_facturacion": "Esteban Rivas Duarte",
+   "email": "erivas@yahoo.com",
+   "telefono_fijo": "22209988",
+   "tipo_documento": "NIT",
+   "numero_documento": "7418523",
+   "nivel_prioridad": 2,
+   "direccion": {
+    "departamento": "Guatemala",
+    "municipio": "Guatemala",
+    "direccion": "6a Calle 3-40, Zona 1"
+   },
+   "password_hash": "$2b$12$hpFg/gPJXDIs6OYOgFeTJek7emDiBLzxwESBUijh0Vowyx5Hb.uvu"
+  },
+  {
+   "razon_social": "Dra. Mónica Leticia Fuentes",
+   "nombre_facturacion": "Mónica Leticia Fuentes Gómez",
+   "email": "monica.fuentes@dental.gt",
+   "telefono_fijo": "24761122",
+   "tipo_documento": "NIT",
+   "numero_documento": "3692582",
+   "nivel_prioridad": 2,
+   "direccion": {
+    "departamento": "Guatemala",
+    "municipio": "Guatemala",
+    "direccion": "20 Calle 5-88, Zona 14"
+   },
+   "password_hash": "$2b$12$Cn5LTnycxKzclSgF9Vh4CefSLDoFmxeT32GxSDxZ4VrAZpoNUrV.W"
+  },
+  {
+   "razon_social": "Clínica Dental Guatemala Smile",
+   "nombre_facturacion": "Guatemala Smile, S.A.",
+   "email": "info@gtsmile.com",
+   "telefono_fijo": "23627788",
+   "tipo_documento": "NIT",
+   "numero_documento": "1593579",
+   "nivel_prioridad": 2,
+   "direccion": {
+    "departamento": "Guatemala",
+    "municipio": "Santa Catarina Pinula",
+    "direccion": "Km 13.5 Carretera a El Salvador"
+   },
+   "password_hash": "$2b$12$zNe0AGTviwE6D8IsHT00w.jRG3U4HoHO09W/Ka2SRpE6cRixAGSya"
+  },
+  {
+   "razon_social": "Dr. Carlos Humberto Paz",
+   "nombre_facturacion": "Carlos Humberto Paz Arriaza",
+   "email": "chpaz@gmail.com",
+   "telefono_fijo": "24403322",
+   "tipo_documento": "NIT",
+   "numero_documento": "7539517",
+   "nivel_prioridad": 2,
+   "direccion": {
+    "departamento": "Guatemala",
+    "municipio": "Guatemala",
+    "direccion": "Calzada Roosevelt 25-10, Zona 7"
+   },
+   "password_hash": "$2b$12$KQ2T8SsGjiyto6/ByHGCJ.h0tKLfd9BcBc7Nn3jcNgbKGfQcH6l0a"
+  },
+  {
+   "razon_social": "Dra. Brenda Marcela Morales",
+   "nombre_facturacion": "Brenda Marcela Morales Lémus",
+   "email": "bmorales@odontologia.gt",
+   "telefono_fijo": "23391144",
+   "tipo_documento": "NIT",
+   "numero_documento": "8524564",
+   "nivel_prioridad": 2,
+   "direccion": {
+    "departamento": "Guatemala",
+    "municipio": "Guatemala",
+    "direccion": "15 Avenida 10-20, Zona 15"
+   },
+   "password_hash": "$2b$12$EhlYL2PDw/udsZnrzccidOKZMIvKPyXr0.olLGocjACKqw30CJs7S"
+  },
+  {
+   "razon_social": "Servicios Dentales Avanzados S.A.",
+   "nombre_facturacion": "Servicios Dentales Avanzados, S.A.",
+   "email": "ventas@sdasa.gt",
+   "telefono_fijo": "23805566",
+   "tipo_documento": "NIT",
+   "numero_documento": "9513574",
+   "nivel_prioridad": 2,
+   "direccion": {
+    "departamento": "Guatemala",
+    "municipio": "Guatemala",
+    "direccion": "12 Calle 4-80, Zona 10"
+   },
+   "password_hash": "$2b$12$mh0HetxH9clfJlxvWSgGbOv8Sdp0yXGpR9sXoHhvmLB0hwKrjexRG"
+  },
+  {
+   "razon_social": "Dr. Mario Roberto Cáceres",
+   "nombre_facturacion": "Mario Roberto Cáceres Solís",
+   "email": "mr_caceres@gmail.com",
+   "telefono_fijo": "22501199",
+   "tipo_documento": "NIT",
+   "numero_documento": "1472585",
+   "nivel_prioridad": 3,
+   "direccion": {
+    "departamento": "Guatemala",
+    "municipio": "Guatemala",
+    "direccion": "3a Avenida 8-12, Zona 1"
+   },
+   "password_hash": "$2b$12$IKNipLw1gkyuqmA4tWf7pOAPQW7VqISdsNK73xIZ2KKlTjIgH66NW"
+  },
+  {
+   "razon_social": "Dra. Silvia Elena Aguilar",
+   "nombre_facturacion": "Silvia Elena Aguilar Ruano",
+   "email": "silvia.aguilar@dental.com",
+   "telefono_fijo": "24356677",
+   "tipo_documento": "NIT",
+   "numero_documento": "3698521",
+   "nivel_prioridad": 3,
+   "direccion": {
+    "departamento": "Guatemala",
+    "municipio": "Guatemala",
+    "direccion": "Blvrd Los Próceres 18-05, Zona 10"
+   },
+   "password_hash": "$2b$12$uIsp7xDLOjUJITM.jI62F.tUV5Uv7WYBUj3hMA05FicZj30mSMRma"
+  },
+  {
+   "razon_social": "Clínica Odontológica Sonrisas del Sur",
+   "nombre_facturacion": "Sonrisas del Sur, S.A.",
+   "email": "sonrisas_sur@gmail.com",
+   "telefono_fijo": "24783344",
+   "tipo_documento": "NIT",
+   "numero_documento": "9638520",
+   "nivel_prioridad": 3,
+   "direccion": {
+    "departamento": "Guatemala",
+    "municipio": "Guatemala",
+    "direccion": "4a Calle 1-30, Zona 11"
+   },
+   "password_hash": "$2b$12$isOv0EIJmt53ZVYo2XUB3eXakI82a5WlfAMaUlu.o9qFrFhloAlCq"
+  },
+  {
+   "razon_social": "Dr. Gustavo Adolfo Ramírez",
+   "nombre_facturacion": "Gustavo Adolfo Ramírez Mejía",
+   "email": "gramirez@odonto.gt",
+   "telefono_fijo": "23664455",
+   "tipo_documento": "NIT",
+   "numero_documento": "741238K",
+   "nivel_prioridad": 3,
+   "direccion": {
+    "departamento": "Guatemala",
+    "municipio": "Guatemala",
+    "direccion": "7a Avenida 2-40, Zona 4"
+   },
+   "password_hash": "$2b$12$y7qX2/THyPelxhyXpHVKgOryRUARMjU6rYmmani1MUqf0H5/aamuS"
+  },
+  {
+   "razon_social": "Dra. Ana Patricia Chacón",
+   "nombre_facturacion": "Ana Patricia Chacón Villatoro",
+   "email": "ana.chacon@gmail.com",
+   "telefono_fijo": "22227788",
+   "tipo_documento": "NIT",
+   "numero_documento": "2583690",
+   "nivel_prioridad": 3,
+   "direccion": {
+    "departamento": "Guatemala",
+    "municipio": "Guatemala",
+    "direccion": "10a Calle 4-15, Zona 1"
+   },
+   "password_hash": "$2b$12$2GpH2ZL6o6IhECcr612lA.A2Vutph.MZ8Ij32na4rYEmV5Ho8hau6"
+  },
+  {
+   "razon_social": "Centro Dental ProSalud",
+   "nombre_facturacion": "ProSalud Dental, S.A.",
+   "email": "prosalud@dentalgt.com",
+   "telefono_fijo": "23349900",
+   "tipo_documento": "NIT",
+   "numero_documento": "3579514",
+   "nivel_prioridad": 3,
+   "direccion": {
+    "departamento": "Guatemala",
+    "municipio": "Guatemala",
+    "direccion": "16 Calle 5-30, Zona 14"
+   },
+   "password_hash": "$2b$12$DfLLIByknbzXaLv.S8T5Jer.uZHX9K2tiitZEJTFMoSIC41V7a5e."
+  },
+  {
+   "razon_social": "Dr. Rafael Ignacio Dávila",
+   "nombre_facturacion": "Rafael Ignacio Dávila Estrada",
+   "email": "ridavila@gmail.com",
+   "telefono_fijo": "24431122",
+   "tipo_documento": "NIT",
+   "numero_documento": "654987K",
+   "nivel_prioridad": 3,
+   "direccion": {
+    "departamento": "Guatemala",
+    "municipio": "Guatemala",
+    "direccion": "5a Avenida 10-50, Zona 9"
+   },
+   "password_hash": "$2b$12$Sr1sR75.uqs.n.Bps9qQQ.ihu9nrjEVOjm2oHdz/9FUNrEQkIcFkq"
+  },
+  {
+   "razon_social": "Dra. Claudia Lorena Navas",
+   "nombre_facturacion": "Claudia Lorena Navas Orellana",
+   "email": "claudia.navas@gmail.com",
+   "telefono_fijo": "23116655",
+   "tipo_documento": "NIT",
+   "numero_documento": "1237896",
+   "nivel_prioridad": 3,
+   "direccion": {
+    "departamento": "Guatemala",
+    "municipio": "Guatemala",
+    "direccion": "Diagonal 14 3-22, Zona 5"
+   },
+   "password_hash": "$2b$12$bFP2bg4HzLy4YcQjOVYqe.LuumKr1Qq02TYEIQm6ZSCuBW9KGWT1W"
+  }
+ ]
+}

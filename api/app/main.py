@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi.exceptions import RequestValidationError
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from app import backend
 from app.errores_validacion import manejar_validacion
@@ -41,13 +42,18 @@ app.add_middleware(
 app.add_exception_handler(RequestValidationError, manejar_validacion)
 
 
+@app.get("/", include_in_schema=False)
+async def raiz():
+    return RedirectResponse("/docs")
+
+
 @app.get("/salud", tags=["Salud"], summary="Estado de la API y del backend")
 async def salud():
     try:
         estado_backend = await backend.llamar("GET", "/salud")
-    except Exception:
-        estado_backend = "sin conexión"
-    return {"servicio": "api", "backend": estado_backend}
+    except Exception as error:
+        estado_backend = f"sin conexión: {getattr(error, 'detail', error)}"
+    return {"servicio": "api", "backend_url": config.BACKEND_URL, "backend": estado_backend}
 
 
 for modulo in (auth, clientes, empleados, catalogos):

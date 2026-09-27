@@ -18,11 +18,11 @@ class ClienteRepositorio:
 
     def listar(self, texto: str | None = None, activo: bool | None = None,
                nivel: int | None = None) -> list[Cliente]:
-        consulta = self._base().order_by(Usuario.nombre, Usuario.apellido)
+        consulta = self._base().order_by(Cliente.razon_social)
         if texto:
             patron = f"%{texto.lower()}%"
             consulta = consulta.where(or_(
-                func.lower(Usuario.nombre).like(patron), func.lower(Usuario.apellido).like(patron),
+                func.lower(Cliente.razon_social).like(patron), func.lower(Cliente.nombre_facturacion).like(patron),
                 func.lower(Usuario.email).like(patron), func.lower(Cliente.clinica).like(patron),
                 Cliente.numero_documento.like(f"%{texto.upper()}%"),
             ))

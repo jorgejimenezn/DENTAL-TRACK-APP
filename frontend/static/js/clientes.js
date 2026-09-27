@@ -8,6 +8,10 @@ let direccionesLocales = [];   // direcciones al crear (aún no guardadas)
 let direccionEditando = null;  // id (editar) o índice (crear) de la dirección en el formulario
 
 /* ---------- Listado ---------- */
+const formatoDocumento = c => c.tipo_documento === "NIT" && c.numero_documento.length > 1
+  ? c.numero_documento.slice(0, -1) + "-" + c.numero_documento.slice(-1)
+  : c.numero_documento;
+
 async function cargar() {
   const params = new URLSearchParams();
   if ($("fTexto").value.trim()) params.set("q", $("fTexto").value.trim());
@@ -28,11 +32,11 @@ function pintarTabla() {
   }
   $("tabla").innerHTML = clientes.map(c => `
     <tr>
-      <td><b>${escapar(c.nombre)} ${escapar(c.apellido)}</b><span class="sub">${escapar(c.email)}</span></td>
+      <td><b>${escapar(c.razon_social)}</b><span class="sub">${escapar(c.nombre_facturacion)}</span><span class="sub">${escapar(c.email)}</span></td>
       <td>${escapar(c.clinica || "—")} ${c.es_red ? '<span class="badge azul">Red</span>' : ""}</td>
-      <td>${escapar(c.tipo_documento)}<span class="sub">${escapar(c.numero_documento)}</span></td>
-      <td>${escapar(c.telefono_celular)}</td>
-      <td><span class="badge ${c.nivel_prioridad === 1 ? "blanco" : "gris"}">Prioridad ${c.nivel_prioridad}</span></td>
+      <td>${escapar(c.tipo_documento)}<span class="sub">${escapar(formatoDocumento(c))}</span></td>
+      <td>${escapar(c.telefono_celular || "")}${c.telefono_celular && c.telefono_fijo ? "<br>" : ""}${escapar(c.telefono_fijo || "")}</td>
+      <td><span class="badge ${c.nivel_prioridad === 2 ? "blanco" : "gris"}">${c.nivel_prioridad === 2 ? "2 · VIP" : "3 · Normal"}</span></td>
       <td><span class="badge ${c.activo ? "verde" : "rojo"}">${c.activo ? "Activo" : "Inactivo"}</span></td>
       <td class="acciones">
         <button class="btn chico" data-editar="${c.id}">Editar</button>
@@ -47,7 +51,7 @@ $("tabla").addEventListener("click", async e => {
   if (estado) {
     const c = clientes.find(x => x.id === +estado.dataset.estado);
     const accion = c.activo ? "desactivar" : "activar";
-    if (!confirm(`¿Seguro que quieres ${accion} a ${c.nombre} ${c.apellido}?${c.activo ? " No podrá iniciar sesión." : ""}`)) return;
+    if (!confirm(`¿Seguro que quieres ${accion} a ${c.razon_social}?${c.activo ? " No podrá iniciar sesión." : ""}`)) return;
     try {
       await api("PATCH", `/clientes/${c.id}/estado`, { activo: !c.activo });
       toast(`Cliente ${c.activo ? "desactivado" : "activado"}`);
@@ -61,9 +65,6 @@ $("fEstado").onchange = cargar;
 $("fNivel").onchange = cargar;
 
 /* ---------- Modal cliente ---------- */
-const CAMPOS = { cNombre: "nombre", cApellido: "apellido", cEmail: "email", cCelular: "telefono_celular",
-  cFijo: "telefono_fijo", cClinica: "clinica", cDocumento: "numero_documento", cPassword: "password" };
-
 function limpiarFormulario() {
   $("formCliente").reset();
   document.querySelectorAll("#formCliente .campo.error").forEach(c => c.classList.remove("error"));
@@ -78,7 +79,7 @@ $("btnNuevo").onclick = () => {
   $("tituloModal").textContent = "Nuevo cliente";
   $("bloquePassword").hidden = false;
   $("btnResetPass").hidden = true;
-  $("cNivel").value = "2";
+  $("cNivel").value = "3";
   pintarDirecciones();
   abrirFormDireccion();
   $("modalCliente").showModal();
@@ -91,11 +92,11 @@ async function abrirEditar(id) {
   modo = "editar";
   limpiarFormulario();
   const c = clienteActual;
-  $("tituloModal").textContent = `Editar · ${c.nombre} ${c.apellido}`;
+  $("tituloModal").textContent = `Editar · ${c.razon_social}`;
   $("bloquePassword").hidden = true;
   $("btnResetPass").hidden = false;
-  $("cNombre").value = c.nombre; $("cApellido").value = c.apellido; $("cEmail").value = c.email;
-  $("cCelular").value = c.telefono_celular; $("cFijo").value = c.telefono_fijo || "";
+  $("cRazon").value = c.razon_social; $("cFacturacion").value = c.nombre_facturacion; $("cEmail").value = c.email;
+  $("cCelular").value = c.telefono_celular || ""; $("cFijo").value = c.telefono_fijo || "";
   $("cClinica").value = c.clinica || ""; $("cRed").checked = c.es_red; $("cNivel").value = String(c.nivel_prioridad);
   $("cTipoDoc").value = c.tipo_documento; $("cDocumento").value = c.numero_documento;
   pintarDirecciones();
@@ -104,11 +105,14 @@ async function abrirEditar(id) {
 
 function validarCliente() {
   const errores = {};
-  if ($("cNombre").value.trim().length < 2) errores.nombre = true;
-  if ($("cApellido").value.trim().length < 2) errores.apellido = true;
+  if ($("cRazon").value.trim().length < 2) errores.razon_social = true;
+  if ($("cFacturacion").value.trim().length < 2) errores.nombre_facturacion = true;
   if (!correoValido($("cEmail").value)) errores.email = true;
-  if (!telefonoValido($("cCelular").value)) errores.telefono_celular = true;
-  if ($("cFijo").value.trim() && !telefonoValido($("cFijo").value)) errores.telefono_fijo = true;
+  const celular = $("cCelular").value.trim(), fijo = $("cFijo").value.trim();
+  $("msgCelular").textContent = "Debe tener 8 dígitos.";
+  if (celular && !telefonoValido(celular)) errores.telefono_celular = true;
+  if (fijo && !telefonoValido(fijo)) errores.telefono_fijo = true;
+  if (!celular && !fijo) { errores.telefono_celular = true; $("msgCelular").textContent = "Ingresa al menos un teléfono."; }
   const tipo = $("cTipoDoc").value, doc = $("cDocumento").value;
   if (tipo === "NIT" ? !nitValido(doc) : !dpiValido(doc)) {
     errores.numero_documento = true;
@@ -116,7 +120,7 @@ function validarCliente() {
   }
   if (modo === "crear" && $("cPassword").value.length < 8) errores.password = true;
   document.querySelectorAll("#formCliente [data-campo]").forEach(c => {
-    if (["nombre","apellido","email","telefono_celular","telefono_fijo","numero_documento","password"].includes(c.dataset.campo))
+    if (["razon_social","nombre_facturacion","email","telefono_celular","telefono_fijo","numero_documento","password"].includes(c.dataset.campo))
       c.classList.toggle("error", !!errores[c.dataset.campo]);
   });
   return Object.keys(errores).length === 0;
@@ -124,9 +128,9 @@ function validarCliente() {
 
 function datosCliente() {
   return {
-    nombre: $("cNombre").value.trim(), apellido: $("cApellido").value.trim(), email: $("cEmail").value.trim(),
+    razon_social: $("cRazon").value.trim(), nombre_facturacion: $("cFacturacion").value.trim(), email: $("cEmail").value.trim(),
     clinica: $("cClinica").value.trim() || null, es_red: $("cRed").checked,
-    telefono_celular: limpiarNumero($("cCelular").value), telefono_fijo: limpiarNumero($("cFijo").value) || null,
+    telefono_celular: limpiarNumero($("cCelular").value) || null, telefono_fijo: limpiarNumero($("cFijo").value) || null,
     tipo_documento: $("cTipoDoc").value, numero_documento: limpiarNumero($("cDocumento").value),
     nivel_prioridad: Number($("cNivel").value),
   };
@@ -258,7 +262,7 @@ $("btnGuardarDir").onclick = async () => {
 /* ---------- Contraseña ---------- */
 $("btnResetPass").onclick = () => {
   $("formPassword").reset(); $("errorPassword").hidden = true;
-  $("textoPassword").textContent = `Nueva contraseña para ${clienteActual.nombre} ${clienteActual.apellido} (${clienteActual.email}).`;
+  $("textoPassword").textContent = `Nueva contraseña para ${clienteActual.razon_social} (${clienteActual.email}).`;
   $("modalPassword").showModal();
 };
 $("formPassword").onsubmit = async e => {

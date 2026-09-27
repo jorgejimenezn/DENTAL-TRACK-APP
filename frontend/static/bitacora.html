@@ -46,12 +46,12 @@
 
   const ACCIONES = {
     login_exitoso: ["Inicio de sesión", "verde"], login_fallido: ["Intento fallido", "rojo"],
-    crear: ["Creación", "azul"], editar: ["Edición", "gris"], activar: ["Activación", "verde"],
+    crear: ["Creación", "azul"], registro: ["Auto-registro", "verde"], editar: ["Edición", "gris"], activar: ["Activación", "verde"],
     desactivar: ["Desactivación", "rojo"], cambiar_password: ["Cambio de contraseña", "gris"],
     agregar_direccion: ["Dirección agregada", "azul"], editar_direccion: ["Dirección editada", "gris"],
-    eliminar_direccion: ["Dirección quitada", "rojo"],
+    eliminar_direccion: ["Dirección quitada", "rojo"], carga_datos_prueba: ["Carga de datos de prueba", "azul"],
   };
-  const ENTIDADES = { sesion: "Sesión", cliente: "Cliente", empleado: "Empleado" };
+  const ENTIDADES = { sesion: "Sesión", cliente: "Cliente", empleado: "Empleado", sistema: "Sistema" };
 
   function textoDetalle(d) {
     if (!d || !Object.keys(d).length) return "—";
@@ -81,7 +81,7 @@
     }
   }
   ETIQUETAS.motivo = "Motivo"; ETIQUETAS.documento = "Documento"; ETIQUETAS.areas = "Áreas"; ETIQUETAS.es_red = "Red";
-  ETIQUETAS.direccion_id = "Dirección #";
+  ETIQUETAS.direccion_id = "Dirección #"; ETIQUETAS.origen = "Origen"; ETIQUETAS.empleados = "Empleados"; ETIQUETAS.clientes = "Clientes"; ETIQUETAS.nivel_prioridad = "Prioridad";
   $("fEntidad").onchange = cargar;
   $("fLimite").onchange = cargar;
   $("btnRecargar").onclick = cargar;

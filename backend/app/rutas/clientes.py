@@ -11,7 +11,7 @@ router = APIRouter(prefix="/clientes", tags=["Clientes"])
 
 
 @router.get("", response_model=list[ClienteOut])
-def listar(q: str | None = None, activo: bool | None = None, nivel: int | None = Query(None, ge=1, le=2),
+def listar(q: str | None = None, activo: bool | None = None, nivel: int | None = Query(None, ge=2, le=3),
            s: ClienteServicio = Depends(servicio_clientes)):
     return s.listar(q, activo, nivel)
 

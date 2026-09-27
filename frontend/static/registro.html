@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crear cuenta · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
+<style>
+  .registro{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);min-height:100vh}
+  .registro-imagen{position:sticky;top:0;height:100vh;overflow:hidden;background:#8f8f8f}
+  .registro-imagen img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%}
+  .registro-imagen::after{content:"";position:absolute;inset:auto 0 0 0;height:40%;background:linear-gradient(to top,rgba(0,0,0,.55),transparent)}
+  .registro-imagen .lema{position:absolute;left:32px;right:32px;bottom:30px;color:#fff;z-index:1}
+  .registro-imagen .lema b{display:block;font-size:20px}
+  .registro-imagen .lema span{font-size:13px;color:#e4e4e4}
+  .registro-panel{background:#000;padding:40px 24px 60px;display:flex;justify-content:center}
+  .registro-caja{width:100%;max-width:620px}
+  .registro-caja .logo{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.14em;font-size:15px;margin-bottom:28px}
+  .registro-caja .logo svg{width:28px;height:28px}
+  .registro-caja h1{font-size:26px;margin-bottom:6px}
+  .registro-caja p.sub{color:var(--texto-2);margin-bottom:22px}
+  .registro-caja .seccion-form:first-of-type{margin-top:0}
+  .acciones{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-top:24px}
+  .acciones .btn.verde{padding:12px 22px;font-size:14px}
+  .acciones a{font-size:13px}
+  .nota{font-size:12px;color:var(--texto-3);margin-top:18px}
+  @media (max-width:860px){
+    .registro{grid-template-columns:1fr}
+    .registro-imagen{position:relative;height:180px}
+    .registro-imagen::after,.registro-imagen .lema{display:none}
+    .registro-panel{padding:26px 16px 50px}
+  }
+</style>
+</head>
+<body>
+<div class="registro">
+  <section class="registro-imagen" aria-hidden="true">
+    <img src="img/diente.png" alt="">
+    <div class="lema"><b>Envía tus casos al laboratorio.</b><span>Crea tu cuenta y sigue cada trabajo hasta la entrega.</span></div>
+  </section>
+
+  <section class="registro-panel">
+    <form class="registro-caja" id="formRegistro" novalidate>
+      <div class="logo">
+        <svg viewBox="0 0 40 40" fill="none"><path d="M12 5c-5 0-8 4-8 10 0 5 2 8 3 13 1 5 2 8 4 8 3 0 3-8 5-11 1-2 3-2 4 0 2 3 2 11 5 11 2 0 3-3 4-8 1-5 3-8 3-13 0-6-3-10-8-10-3 0-5 2-8 2s-5-2-8-2z" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/></svg>
+        DENTAL TRACK
+      </div>
+      <h1>Crear cuenta de cliente</h1>
+      <p class="sub">Regístrate como doctor o clínica para enviar solicitudes al laboratorio.</p>
+
+      <div class="error-form" id="errorRegistro" hidden></div>
+
+      <div class="seccion-form">Datos del cliente</div>
+      <div class="grid">
+        <div class="campo span2" data-campo="razon_social"><label>Nombre del doctor o clínica <span class="req">*</span></label>
+          <input id="rRazon" placeholder="Ej. Dra. Leslie Pérez o Clínica Dental Sonrisa S.A." autocomplete="organization"><div class="msg-error">Requerido.</div></div>
+        <div class="campo span2" data-campo="nombre_facturacion"><label>Nombre de facturación <span class="req">*</span></label>
+          <input id="rFacturacion" placeholder="Como debe aparecer en la factura"><div class="msg-error">Requerido.</div></div>
+        <div class="campo"><label>Clínica</label><input id="rClinica" placeholder="Opcional"></div>
+        <div class="campo"><label>&nbsp;</label><label class="check-linea" style="margin-top:10px"><input type="checkbox" id="rRed"> Somos una red de clínicas</label></div>
+        <div class="campo" data-campo="telefono_celular"><label>Celular</label><input id="rCelular" inputmode="numeric" placeholder="5555 1234" autocomplete="tel"><div class="msg-error" id="msgCelular">Debe tener 8 dígitos.</div></div>
+        <div class="campo" data-campo="telefono_fijo"><label>Teléfono fijo</label><input id="rFijo" inputmode="numeric" placeholder="2360 1234"><div class="msg-error">Debe tener 8 dígitos.</div></div>
+      </div>
+      <div class="ayuda" style="font-size:11px;color:var(--texto-3);margin-top:6px">Ingresa al menos un teléfono.</div>
+
+      <div class="seccion-form">Documento fiscal</div>
+      <div class="grid">
+        <div class="campo"><label>Tipo</label><select id="rTipoDoc"><option>NIT</option><option>DPI</option></select></div>
+        <div class="campo" data-campo="numero_documento"><label>Número <span class="req">*</span></label><input id="rDocumento" placeholder="Ej. 576937-K"><div class="msg-error" id="msgDoc">Documento no válido.</div></div>
+      </div>
+
+      <div class="seccion-form">Dirección de entrega</div>
+      <div class="grid">
+        <div class="campo" data-campo="departamento"><label>Departamento <span class="req">*</span></label><select id="rDepartamento"></select><div class="msg-error">Requerido.</div></div>
+        <div class="campo" data-campo="municipio"><label>Municipio <span class="req">*</span></label><input id="rMunicipio" list="listaMunicipios" placeholder="Escribe o elige"><datalist id="listaMunicipios"></datalist><div class="msg-error">Requerido.</div></div>
+        <div class="campo span2" data-campo="direccion"><label>Dirección completa <span class="req">*</span></label><input id="rDireccion" placeholder="Calle o avenida, número, zona, edificio, referencia" autocomplete="street-address"><div class="msg-error">Mínimo 5 caracteres.</div></div>
+      </div>
+      <div class="ayuda" style="font-size:11px;color:var(--texto-3);margin-top:6px">Podrás agregar más direcciones después.</div>
+
+      <div class="seccion-form">Acceso</div>
+      <div class="grid">
+        <div class="campo span2" data-campo="email"><label>Correo electrónico <span class="req">*</span></label><input id="rEmail" type="email" autocomplete="email" placeholder="tu@correo.com"><div class="msg-error">Correo no válido.</div></div>
+        <div class="campo" data-campo="password"><label>Contraseña <span class="req">*</span></label><input id="rPassword" type="password" autocomplete="new-password"><div class="msg-error">Mínimo 8 caracteres.</div></div>
+        <div class="campo" data-campo="confirmar"><label>Confirmar contraseña <span class="req">*</span></label><input id="rConfirmar" type="password" autocomplete="new-password"><div class="msg-error">Las contraseñas no coinciden.</div></div>
+      </div>
+
+      <div class="acciones">
+        <a href="login.html">← Ya tengo cuenta</a>
+        <button type="submit" class="btn verde" id="btnRegistrar">Crear mi cuenta</button>
+      </div>
+      <p class="nota">Tu cuenta se crea como cliente del laboratorio. El laboratorio puede ajustar tus datos comerciales más adelante.</p>
+    </form>
+  </section>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/validaciones.js"></script>
+<script>
+  if (Sesion.obtener()?.token) location.href = "inicio.html";
+
+  $("rDepartamento").innerHTML = '<option value="">Selecciona</option>' + DEPARTAMENTOS.map(d => `<option>${d}</option>`).join("");
+  $("rDepartamento").value = "Guatemala";
+  const cargarMunicipios = () => {
+    $("listaMunicipios").innerHTML = (MUNICIPIOS[$("rDepartamento").value] || []).map(m => `<option value="${m}">`).join("");
+  };
+  $("rDepartamento").onchange = () => { cargarMunicipios(); $("rMunicipio").value = ""; };
+  cargarMunicipios();
+
+  $("formRegistro").addEventListener("input", e => {
+    e.target.closest(".campo")?.classList.remove("error");
+    $("errorRegistro").hidden = true;
+  });
+
+  function validar() {
+    const celular = $("rCelular").value.trim(), fijo = $("rFijo").value.trim();
+    const tipo = $("rTipoDoc").value, doc = $("rDocumento").value;
+    $("msgCelular").textContent = "Debe tener 8 dígitos.";
+    $("msgDoc").textContent = tipo === "NIT" ? "NIT no válido (revisa el dígito verificador)." : "DPI no válido (13 dígitos).";
+    const errores = {
+      razon_social: $("rRazon").value.trim().length < 2,
+      nombre_facturacion: $("rFacturacion").value.trim().length < 2,
+      telefono_celular: (celular && !telefonoValido(celular)) || (!celular && !fijo),
+      telefono_fijo: fijo && !telefonoValido(fijo),
+      numero_documento: tipo === "NIT" ? !nitValido(doc) : !dpiValido(doc),
+      departamento: !$("rDepartamento").value,
+      municipio: $("rMunicipio").value.trim().length < 2,
+      direccion: $("rDireccion").value.trim().length < 5,
+      email: !correoValido($("rEmail").value),
+      password: $("rPassword").value.length < 8,
+      confirmar: $("rConfirmar").value !== $("rPassword").value,
+    };
+    if (!celular && !fijo) $("msgCelular").textContent = "Ingresa al menos un teléfono.";
+    document.querySelectorAll("#formRegistro [data-campo]").forEach(c => c.classList.toggle("error", !!errores[c.dataset.campo]));
+    const primero = document.querySelector("#formRegistro .campo.error");
+    if (primero) primero.scrollIntoView({ behavior: "smooth", block: "center" });
+    return !primero;
+  }
+
+  $("formRegistro").onsubmit = async e => {
+    e.preventDefault();
+    if (!validar()) return;
+    const datos = {
+      razon_social: $("rRazon").value.trim(),
+      nombre_facturacion: $("rFacturacion").value.trim(),
+      clinica: $("rClinica").value.trim() || null,
+      es_red: $("rRed").checked,
+      telefono_celular: limpiarNumero($("rCelular").value) || null,
+      telefono_fijo: limpiarNumero($("rFijo").value) || null,
+      tipo_documento: $("rTipoDoc").value,
+      numero_documento: limpiarNumero($("rDocumento").value),
+      email: $("rEmail").value.trim(),
+      password: $("rPassword").value,
+      direccion: {
+        departamento: $("rDepartamento").value, municipio: $("rMunicipio").value.trim(),
+        direccion: $("rDireccion").value.trim(), principal: true,
+      },
+    };
+    $("btnRegistrar").disabled = true;
+    $("btnRegistrar").textContent = "Creando cuenta…";
+    try {
+      const r = await api("POST", "/auth/registro", datos);
+      Sesion.guardar({ token: r.access_token, expira: r.expira_en, usuario: r.usuario });
+      location.href = "inicio.html";
+    } catch (error) {
+      mostrarErrores($("errorRegistro"), error);
+      $("btnRegistrar").disabled = false;
+      $("btnRegistrar").textContent = "Crear mi cuenta";
+    }
+  };
+</script>
+</body>
+</html>

@@ -26,7 +26,8 @@ function mensajesDeError(detalle) {
 }
 
 const ETIQUETAS = {
-  nombre: "Nombre", apellido: "Apellido", email: "Correo", password: "Contraseña",
+  nombre: "Nombre", apellido: "Apellido", razon_social: "Razón social", nombre_facturacion: "Nombre de facturación",
+  telefono: "Teléfono", email: "Correo", password: "Contraseña",
   telefono_celular: "Celular", telefono_fijo: "Teléfono fijo", numero_documento: "Documento",
   tipo_documento: "Tipo de documento", nivel_prioridad: "Nivel", clinica: "Clínica",
   direcciones: "Direcciones", departamento: "Departamento", municipio: "Municipio",

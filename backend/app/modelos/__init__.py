@@ -8,6 +8,7 @@ from app.db.postgres import Base
 
 ROLES_INTERNOS = ["admin", "ingresos", "tecnico", "qa", "facturacion", "logistica"]
 ROL_CLIENTE = "doctor"
+NIVELES_CLIENTE = {2: "VIP", 3: "Normal"}  # la prioridad 1 es exclusiva de emergencias
 
 # Relación N:M empleado <-> área del laboratorio
 usuario_area = Table(
@@ -29,9 +30,11 @@ class Usuario(Base):
     """Toda persona que inicia sesión: empleados del laboratorio y doctores (clientes)."""
     __tablename__ = "usuarios"
     id: Mapped[int] = mapped_column(primary_key=True)
-    nombre: Mapped[str] = mapped_column(String(80))
-    apellido: Mapped[str] = mapped_column(String(80))
+    nombre: Mapped[str] = mapped_column(String(150))
+    apellido: Mapped[str] = mapped_column(String(80), default="")
     email: Mapped[str] = mapped_column(String(120), unique=True, index=True)
+    telefono: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    direccion: Mapped[str | None] = mapped_column(String(250), nullable=True)
     password_hash: Mapped[str] = mapped_column(String(200))
     rol: Mapped[str] = mapped_column(String(20))
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -47,13 +50,16 @@ class Cliente(Base):
     __tablename__ = "clientes"
     id: Mapped[int] = mapped_column(primary_key=True)
     usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id", ondelete="CASCADE"), unique=True)
+    razon_social: Mapped[str] = mapped_column(String(150))
+    nombre_facturacion: Mapped[str] = mapped_column(String(150))
     clinica: Mapped[str | None] = mapped_column(String(120), nullable=True)
     es_red: Mapped[bool] = mapped_column(Boolean, default=False)
-    telefono_celular: Mapped[str] = mapped_column(String(8))
+    telefono_celular: Mapped[str | None] = mapped_column(String(8), nullable=True)
     telefono_fijo: Mapped[str | None] = mapped_column(String(8), nullable=True)
     tipo_documento: Mapped[str] = mapped_column(String(3))  # NIT o DPI
     numero_documento: Mapped[str] = mapped_column(String(20), unique=True)
-    nivel_prioridad: Mapped[int] = mapped_column(Integer, default=2)  # 1 = más alta
+    # Prioridad: 1 = emergencia (se marca en la solicitud), 2 = cliente VIP, 3 = cliente normal
+    nivel_prioridad: Mapped[int] = mapped_column(Integer, default=3)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     usuario: Mapped[Usuario] = relationship(back_populates="cliente")

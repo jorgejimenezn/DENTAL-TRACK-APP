@@ -3,6 +3,7 @@ from sqlalchemy import select
 
 from app.core.config import config
 from app.core.seguridad import cifrar_password
+from app.db.migraciones import migrar
 from app.db.postgres import Base, SesionLocal, engine
 from app.modelos import Area, Usuario
 
@@ -13,6 +14,7 @@ AREAS_INICIALES = [
 
 
 def inicializar_base():
+    migrar()  # primero actualiza tablas de versiones anteriores
     Base.metadata.create_all(engine)
     with SesionLocal() as sesion:
         existentes = set(sesion.scalars(select(Area.nombre)))

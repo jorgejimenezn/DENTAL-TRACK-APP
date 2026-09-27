@@ -23,11 +23,11 @@
       <div class="filtros">
         <div class="campo ancho"><input id="fTexto" placeholder="Buscar por nombre, clínica, correo o NIT/DPI"></div>
         <div class="campo"><select id="fEstado"><option value="">Todos los estados</option><option value="true" selected>Activos</option><option value="false">Inactivos</option></select></div>
-        <div class="campo"><select id="fNivel"><option value="">Todas las prioridades</option><option value="1">Prioridad 1</option><option value="2">Prioridad 2</option></select></div>
+        <div class="campo"><select id="fNivel"><option value="">Todas las prioridades</option><option value="2">Prioridad 2 · VIP</option><option value="3">Prioridad 3 · Normal</option></select></div>
       </div>
       <div class="tabla-wrap">
         <table>
-          <thead><tr><th>Doctor</th><th>Clínica</th><th>Documento</th><th>Celular</th><th>Prioridad</th><th>Estado</th><th></th></tr></thead>
+          <thead><tr><th>Cliente</th><th>Clínica</th><th>Documento</th><th>Teléfono</th><th>Prioridad</th><th>Estado</th><th></th></tr></thead>
           <tbody id="tabla"><tr><td colspan="7" class="cargando">Cargando…</td></tr></tbody>
         </table>
       </div>
@@ -42,21 +42,22 @@
     <div class="modal-cuerpo">
       <div class="error-form" id="errorCliente" hidden></div>
 
-      <div class="seccion-form">Datos del doctor</div>
+      <div class="seccion-form">Datos del cliente</div>
       <div class="grid">
-        <div class="campo" data-campo="nombre"><label>Nombre <span class="req">*</span></label><input id="cNombre"><div class="msg-error">Requerido.</div></div>
-        <div class="campo" data-campo="apellido"><label>Apellido <span class="req">*</span></label><input id="cApellido"><div class="msg-error">Requerido.</div></div>
+        <div class="campo span2" data-campo="razon_social"><label>Cliente / razón social <span class="req">*</span></label><input id="cRazon" placeholder="Ej. Dra. Leslie Pérez o Clínica Dental Sonrisa Perfecta S.A."><div class="msg-error">Requerido.</div></div>
+        <div class="campo span2" data-campo="nombre_facturacion"><label>Nombre de facturación <span class="req">*</span></label><input id="cFacturacion" placeholder="Como debe aparecer en la factura"><div class="msg-error">Requerido.</div></div>
         <div class="campo span2" data-campo="email"><label>Correo electrónico (usuario de acceso) <span class="req">*</span></label><input id="cEmail" type="email"><div class="msg-error">Correo no válido.</div></div>
-        <div class="campo" data-campo="telefono_celular"><label>Celular <span class="req">*</span></label><input id="cCelular" inputmode="numeric" placeholder="5555 1234"><div class="msg-error">Debe tener 8 dígitos.</div></div>
-        <div class="campo" data-campo="telefono_fijo"><label>Teléfono fijo</label><input id="cFijo" inputmode="numeric" placeholder="Opcional"><div class="msg-error">Debe tener 8 dígitos.</div></div>
+        <div class="campo" data-campo="telefono_celular"><label>Celular</label><input id="cCelular" inputmode="numeric" placeholder="5555 1234"><div class="msg-error" id="msgCelular">Debe tener 8 dígitos.</div></div>
+        <div class="campo" data-campo="telefono_fijo"><label>Teléfono fijo</label><input id="cFijo" inputmode="numeric" placeholder="2360 1234"><div class="msg-error">Debe tener 8 dígitos.</div></div>
+        <div class="ayuda span2" style="font-size:11px;color:var(--texto-3);margin-top:-8px">Ingresa al menos un teléfono.</div>
       </div>
 
       <div class="seccion-form">Clínica y prioridad</div>
       <div class="grid">
         <div class="campo"><label>Clínica</label><input id="cClinica" placeholder="Opcional"></div>
         <div class="campo"><label>Prioridad del cliente</label>
-          <select id="cNivel"><option value="1">Prioridad 1 (alta)</option><option value="2" selected>Prioridad 2</option></select>
-          <div class="ayuda">Solo la ve el laboratorio, no el doctor.</div></div>
+          <select id="cNivel"><option value="2">Prioridad 2 · VIP</option><option value="3" selected>Prioridad 3 · Normal</option></select>
+          <div class="ayuda">Solo la ve el laboratorio. La prioridad 1 es para solicitudes de emergencia.</div></div>
         <label class="check-linea span2"><input type="checkbox" id="cRed"> Es una red de clínicas (varios doctores envían con esta cuenta)</label>
       </div>
 

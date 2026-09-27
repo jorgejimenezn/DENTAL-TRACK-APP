@@ -31,15 +31,17 @@ Proyecto de graduación. Arquitectura en N capas con cinco servicios en Railway 
 ## Fase 1 (incluida)
 
 - **Login** con token JWT, contraseñas cifradas con bcrypt y redirección según rol.
-- **Clientes**: alta, edición, activar/desactivar, restablecer contraseña, varias direcciones de entrega (una principal), clínica en red, prioridad 1 o 2 (solo visible para el laboratorio). Validación real de **NIT** (dígito verificador) y **DPI** (CUI de 13 dígitos) en el frontend y en el backend.
+- **Clientes**: razón social y nombre de facturación, alta, edición, activar/desactivar, restablecer contraseña, varias direcciones de entrega (una principal), clínica en red, prioridad 2 (VIP) o 3 (normal), visible solo para el laboratorio. La prioridad 1 queda reservada para emergencias. Validación real de **NIT** (dígito verificador) y **DPI** (CUI de 13 dígitos) en el frontend y en el backend.
 - **Empleados**: alta, edición, roles (admin, ingresos, técnico, QA, facturación, logística), áreas del laboratorio, activar/desactivar, restablecer contraseña. No se puede desactivar ni quitar el rol al último administrador.
 - **Bitácora** en MongoDB: inicios de sesión (exitosos y fallidos), creaciones, ediciones con valores antes/después.
+- **Registro público de clientes** desde el login (`registro.html`): la cuenta se crea siempre como cliente (rol doctor) con prioridad 3 (normal); el servidor ignora cualquier otro rol o prioridad enviados. Al terminar, la sesión queda iniciada.
 - **Prototipo** del formulario de nueva solicitud (`nueva-solicitud.html`).
 
 ## Estructura
 
 ```
 DENTAL-TRACK-APP/
+├── herramientas/          conversión del Excel de datos simulados
 ├── backend/
 │   ├── app/
 │   │   ├── core/          configuración, errores, seguridad, validaciones NIT/DPI
@@ -110,6 +112,12 @@ JWT_HORAS=10
 CORS_ORIGINS=https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}
 ```
 
+Opcional, para cargar los datos simulados (25 empleados y 20 clientes) al arrancar:
+```
+CARGAR_DATOS_PRUEBA=true
+```
+La carga no duplica registros: omite correos o NIT que ya existan. Cuando termines las pruebas puedes quitar la variable.
+
 **frontend**
 ```
 API_URL=https://${{api.RAILWAY_PUBLIC_DOMAIN}}
@@ -125,6 +133,26 @@ API_URL=https://${{api.RAILWAY_PUBLIC_DOMAIN}}
 - `https://<frontend>` abre el login. Entra con `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
 
 El administrador inicial y las 10 áreas del laboratorio se crean solos al primer arranque del backend. Las tablas se crean con `create_all` (suficiente para esta fase; más adelante se puede migrar a Alembic).
+
+## Datos de prueba
+
+`backend/app/db/datos_prueba.json` contiene los empleados y clientes simulados, con contraseñas **cifradas** (bcrypt). Las contraseñas iniciales en texto están en `credenciales_prueba.xlsx`, que **no** se sube al repositorio.
+
+Para regenerar ambos archivos desde el Excel de datos simulados:
+
+```bash
+pip install openpyxl bcrypt
+python herramientas/preparar_datos_prueba.py datos_simulados_de_prueba.xlsx
+```
+
+Reglas aplicadas en la conversión:
+- **Prioridad:** 1 = emergencia (se marca en la solicitud), 2 = cliente VIP, 3 = cliente normal.
+- **NIT:** se conserva el número y se recalcula el dígito verificador, porque los del Excel son ficticios.
+- **Teléfonos de clientes:** se guardan como fijo. El sistema exige al menos un teléfono.
+- **Direcciones:** departamento y municipio se deducen del texto (por defecto Guatemala, Guatemala).
+- **Empleados:** Jorge Jimenez y Axel Aguilar son administradores; el resto se reparte entre ingresos, técnicos por área, QA, facturación y logística.
+
+> **Actualización desde la versión anterior:** el backend incluye una migración automática (`backend/app/db/migraciones.py`). Al arrancar agrega las columnas nuevas, llena la razón social con el nombre del doctor y convierte las prioridades (1 → 2 VIP, 2 → 3 normal) sin borrar datos. Es segura de ejecutar en cada reinicio.
 
 ## Ejecución local (opcional)
 
@@ -154,6 +182,7 @@ Sin servidor Mongo se puede probar con `MONGO_URL=mongomock://local` (requiere `
 | Método | Ruta | Rol |
 |---|---|---|
 | POST | `/auth/login` | público |
+| POST | `/auth/registro` | público (crea cliente con prioridad normal) |
 | GET | `/auth/yo` | cualquiera con sesión |
 | GET/POST | `/clientes` | admin |
 | GET/PUT | `/clientes/{id}` | admin |

@@ -29,8 +29,8 @@ async def llamar(metodo: str, ruta: str, usuario: dict | None = None, json=None,
         params = {k: v for k, v in params.items() if v is not None}
     try:
         respuesta = await http().request(metodo, ruta, headers=cabeceras, json=json, params=params)
-    except httpx.HTTPError:
-        raise HTTPException(status_code=503, detail="El servicio backend no está disponible")
+    except httpx.HTTPError as error:
+        raise HTTPException(status_code=503, detail=f"El servicio backend no está disponible ({type(error).__name__}: {error})")
 
     if respuesta.status_code == 204:
         return None
