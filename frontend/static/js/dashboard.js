@@ -27,12 +27,16 @@ function pintarVivo(v) {
 }
 
 function pintarPeriodo(p) {
-  $("kpisPeriodo").innerHTML = kpi("Dentro de meta (producción)", pct(p.cumplimiento_general), "pasos terminados a tiempo", p.cumplimiento_general !== null && p.cumplimiento_general < 90)
+  const retrabajos = p.por_area.reduce((t, a) => t + a.retrabajos, 0);
+  $("kpisMetas").innerHTML = kpi("Dentro de meta (producción)", pct(p.cumplimiento_general), "pasos terminados a tiempo", p.cumplimiento_general !== null && p.cumplimiento_general < 90)
     + kpi("Entregas a tiempo", pct(p.puntualidad), `${num(p.a_tiempo)} de ${num(p.entregados)} entregados`, p.puntualidad !== null && p.puntualidad < 90)
-    + kpi("Casos recibidos", num(p.creados), `${num(p.cn)} CN · ${num(p.rp)} RP`)
-    + kpi("Digital / analógico", `${num(p.digital)} / ${num(p.analogo)}`, `${num(p.emergencias)} emergencias`)
+    + kpi("Pasos repetidos", num(retrabajos), "por devoluciones de QA")
     + kpi("Visitas fallidas", num(p.visitas_fallidas), "recolectas o entregas")
     + kpi("Días promedio de cobro", p.cobro_dias_promedio === null ? "—" : num(p.cobro_dias_promedio), `${num(p.cobros_pendientes)} facturas pendientes`);
+  $("kpisVolumen").innerHTML = kpi("Casos recibidos", num(p.creados), `${num(p.cn)} CN · ${num(p.rp)} RP`)
+    + kpi("Digital / analógico", `${num(p.digital)} / ${num(p.analogo)}`)
+    + kpi("Emergencias", num(p.emergencias))
+    + kpi("Tasa de reapertura", p.creados ? pct(100 * p.rp / p.creados) : "—", "RP sobre casos recibidos");
   $("tablaAreas").innerHTML = p.por_area.map(a => `<tr>
       <td class="principal"><b>${escapar(a.area)}</b></td>
       <td data-label="Meta">${horas(a.meta_horas)}</td>
@@ -61,6 +65,16 @@ async function cargar() {
     pintarVivo(d.vivo); pintarPeriodo(d.periodo);
   } catch (error) { mostrarErrores($("errorDash"), error); }
 }
+/* Pestañas (se recuerda la elegida en la dirección) */
+function mostrarTab(tab) {
+  if (!document.querySelector(`[data-panel="${tab}"]`)) tab = "vivo";
+  document.querySelectorAll("#pestanasDash button").forEach(b => b.classList.toggle("activa", b.dataset.tab === tab));
+  document.querySelectorAll("[data-panel]").forEach(p => p.hidden = p.dataset.panel !== tab);
+  $("rango").hidden = tab === "vivo";
+  history.replaceState(null, "", "#" + tab);
+}
+$("pestanasDash").onclick = e => { const b = e.target.closest("[data-tab]"); if (b) mostrarTab(b.dataset.tab); };
+mostrarTab(location.hash.slice(1));
 $("btnActualizar").onclick = cargar;
 $("btnPeriodo").onclick = cargar;
 cargar();

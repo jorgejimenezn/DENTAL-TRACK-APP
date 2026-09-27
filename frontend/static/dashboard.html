@@ -20,36 +20,55 @@
     </div>
     <div class="error-form" id="errorDash" hidden></div>
 
-    <h2 class="t" style="font-size:16px;margin-bottom:10px">En vivo</h2>
-    <div class="kpis" id="kpisVivo"></div>
-    <div class="panel-metricas">
-      <section class="card"><h2>Carga por área <span class="sub" style="font-weight:400;color:var(--texto-3);font-size:12px">casos en el área ahora</span></h2><div id="cargaAreas"></div></section>
-      <section class="card"><h2>Requiere atención</h2><div id="atencion"></div></section>
-    </div>
+    <nav class="pestanas" id="pestanasDash">
+      <button data-tab="vivo" class="activa">En vivo</button>
+      <button data-tab="metas">Metas por área</button>
+      <button data-tab="volumen">Volumen y reaperturas</button>
+      <button data-tab="tecnicos">Técnicos</button>
+    </nav>
 
-    <div class="rango-fechas">
-      <h2 style="font-size:16px;flex:1 1 100%">Desempeño del periodo</h2>
+    <div class="rango-fechas" id="rango" hidden>
       <div class="campo"><label>Desde</label><input type="date" id="fDesde"></div>
       <div class="campo"><label>Hasta</label><input type="date" id="fHasta"></div>
       <button class="btn" id="btnPeriodo">Aplicar</button>
+      <span class="nota" style="margin:0 0 10px">Periodo para metas, volumen y técnicos.</span>
     </div>
-    <div class="kpis" id="kpisPeriodo"></div>
-    <section class="card" style="margin-bottom:16px">
-      <h2 class="t">Cumplimiento de meta por área <span style="font-weight:400;color:var(--texto-3);font-size:12px">horas laborales desde que llega al área hasta que termina el paso</span></h2>
-      <div class="tabla-wrap"><table class="responsiva">
-        <thead><tr><th>Área</th><th>Meta</th><th>Terminados</th><th>Promedio</th><th>Mediana</th><th>Dentro de meta</th><th>Retrabajos</th></tr></thead>
-        <tbody id="tablaAreas"></tbody></table></div>
-    </section>
-    <div class="panel-metricas">
-      <section class="card"><h2>Casos por tipo de trabajo</h2><div id="porTipo"></div></section>
-      <section class="card"><h2>Reaperturas por clasificación de QA</h2><div id="rpClas"></div><h2 style="margin-top:16px">Motivos de reapertura</h2><div id="rpMotivos"></div></section>
+
+    <div data-panel="vivo">
+      <div class="kpis" id="kpisVivo"></div>
+      <div class="panel-metricas">
+        <section class="card"><h2>Carga por área <span style="font-weight:400;color:var(--texto-3);font-size:12px">casos en el área ahora</span></h2><div id="cargaAreas"></div></section>
+        <section class="card"><h2>Requiere atención</h2><div id="atencion"></div></section>
+      </div>
     </div>
-    <section class="card">
-      <h2 class="t">Producción por técnico</h2>
-      <div class="tabla-wrap"><table class="responsiva">
-        <thead><tr><th>Técnico</th><th>Áreas</th><th>Terminados</th><th>Promedio de trabajo</th><th>Dentro de meta</th><th>Devueltos por QA</th></tr></thead>
-        <tbody id="tablaTecnicos"></tbody></table></div>
-    </section>
+
+    <div data-panel="metas" hidden>
+      <div class="kpis" id="kpisMetas"></div>
+      <section class="card">
+        <h2 class="t">Cumplimiento de meta por área <span style="font-weight:400;color:var(--texto-3);font-size:12px">horas laborales desde que llega al área hasta que termina el paso</span></h2>
+        <div class="tabla-wrap"><table class="responsiva">
+          <thead><tr><th>Área</th><th>Meta</th><th>Terminados</th><th>Promedio</th><th>Mediana</th><th>Dentro de meta</th><th>Retrabajos</th></tr></thead>
+          <tbody id="tablaAreas"></tbody></table></div>
+      </section>
+    </div>
+
+    <div data-panel="volumen" hidden>
+      <div class="kpis" id="kpisVolumen"></div>
+      <div class="panel-metricas">
+        <section class="card"><h2>Casos por tipo de trabajo</h2><div id="porTipo"></div></section>
+        <section class="card"><h2>Reaperturas por clasificación de QA</h2><div id="rpClas"></div><h2 style="margin-top:16px">Motivos de reapertura</h2><div id="rpMotivos"></div></section>
+      </div>
+    </div>
+
+    <div data-panel="tecnicos" hidden>
+      <section class="card">
+        <h2 class="t">Producción por técnico</h2>
+        <div class="tabla-wrap"><table class="responsiva">
+          <thead><tr><th>Técnico</th><th>Áreas</th><th>Terminados</th><th>Promedio de trabajo</th><th>Dentro de meta</th><th>Devueltos por QA</th></tr></thead>
+          <tbody id="tablaTecnicos"></tbody></table></div>
+        <p class="nota">Los devueltos cuentan el paso al que QA regresó el caso; el defecto pudo originarse antes. Úsalo junto con el volumen de cada técnico.</p>
+      </section>
+    </div>
   </main>
 </div>
 <script src="js/config.js"></script>

@@ -212,6 +212,8 @@ class TerminarIn(BaseModel):
 
 class RechazoIn(BaseModel):
     volver_a_paso_id: int = Field(description="Paso de producción al que regresa (ver pasos_previos en la bandeja)")
+    modo: Literal["desde", "solo"] = Field(default="desde", description="desde: repite ese paso y los siguientes hasta QA; "
+                                                                        "solo: repite únicamente ese paso y vuelve a QA")
     motivo: str = Field(min_length=3, max_length=250)
 
 

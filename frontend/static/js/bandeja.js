@@ -207,14 +207,18 @@ $("formTerminar").onsubmit = async e => {
 
 function abrirRechazo() {
   $("errorRechazar").hidden = true; $("rMotivo").value = "";
-  $("rPaso").innerHTML = pasoActivo.pasos_previos.map(p => `<option value="${p.id}">${escapar(p.area)}</option>`).join("");
-  $("rPaso").value = pasoActivo.pasos_previos.at(-1)?.id || "";  // por defecto, el paso anterior
+  const previos = pasoActivo.pasos_previos;
+  $("rPaso").innerHTML = previos.map((p, i) => `<option value="${p.id}">${escapar(p.area)}${i === 0 && previos.length > 1 ? " (todo el trabajo)" : ""}</option>`).join("");
+  $("rPaso").value = previos.at(-1)?.id || "";  // por defecto, el paso anterior
+  document.querySelector("[name=rModo][value=desde]").checked = true;
+  resumenRechazo();
   $("modalRechazar").showModal();
 }
 $("formRechazar").onsubmit = async e => {
   e.preventDefault();
   if ($("rMotivo").value.trim().length < 3) return mostrarErrores($("errorRechazar"), new Error("Describe el motivo"));
-  await ejecutar(null, () => api("POST", `/pasos/${pasoActivo.paso_id}/rechazar`, { volver_a_paso_id: Number($("rPaso").value), motivo: $("rMotivo").value.trim() }),
+  const modo = document.querySelector("[name=rModo]:checked").value;
+  await ejecutar(null, () => api("POST", `/pasos/${pasoActivo.paso_id}/rechazar`, { volver_a_paso_id: Number($("rPaso").value), modo, motivo: $("rMotivo").value.trim() }),
     `${pasoActivo.codigo} regresó a producción`).catch(err => mostrarErrores($("errorRechazar"), err));
 };
 
@@ -382,3 +386,13 @@ document.addEventListener("click", async e => {
   toast(`${ok} trabajo(s) iniciados en ${lote.area}`);
   cargar();
 });
+
+/* Resumen de lo que se repetirá al devolver */
+function resumenRechazo() {
+  const previos = pasoActivo.pasos_previos, i = previos.findIndex(p => p.id === Number($("rPaso").value));
+  const modo = document.querySelector("[name=rModo]:checked")?.value;
+  const areas = i < 0 ? [] : (modo === "solo" ? [previos[i]] : previos.slice(i)).map(p => p.area);
+  $("rResumen").textContent = areas.length ? `Se repetirá: ${[...areas, "QA"].join(" → ")}` : "";
+}
+$("rPaso").addEventListener("change", resumenRechazo);
+document.querySelectorAll("[name=rModo]").forEach(r => r.addEventListener("change", resumenRechazo));

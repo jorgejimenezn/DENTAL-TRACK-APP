@@ -120,6 +120,8 @@ class TerminarIn(BaseModel):
 
 class RechazoIn(BaseModel):
     volver_a_paso_id: int = Field(description="Paso de producción al que regresa el caso")
+    modo: Literal["desde", "solo"] = Field(default="desde", description="desde: repite ese paso y los siguientes; "
+                                                                        "solo: repite únicamente ese paso")
     motivo: str = Field(min_length=3, max_length=250)
 
 

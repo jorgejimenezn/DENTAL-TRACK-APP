@@ -77,8 +77,14 @@ class ProduccionServicio:
         s = p.solicitud
         previos = []
         if p.etapa == "qa":  # opciones para devolver el caso
-            previos = [PasoPrevio(id=x.id, orden=x.orden, area=x.area.nombre) for x in s.pasos
-                       if x.etapa == "produccion" and x.estado == "terminado" and x.orden < p.orden]
+            ultimos: dict[int, SolicitudPaso] = {}
+            primero: dict[int, int] = {}
+            for x in sorted(s.pasos, key=lambda y: y.orden):
+                if x.etapa == "produccion" and x.estado == "terminado" and x.orden < p.orden:
+                    ultimos[x.area_id] = x
+                    primero.setdefault(x.area_id, x.orden)
+            previos = [PasoPrevio(id=x.id, orden=x.orden, area=x.area.nombre)
+                       for x in sorted(ultimos.values(), key=lambda y: primero[y.area_id])]
         return PasoBandeja(
             paso_id=p.id, solicitud_id=s.id, codigo=s.codigo, tipo_caso=s.tipo_caso, cliente=s.cliente.razon_social,
             paciente=s.paciente, doctor_tratante=s.doctor_tratante,
@@ -324,9 +330,18 @@ class ProduccionServicio:
         destino = next((p for p in s.pasos if p.id == datos.volver_a_paso_id), None)
         if not destino or destino.etapa != "produccion" or destino.orden > paso.orden or destino.estado != "terminado":
             raise ErrorNegocio("Elige un paso de producción ya realizado en este caso")
-        repetir = [p for p in sorted(s.pasos, key=lambda x: x.orden)
-                   if destino.orden <= p.orden <= paso.orden and (p.estado == "terminado" or p is paso)
-                   and p.etapa in ("produccion", "qa")]
+        if datos.modo == "solo":  # solo ese paso y de regreso a QA
+            repetir = [destino, paso]
+        else:  # desde ese paso: ese y los de producción que le siguen en el flujo (su última vuelta) y QA
+            ultimos: dict[int, SolicitudPaso] = {}
+            primero: dict[int, int] = {}
+            for p in sorted(s.pasos, key=lambda x: x.orden):
+                if p.orden < paso.orden and p.estado == "terminado" and p.etapa == "produccion":
+                    ultimos[p.area_id] = p
+                    primero.setdefault(p.area_id, p.orden)
+            desde = primero[destino.area_id]
+            repetir = sorted((p for aid, p in ultimos.items() if primero[aid] >= desde),
+                             key=lambda x: primero[x.area_id]) + [paso]
         despues = [p for p in s.pasos if p.orden > paso.orden and p.estado == PASO_PENDIENTE]
         for p in despues:
             p.orden += len(repetir)
@@ -341,8 +356,9 @@ class ProduccionServicio:
             t.devuelto = True
         self.motor.terminar(paso, actor.id, f"Devuelto a {destino.area.nombre}: {motivo}")
         self.sesion.flush()
-        self._finalizar(s, paso, actor, f"QA devolvió el caso a {destino.area.nombre}: {motivo}", "rechazar_qa",
-                        {"volver_a": destino.area.nombre, "motivo": motivo})
+        alcance = "solo ese paso" if datos.modo == "solo" else f"{len(repetir) - 1} paso(s) de producción"
+        self._finalizar(s, paso, actor, f"QA devolvió el caso a {destino.area.nombre} ({alcance}): {motivo}",
+                        "rechazar_qa", {"volver_a": destino.area.nombre, "modo": datos.modo, "motivo": motivo})
 
     # ================= Ingresos =================
     def modificar(self, paso_id: int, datos: ModificacionIn, actor: Actor) -> None:
