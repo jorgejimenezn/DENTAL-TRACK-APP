@@ -84,6 +84,20 @@ Reglas que valida el servidor (aunque se use Swagger directamente): cadena de ca
 
 **Estados:** pendiente de recolecta · validación de QA · en revisión de Ingresos · en producción · control de calidad · facturación y empaque · en ruta · entregada · cancelada. El estado se calcula solo según el paso en que va el caso.
 
+## Operación: lotes, ausencias, tiempos, cobros y dashboards
+
+| Módulo | Qué hace |
+|---|---|
+| **Áreas y metas** (admin) | Por área: **trabajo por lote** (solo producción) con máximo de trabajos simultáneos por técnico y **meta en horas laborales**. Por defecto Yesos, CAM_IMP y CAM_FRES trabajan por lote con 15; CAM tiene meta de 8 h y el resto 4 h. El **inicio de jornada** se configura en Calendario y reglas. |
+| **Bandeja por lote** | En áreas por lote el técnico ve todo lo asignado, inicia varios (uno por uno o "Iniciar N en orden de prioridad") hasta el máximo y los termina por separado. En las demás áreas solo ve el trabajo actual, el siguiente y cuántos esperan. |
+| **Retrabajos** | Cuando QA devuelve un caso, las tarjetas del paso repetido muestran "Retrabajo" con el motivo de QA; la auditoría marca como devuelto el paso original. |
+| **Ausencias** (admin, supervisor) | Empleado, fechas y motivo ("Solo hoy" en un clic). Mientras no labora no recibe trabajo; lo que tenía asignado sin iniciar se reparte solo y las rutas de un mensajero vuelven a Logística. Lo que tenía en proceso aparece en el Dashboard para reasignarlo. |
+| **Auditoría de tiempos** | Tabla `tiempos_paso`: una fila por paso terminado con espera, tiempo de trabajo y tiempo total en **horas laborales** (sin noches, domingos ni días sin labores), la meta vigente y si la cumplió. Cambiar una meta no altera el histórico. |
+| **Cobros** (facturación; admin y supervisor; operaciones consulta) | Facturas pendientes por días calendario desde que se facturaron: **Hoy · 1–5 · 6–10 · 11–15 · Más de 15**, más pagados de los últimos 30 días. **Marcar pagado** con fecha y referencia. Las RP con garantía total o parcial sin cobro no entran. |
+| **Dashboard** (admin, supervisor, operaciones) | En vivo: vigentes, vencidos, vencen hoy/mañana, emergencias, colas, sin técnico, devoluciones de QA, carga por área, ausentes y trabajos en proceso de ausentes. Periodo: cumplimiento de meta por área, puntualidad de entregas, volumen CN/RP y por tipo, reaperturas por clasificación y motivo, visitas fallidas, días de cobro y producción por técnico. |
+| **Mis métricas** (cada empleado) | Solo sus datos: terminados hoy/semana/30 días, tiempos frente a la meta por área, devueltos por QA y próximos vencimientos. |
+| **Rol Operaciones** | Gerencia de área: solo consulta Dashboard, Cobros y Solicitudes. |
+
 ## Tablero Kanban del doctor
 
 **Mi tablero** es la pantalla principal del doctor (entra ahí al iniciar sesión). Columnas: **Recibido** (recolecta, Ingresos o validación de QA) · **En producción** · **Control de calidad** · **Listo para entrega** (facturación, listo y en ruta) · **Entregado** (últimos 15 días, con botón para reabrir). Cada tarjeta muestra el avance en pasos, la fecha de entrega (en rojo si ya pasó) y si es emergencia o RP. En celular las columnas se deslizan de lado. Admin, supervisor e Ingresos pueden ver el tablero de cualquier cliente en **Tablero por cliente**. API: `GET /solicitudes/tablero`.
@@ -286,4 +300,8 @@ Sin servidor Mongo se puede probar con `MONGO_URL=mongomock://local` (requiere `
 | GET/POST | `/pasos/{id}/candidatos`, `/pasos/{id}/asignar` | Logística (mensajero) · admin y supervisor (técnico) |
 | POST | `/pasos/{id}/no-se-pudo` | mensajero asignado, Logística |
 | POST | `/solicitudes/{id}/prioridad` | admin, supervisor |
+| GET/PUT | `/config/areas-operacion` | lectura con sesión · edición admin |
+| GET/POST/DELETE | `/ausencias` | admin, supervisor (operaciones consulta) |
+| GET / POST | `/cobros`, `/cobros/{id}/pagar` | facturación, admin, supervisor (operaciones consulta) |
+| GET | `/metricas/operacion`, `/metricas/mias` | admin, supervisor, operaciones · cada empleado |
 | GET | `/salud` | público |

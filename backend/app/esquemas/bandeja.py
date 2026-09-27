@@ -56,14 +56,26 @@ class PasoBandeja(BaseModel):
     telefono: str | None = None
     receptor: str | None = None
     caja: str | None = None
+    devolucion: str | None = None  # motivo de QA cuando es un retrabajo
     acciones: list[str]
     pasos_previos: list[PasoPrevio] = []
+
+
+class LoteArea(BaseModel):
+    """Área que trabaja por lote (Yesos, CAM): el técnico ve todo lo asignado y trabaja varios a la vez."""
+    area_id: int
+    area: str
+    max_simultaneos: int
+    en_proceso: list[PasoBandeja]
+    en_espera: list[PasoBandeja]
 
 
 class Produccion(BaseModel):
     actual: PasoBandeja | None
     siguiente: PasoBandeja | None
-    asignados: list[PasoBandeja]
+    asignados: list[PasoBandeja]  # solo se llena en áreas por lote (las demás ven actual, siguiente y el conteo)
+    en_espera: int = 0
+    lotes: list[LoteArea] = []
     total: int
     max_trabajos: int | None
 

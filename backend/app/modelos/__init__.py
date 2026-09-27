@@ -1,12 +1,13 @@
 """Modelos de la base relacional (PostgreSQL)."""
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table, func
+from sqlalchemy import Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, String, Table, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.postgres import Base
 
-ROLES_INTERNOS = ["admin", "supervisor", "ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"]
+ROLES_INTERNOS = ["admin", "supervisor", "operaciones", "ingresos", "tecnico", "qa", "facturacion", "logistica",
+                  "mensajero"]
 ROL_CLIENTE = "doctor"
 NIVELES_CLIENTE = {2: "VIP", 3: "Normal"}  # la prioridad 1 es exclusiva de emergencias
 
@@ -24,6 +25,17 @@ class Area(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     nombre: Mapped[str] = mapped_column(String(60), unique=True)
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Operación del área (editable por el admin en "Áreas y metas")
+    lote: Mapped[bool] = mapped_column(Boolean, default=False)            # el técnico trabaja varios a la vez
+    max_simultaneos: Mapped[int] = mapped_column(Integer, default=1)      # tope de trabajos en proceso por técnico
+    meta_horas: Mapped[float] = mapped_column(Float, default=4.0)         # meta de horas laborales en el área
+
+
+def valores_area(nombre: str) -> dict:
+    """Valores iniciales: Yesos, CAM_IMP y CAM_FRES trabajan por lote (15); CAM tiene meta de 8 h, el resto 4 h."""
+    n = nombre.upper()
+    lote = n.startswith("YESO") or n.startswith("CAM")
+    return {"lote": lote, "max_simultaneos": 15 if lote else 1, "meta_horas": 8.0 if n.startswith("CAM") else 4.0}
 
 
 class Usuario(Base):
@@ -83,11 +95,24 @@ class Direccion(Base):
     cliente: Mapped[Cliente] = relationship(back_populates="direcciones")
 
 
+class Ausencia(Base):
+    """Días en que un empleado no labora: el reparto automático no le asigna trabajo."""
+    __tablename__ = "ausencias"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id", ondelete="CASCADE"), index=True)
+    desde: Mapped["date"] = mapped_column(Date)  # noqa: F821
+    hasta: Mapped["date"] = mapped_column(Date)  # noqa: F821
+    motivo: Mapped[str] = mapped_column(String(150))
+    creado_por_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    usuario: Mapped[Usuario] = relationship(foreign_keys=[usuario_id])
+
+
 # Modelos de configuración (catálogos, flujos, calendario...). Se importan aquí para registrarlos.
 from app.modelos.configuracion import (  # noqa: E402,F401
     Color, ColorCaja, DiaNoLaborable, Flujo, FlujoPaso, GuiaColor, Material, MotivoRP, Parametro, TipoTrabajo, Unidad,
     material_guia, material_unidad, tipo_material, usuario_area_tipo,
 )
 from app.modelos.solicitud import (  # noqa: E402,F401
-    ESTADOS, ESTADOS_CERRADOS, Correlativo, Solicitud, SolicitudArchivo, SolicitudHistorial, SolicitudPaso,
+    ESTADOS, ESTADOS_CERRADOS, Correlativo, Solicitud, SolicitudArchivo, SolicitudHistorial, SolicitudPaso, TiempoPaso,
 )

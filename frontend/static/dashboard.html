@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="marca" id="marca" aria-hidden="true"></div>
+<div class="app">
+  <aside class="lateral" id="lateral"></aside>
+  <main class="contenido">
+    <div class="encabezado">
+      <div>
+        <h1>Dashboard de operación</h1>
+        <p>Lo que pasa ahora en el laboratorio y cómo le fue en el periodo.</p>
+      </div>
+      <button class="btn" id="btnActualizar">Actualizar</button>
+    </div>
+    <div class="error-form" id="errorDash" hidden></div>
+
+    <h2 class="t" style="font-size:16px;margin-bottom:10px">En vivo</h2>
+    <div class="kpis" id="kpisVivo"></div>
+    <div class="panel-metricas">
+      <section class="card"><h2>Carga por área <span class="sub" style="font-weight:400;color:var(--texto-3);font-size:12px">casos en el área ahora</span></h2><div id="cargaAreas"></div></section>
+      <section class="card"><h2>Requiere atención</h2><div id="atencion"></div></section>
+    </div>
+
+    <div class="rango-fechas">
+      <h2 style="font-size:16px;flex:1 1 100%">Desempeño del periodo</h2>
+      <div class="campo"><label>Desde</label><input type="date" id="fDesde"></div>
+      <div class="campo"><label>Hasta</label><input type="date" id="fHasta"></div>
+      <button class="btn" id="btnPeriodo">Aplicar</button>
+    </div>
+    <div class="kpis" id="kpisPeriodo"></div>
+    <section class="card" style="margin-bottom:16px">
+      <h2 class="t">Cumplimiento de meta por área <span style="font-weight:400;color:var(--texto-3);font-size:12px">horas laborales desde que llega al área hasta que termina el paso</span></h2>
+      <div class="tabla-wrap"><table class="responsiva">
+        <thead><tr><th>Área</th><th>Meta</th><th>Terminados</th><th>Promedio</th><th>Mediana</th><th>Dentro de meta</th><th>Retrabajos</th></tr></thead>
+        <tbody id="tablaAreas"></tbody></table></div>
+    </section>
+    <div class="panel-metricas">
+      <section class="card"><h2>Casos por tipo de trabajo</h2><div id="porTipo"></div></section>
+      <section class="card"><h2>Reaperturas por clasificación de QA</h2><div id="rpClas"></div><h2 style="margin-top:16px">Motivos de reapertura</h2><div id="rpMotivos"></div></section>
+    </div>
+    <section class="card">
+      <h2 class="t">Producción por técnico</h2>
+      <div class="tabla-wrap"><table class="responsiva">
+        <thead><tr><th>Técnico</th><th>Áreas</th><th>Terminados</th><th>Promedio de trabajo</th><th>Dentro de meta</th><th>Devueltos por QA</th></tr></thead>
+        <tbody id="tablaTecnicos"></tbody></table></div>
+    </section>
+  </main>
+</div>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/metricas.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>

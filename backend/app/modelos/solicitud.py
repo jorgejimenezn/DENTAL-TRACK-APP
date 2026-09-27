@@ -6,7 +6,7 @@ un material. Si el id es nulo y el nombre no, el valor fue "fuera de catálogo".
 """
 from datetime import date, datetime
 
-from sqlalchemy import JSON, Boolean, Date, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.postgres import Base
@@ -92,6 +92,11 @@ class Solicitud(Base):
 
     instrucciones: Mapped[str | None] = mapped_column(Text, nullable=True)
     factura_numero: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    factura_fecha: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    pago_estado: Mapped[str | None] = mapped_column(String(12), nullable=True, index=True)  # pendiente|pagado|no_aplica
+    pagado_en: Mapped[date | None] = mapped_column(Date, nullable=True)
+    pago_referencia: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    pago_por_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     # Caja física que asigna Ingresos al aprobar
     caja_color_id: Mapped[int | None] = mapped_column(ForeignKey("colores_caja.id"), nullable=True)
     caja_color: Mapped[str | None] = mapped_column(String(120), nullable=True)
@@ -173,3 +178,27 @@ class SolicitudPaso(Base):
     area: Mapped["Area"] = relationship()  # noqa: F821
     tecnico: Mapped["Usuario | None"] = relationship(foreign_keys=[tecnico_id])  # noqa: F821
     atendido_por: Mapped["Usuario | None"] = relationship(foreign_keys=[atendido_por_id])  # noqa: F821
+
+
+class TiempoPaso(Base):
+    """Auditoría de tiempos: una fila por paso terminado, con horas laborales y la meta vigente en ese momento."""
+    __tablename__ = "tiempos_paso"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    paso_id: Mapped[int] = mapped_column(ForeignKey("solicitud_pasos.id", ondelete="CASCADE"), unique=True)
+    solicitud_id: Mapped[int] = mapped_column(ForeignKey("solicitudes.id", ondelete="CASCADE"), index=True)
+    codigo: Mapped[str] = mapped_column(String(20))
+    area_id: Mapped[int] = mapped_column(ForeignKey("areas.id"), index=True)
+    area: Mapped[str] = mapped_column(String(60))
+    etapa: Mapped[str] = mapped_column(String(20))
+    tipo_trabajo: Mapped[str] = mapped_column(String(120))
+    responsable_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True, index=True)
+    vuelta: Mapped[int] = mapped_column(Integer, default=1)
+    activado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    iniciado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    terminado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    espera_horas: Mapped[float | None] = mapped_column(Float, nullable=True)   # llegada → inicio (producción)
+    trabajo_horas: Mapped[float | None] = mapped_column(Float, nullable=True)  # inicio → fin (producción)
+    total_horas: Mapped[float] = mapped_column(Float)                          # llegada → fin
+    meta_horas: Mapped[float] = mapped_column(Float)
+    cumplio: Mapped[bool] = mapped_column(Boolean)
+    devuelto: Mapped[bool] = mapped_column(Boolean, default=False)  # QA devolvió el caso a este paso o antes

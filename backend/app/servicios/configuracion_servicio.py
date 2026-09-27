@@ -320,6 +320,7 @@ class CalendarioServicio(_Base):
         valores = {p.clave: p.valor for p in self.sesion.scalars(select(Parametro))}
         return Parametros(corte_semana=valores.get("corte_semana", "18:00"),
                           corte_sabado=valores.get("corte_sabado", "12:00"),
+                          inicio_jornada=valores.get("inicio_jornada", "08:00"),
                           min_digital=int(valores.get("min_digital", 2)),
                           min_analogo=int(valores.get("min_analogo", 3)),
                           min_emergencia=int(valores.get("min_emergencia", 1)))

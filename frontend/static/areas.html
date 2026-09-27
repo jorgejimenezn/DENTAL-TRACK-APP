@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Áreas y metas · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="marca" id="marca" aria-hidden="true"></div>
+<div class="app">
+  <aside class="lateral" id="lateral"></aside>
+  <main class="contenido">
+    <div class="encabezado">
+      <div>
+        <h1>Áreas y metas</h1>
+        <p>Cómo trabaja cada área y en cuántas horas laborales debe terminar su paso.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="error-form" id="errorAreas" hidden></div>
+      <div class="tabla-wrap">
+        <table class="responsiva meta-tabla">
+          <thead><tr><th>Área</th><th>Tipo</th><th>Trabajo por lote</th><th>Simultáneos por técnico</th><th>Meta (horas laborales)</th><th></th></tr></thead>
+          <tbody id="tabla"><tr><td colspan="6" class="cargando">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+      <p class="nota"><b>Por lote:</b> el técnico ve todo lo asignado y puede tener varios trabajos en proceso a la vez (hasta el número indicado); en las demás áreas trabaja uno a la vez y solo ve el actual, el siguiente y cuántos esperan. <b>Meta:</b> horas laborales desde que el caso llega al área hasta que se termina el paso (no cuentan noches, domingos ni días sin labores; el inicio de jornada se configura en Calendario y reglas). Cambiar una meta no altera el histórico.</p>
+    </div>
+  </main>
+</div>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script>
+if (!iniciarPagina(["admin"])) throw new Error("sin acceso");
+const TIPO = { produccion: "Producción", ingresos: "Ingresos", qa: "QA", facturacion: "Facturación", logistica: "Logística" };
+async function cargar() {
+  try {
+    const areas = await api("GET", "/config/areas-operacion");
+    $("tabla").innerHTML = areas.map(a => `
+      <tr data-id="${a.id}" class="${a.activo ? "" : "inactivo"}">
+        <td class="principal"><b>${escapar(a.nombre)}</b>${a.activo ? "" : '<span class="sub">Inactiva</span>'}</td>
+        <td data-label="Tipo">${TIPO[a.tipo] || a.tipo}</td>
+        <td data-label="Por lote">${a.tipo === "produccion" ? `<label class="check-linea" style="justify-content:flex-end"><input type="checkbox" class="lote" ${a.lote ? "checked" : ""}> Sí</label>` : '<span class="sub" style="display:inline">No aplica</span>'}</td>
+        <td data-label="Simultáneos"><input type="number" class="max" min="1" max="50" value="${a.max_simultaneos}" ${a.lote ? "" : "disabled"}></td>
+        <td data-label="Meta (h)"><input type="number" class="meta" min="0.5" max="200" step="0.5" value="${a.meta_horas}"></td>
+        <td class="acciones"><button class="btn chico verde" data-guardar>Guardar</button></td>
+      </tr>`).join("");
+    document.querySelectorAll(".lote").forEach(c => c.onchange = () => { const max = c.closest("tr").querySelector(".max"); max.disabled = !c.checked; if (c.checked && Number(max.value) < 2) max.value = 15; });
+  } catch (error) { mostrarErrores($("errorAreas"), error); }
+}
+$("tabla").addEventListener("click", async e => {
+  const b = e.target.closest("[data-guardar]");
+  if (!b) return;
+  const fila = b.closest("tr");
+  const datos = { lote: !!fila.querySelector(".lote")?.checked, max_simultaneos: Number(fila.querySelector(".max").value) || 1,
+                  meta_horas: Number(fila.querySelector(".meta").value) };
+  try { await api("PUT", `/config/areas-operacion/${fila.dataset.id}`, datos); toast("Área guardada"); cargar(); }
+  catch (error) { toast(error.message, true); }
+});
+cargar();
+</script>
+</body>
+</html>

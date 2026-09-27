@@ -74,7 +74,7 @@ class ClienteActualizar(_ClienteBase):
     pass
 
 
-RolInterno = Literal["admin", "supervisor", "ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"]
+RolInterno = Literal["admin", "supervisor", "operaciones", "ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"]
 
 
 class _EmpleadoBase(BaseModel):
@@ -147,6 +147,7 @@ class DiaIn(BaseModel):
 class ParametrosIn(BaseModel):
     corte_semana: str = Field(examples=["18:00"])
     corte_sabado: str = Field(examples=["12:00"])
+    inicio_jornada: str = Field(default="08:00", examples=["08:00"], description="Inicio de la jornada (horas laborales)")
     min_digital: int = Field(ge=0, le=30, examples=[2])
     min_analogo: int = Field(ge=0, le=30, examples=[3])
     min_emergencia: int = Field(ge=0, le=30, examples=[1])
@@ -243,3 +244,22 @@ class AsignarIn(BaseModel):
 class PrioridadIn(BaseModel):
     prioridad: Literal[1, 2, 3] = Field(description="1 emergencia, 2 VIP, 3 normal")
     motivo: str = Field(min_length=3, max_length=200)
+
+
+# ---------------- Gestión ----------------
+class AreaOperacionIn(BaseModel):
+    lote: bool = Field(default=False, description="El técnico trabaja varios a la vez (Yesos, CAM)")
+    max_simultaneos: int = Field(default=1, ge=1, le=50, description="Máximo en proceso por técnico si es por lote")
+    meta_horas: float = Field(ge=0.5, le=200, description="Meta en horas laborales para terminar el paso")
+
+
+class AusenciaIn(BaseModel):
+    usuario_id: int
+    desde: date
+    hasta: date
+    motivo: str = Field(min_length=3, max_length=150, examples=["Vacaciones"])
+
+
+class PagoIn(BaseModel):
+    fecha: date
+    referencia: str | None = Field(default=None, max_length=80, examples=["Depósito 55821"])

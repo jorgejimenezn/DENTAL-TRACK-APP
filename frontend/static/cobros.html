@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cobros · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="marca" id="marca" aria-hidden="true"></div>
+<div class="app">
+  <aside class="lateral" id="lateral"></aside>
+  <main class="contenido">
+    <div class="encabezado">
+      <div>
+        <h1>Cobros</h1>
+        <p>Facturas pendientes de pago según los días calendario desde que se facturaron.</p>
+      </div>
+      <button class="btn" id="btnActualizar">Actualizar</button>
+    </div>
+    <div class="card">
+      <div class="pestanas" id="pestanas"></div>
+      <div class="filtros"><div class="campo ancho"><input id="fTexto" placeholder="Buscar por código, cliente o factura"></div></div>
+      <div class="tabla-wrap">
+        <table class="responsiva">
+          <thead><tr><th>Caso</th><th>Cliente</th><th>Factura</th><th>Facturado</th><th>Días</th><th></th></tr></thead>
+          <tbody id="tabla"><tr><td colspan="6" class="cargando">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+      <p class="nota">Las reaperturas con garantía total o garantía parcial sin cobro no entran aquí.</p>
+    </div>
+  </main>
+</div>
+<dialog class="modal chico" id="modalPago">
+  <form id="formPago" novalidate>
+    <div class="modal-cabecera"><h2 id="tituloPago">Registrar pago</h2><button type="button" class="cerrar" data-cerrar>&times;</button></div>
+    <div class="modal-cuerpo">
+      <div class="error-form" id="errorPago" hidden></div>
+      <div class="campo"><label>Fecha de pago</label><input type="date" id="pFecha"></div>
+      <div class="campo" style="margin-top:12px"><label>Referencia</label><input id="pRef" maxlength="80" placeholder="Depósito, transferencia, recibo…"></div>
+    </div>
+    <div class="modal-pie"><button type="button" class="btn" data-cerrar>Cancelar</button><button class="btn verde">Marcar pagado</button></div>
+  </form>
+</dialog>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script>
+const usuario = iniciarPagina(["admin", "supervisor", "operaciones", "facturacion"]);
+if (!usuario) throw new Error("sin acceso");
+const puedePagar = ["admin", "supervisor", "facturacion"].includes(usuario.rol);
+const fecha = s => new Date(s + "T12:00:00").toLocaleDateString("es-GT", { day: "numeric", month: "short", year: "numeric" });
+let datos = null, pestana = "hoy", actual = null;
+function pintar() {
+  const pest = [...datos.rangos.map(r => [r.clave, r.titulo, r.casos.length]), ["pagados", "Pagados (30 días)", datos.pagados.length]];
+  $("pestanas").innerHTML = pest.map(([c, t, n]) => `<button data-p="${c}" class="${c === pestana ? "activa" : ""}">${t} · ${n}</button>`).join("");
+  const texto = $("fTexto").value.trim().toLowerCase();
+  const filtra = x => !texto || [x.codigo, x.cliente, x.factura].some(v => (v || "").toLowerCase().includes(texto));
+  if (pestana === "pagados") {
+    const lista = datos.pagados.filter(filtra);
+    $("tabla").innerHTML = lista.length ? lista.map(x => `<tr><td class="principal"><a class="codigo-caso" href="caso.html?id=${x.id}">${escapar(x.codigo)}</a></td>
+      <td data-label="Cliente">${escapar(x.cliente)}</td><td data-label="Factura">${escapar(x.factura)}</td>
+      <td data-label="Pagado">${escapar(fecha(x.pagado_en))}</td><td data-label="Referencia">${escapar(x.referencia || "—")}</td><td></td></tr>`).join("")
+      : '<tr><td colspan="6" class="vacio">Sin pagos en los últimos 30 días.</td></tr>';
+    return;
+  }
+  const lista = datos.rangos.find(r => r.clave === pestana).casos.filter(filtra);
+  $("tabla").innerHTML = lista.length ? lista.map(x => `<tr>
+      <td class="principal"><a class="codigo-caso" href="caso.html?id=${x.id}">${escapar(x.codigo)}</a>${x.qa_clasificacion ? ` <span class="badge azul">${escapar(x.qa_clasificacion)}</span>` : ""}<span class="sub">${escapar(x.paciente)}</span></td>
+      <td data-label="Cliente">${escapar(x.cliente)}${x.telefono ? `<span class="sub"><a href="tel:${escapar(x.telefono)}">${escapar(x.telefono)}</a></span>` : ""}</td>
+      <td data-label="Factura"><b>${escapar(x.factura)}</b></td>
+      <td data-label="Facturado">${escapar(fecha(x.facturado))}</td>
+      <td data-label="Días"><span class="badge ${x.dias > 15 ? "rojo" : x.dias > 5 ? "azul" : "gris"}">${x.dias} día(s)</span></td>
+      <td class="acciones">${puedePagar ? `<button class="btn chico verde" data-pagar="${x.id}" data-codigo="${escapar(x.codigo)}" data-factura="${escapar(x.factura)}">Marcar pagado</button>` : ""}</td>
+    </tr>`).join("") : '<tr><td colspan="6" class="vacio">Sin facturas pendientes en este rango.</td></tr>';
+}
+async function cargar() {
+  try { datos = await api("GET", "/cobros"); pintar(); }
+  catch (error) { $("tabla").innerHTML = `<tr><td colspan="6" class="vacio">${escapar(error.message)}</td></tr>`; }
+}
+$("pestanas").onclick = e => { const b = e.target.closest("[data-p]"); if (b) { pestana = b.dataset.p; pintar(); } };
+$("fTexto").addEventListener("input", debounce(pintar, 150));
+$("btnActualizar").onclick = cargar;
+$("tabla").addEventListener("click", e => {
+  const b = e.target.closest("[data-pagar]");
+  if (!b) return;
+  actual = Number(b.dataset.pagar);
+  $("tituloPago").textContent = `Pago de ${b.dataset.codigo} · factura ${b.dataset.factura}`;
+  const d = new Date(); $("pFecha").value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  $("pRef").value = ""; $("errorPago").hidden = true; $("modalPago").showModal();
+});
+$("formPago").onsubmit = async e => {
+  e.preventDefault();
+  try { await api("POST", `/cobros/${actual}/pagar`, { fecha: $("pFecha").value, referencia: $("pRef").value.trim() || null }); $("modalPago").close(); toast("Pago registrado"); cargar(); }
+  catch (error) { mostrarErrores($("errorPago"), error); }
+};
+document.querySelectorAll("[data-cerrar]").forEach(b => b.onclick = () => b.closest("dialog").close());
+cargar();
+</script>
+</body>
+</html>

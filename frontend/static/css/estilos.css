@@ -484,3 +484,31 @@ a.btn{text-decoration:none}
 .muestras-caja label i{width:16px;height:16px;border-radius:4px;border:1px solid rgba(255,255,255,.35)}
 .muestras-caja label:has(input:checked){border-color:var(--azul);background:var(--azul-suave)}
 .muestras-caja input{display:none}
+
+/* ================= Métricas y dashboards ================= */
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--panel-borde);border-radius:var(--radio);padding:12px 14px;min-width:0}
+.kpi span{display:block;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--texto-3)}
+.kpi b{display:block;font-size:26px;line-height:1.2;margin-top:4px;color:var(--texto)}
+.kpi small{display:block;font-size:12px;color:var(--texto-2);margin-top:2px}
+.kpi.alerta{border-color:rgba(207,34,46,.55)}
+.kpi.alerta b{color:var(--rojo-texto)}
+.panel-metricas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:16px}
+@media (max-width:1000px){.panel-metricas{grid-template-columns:1fr}}
+.panel-metricas .card h2,.card h2.t{font-size:15px;margin-bottom:12px}
+.barras{display:flex;flex-direction:column;gap:9px}
+.barra-fila{display:grid;grid-template-columns:minmax(90px,150px) 1fr auto;gap:10px;align-items:center;font-size:13px}
+.barra-fila .n{color:var(--texto-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.barra-fila .pista-b{height:10px;background:#1c1c1c;border-radius:4px;overflow:hidden;position:relative}
+.barra-fila .pista-b i{display:block;height:100%;background:var(--azul);border-radius:0 4px 4px 0}
+.barra-fila .v{font-weight:700;font-variant-numeric:tabular-nums;min-width:48px;text-align:right}
+.estado-meta{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600}
+.estado-meta.ok{color:var(--verde-texto)}.estado-meta.mal{color:var(--rojo-texto)}.estado-meta.na{color:var(--texto-3)}
+.columnas-dia{display:flex;align-items:flex-end;gap:4px;height:120px;padding-top:6px}
+.columnas-dia div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;min-width:0}
+.columnas-dia i{display:block;width:100%;max-width:26px;background:var(--azul);border-radius:4px 4px 0 0;min-height:2px}
+.columnas-dia small{font-size:10px;color:var(--texto-3)}
+.columnas-dia em{font-style:normal;font-size:11px;color:var(--texto-2)}
+.rango-fechas{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+.rango-fechas .campo{min-width:150px}
+.meta-tabla input{width:90px;padding:7px 9px;border:1px solid var(--campo-borde);border-radius:8px;background:var(--campo);color:var(--texto);font:inherit}

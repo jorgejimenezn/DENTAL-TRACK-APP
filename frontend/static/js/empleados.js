@@ -4,7 +4,8 @@ if (!yo) throw new Error("sin acceso");
 
 const ROLES = {
   admin: "Administra usuarios, clientes, catálogos y flujos.",
-  supervisor: "Supervisa todo el laboratorio: ve todas las órdenes, reasigna y autoriza pendientes. Sin acceso a configuración ni usuarios.",
+  supervisor: "Supervisa todo el laboratorio: ve todas las órdenes, reasigna, cambia prioridades, registra ausencias y cancela. Sin acceso a configuración ni usuarios.",
+  operaciones: "Gerencia de área: solo consulta el dashboard de operación, métricas, cobros y solicitudes. No modifica nada.",
   ingresos: "Recibe y valida las solicitudes nuevas.",
   tecnico: "Trabaja las órdenes asignadas en la línea de producción.",
   qa: "Valida los RP y hace el control de calidad final.",

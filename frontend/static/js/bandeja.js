@@ -41,6 +41,7 @@ function tarjeta(p, { actual = false, mostrarTecnico = false } = {}) {
   if (p.etapa === "validacion_rp") extra.push(`<div class="nota-caso"><b>${p.reapertura_tipo === "garantia" ? "Garantía" : "Modificación"}:</b> ${escapar(p.reapertura_motivo)}</div>`);
   if (p.qa_clasificacion && ["facturacion", "produccion"].includes(p.etapa)) extra.push(`<div class="linea">QA: <b>${escapar(p.qa_clasificacion)}</b></div>`);
   if (["recolecta", "entrega"].includes(p.etapa)) extra.push(`<div class="linea">${p.etapa === "recolecta" ? "Recoger en" : "Entregar en"}: <b>${escapar(p.direccion)}</b></div>`);
+  if (p.devolucion) extra.push(`<div class="aviso rojo" style="margin:0"><div><b>Retrabajo:</b> ${escapar(p.devolucion.replace("Devuelto por QA: ", ""))}</div></div>`);
   if (p.instrucciones) extra.push(`<div class="nota-caso">${escapar(p.instrucciones)}</div>`);
   if (ES_RUTA(p) && p.estado === "asignado" && !mostrarTecnico && usuario.rol !== "mensajero") extra.push(`<div class="linea">Mensajero: <b>${escapar(p.tecnico)}</b></div>`);
   if (ES_RUTA(p) && p.telefono) extra.push(`<div class="linea">Teléfono: <a href="tel:${escapar(p.telefono)}">${escapar(p.telefono)}</a></div>`);
@@ -68,16 +69,24 @@ function tarjeta(p, { actual = false, mostrarTecnico = false } = {}) {
 /* ---------- Pintar ---------- */
 function pintarProduccion(pr) {
   if (!pr) { $("produccion").innerHTML = ""; return; }
-  const carga = `${pr.total}${pr.max_trabajos ? ` de ${pr.max_trabajos}` : ""} asignado(s)`;
-  const espera = pr.asignados.length ? `<div class="bandeja-seccion"><div class="etiqueta-seccion">En espera (${pr.asignados.length}) · el sistema te los entrega en este orden</div>
-    <div class="espera">${pr.asignados.map(p => `<a href="caso.html?id=${p.solicitud_id}"><b class="codigo-caso">${escapar(p.codigo)}</b>
-      ${p.emergencia ? '<span class="badge rojo">EMERGENCIA</span>' : ""}<span>${escapar(p.area)} · ${escapar(p.trabajo)}</span>
-      <span class="fecha">Entrega ${escapar(fechaCorta(p.fecha_entrega))}</span></a>`).join("")}</div></div>` : "";
-  $("produccion").innerHTML = `<section class="bandeja-seccion"><h2>Producción <span class="sub">${carga}</span></h2>
+  const carga = `${pr.total}${pr.max_trabajos ? ` de ${pr.max_trabajos}` : ""} asignado(s) en total`;
+  const hayNormal = pr.actual || pr.siguiente || !pr.lotes.length;
+  const normal = hayNormal ? `<section class="bandeja-seccion"><h2>Producción <span class="sub">${carga}</span></h2>
     <div class="produccion-grid">
       <div><div class="etiqueta-seccion">Trabajando ahora</div>${pr.actual ? tarjeta(pr.actual, { actual: true }) : '<div class="vacio-card">No tienes un trabajo en proceso.</div>'}</div>
       <div><div class="etiqueta-seccion">Siguiente</div>${pr.siguiente ? tarjeta(pr.siguiente) + (pr.actual ? '<p class="nota">Termina el trabajo actual para iniciar este.</p>' : "") : '<div class="vacio-card">No hay más trabajos asignados.</div>'}</div>
-    </div></section>${espera}`;
+    </div>${pr.en_espera ? `<p class="nota">Después de este tienes <b>${pr.en_espera}</b> trabajo(s) más en espera. El sistema te los entrega en orden de prioridad.</p>` : ""}</section>` : "";
+  // Áreas por lote: todo lo asignado a la vista y varios en proceso
+  const lotes = pr.lotes.map(l => `<section class="bandeja-seccion"><h2>${escapar(l.area)} · por lote
+      <span class="sub">${l.en_proceso.length} de ${l.max_simultaneos} en proceso · ${l.en_espera.length} en espera</span></h2>
+    ${l.en_espera.length > 1 && l.en_espera[0].acciones.includes("iniciar") ? `<div style="margin-bottom:10px"><button class="btn verde" data-lote-iniciar="${l.area_id}">Iniciar ${Math.min(l.en_espera.length, l.max_simultaneos - l.en_proceso.length)} en orden de prioridad</button></div>` : ""}
+    <div class="etiqueta-seccion">En proceso</div>
+    ${l.en_proceso.length ? `<div class="trabajos" style="margin-bottom:14px">${l.en_proceso.map(p => tarjeta(p, { actual: true })).join("")}</div>` : '<div class="vacio-card" style="margin-bottom:14px">Nada en proceso.</div>'}
+    <div class="etiqueta-seccion">En espera (${l.en_espera.length})</div>
+    ${l.en_espera.length ? `<div class="trabajos">${l.en_espera.map(p => tarjeta(p)).join("")}</div>` : '<div class="vacio-card">Sin trabajos en espera.</div>'}
+    ${l.en_espera.length && !l.en_espera[0].acciones.includes("iniciar") ? '<p class="nota">Llegaste al máximo de trabajos simultáneos: termina alguno para iniciar otro.</p>' : ""}
+  </section>`).join("");
+  $("produccion").innerHTML = normal + lotes;
 }
 
 function pintarRutas(rutas) {
@@ -357,3 +366,19 @@ $("btnImprimir").onclick = () => {
   $("modalImprimir").close();
   abrirPdf(`/solicitudes/${p.solicitud_id}/orden.pdf`, `Orden ${p.codigo}.pdf`).catch(e => toast(e.message, true));
 };
+
+/* ---------- Iniciar varios en un área por lote ---------- */
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-lote-iniciar]");
+  if (!b) return;
+  const lote = datos.produccion.lotes.find(l => l.area_id === Number(b.dataset.loteIniciar));
+  const cupo = lote.max_simultaneos - lote.en_proceso.length;
+  const elegidos = lote.en_espera.slice(0, cupo);
+  b.disabled = true;
+  let ok = 0;
+  for (const p of elegidos) {
+    try { await api("POST", `/pasos/${p.paso_id}/iniciar`); ok++; } catch (error) { toast(error.message, true); break; }
+  }
+  toast(`${ok} trabajo(s) iniciados en ${lote.area}`);
+  cargar();
+});

@@ -11,6 +11,10 @@ const ICONOS = {
   calendario: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
   bandeja: '<path d="M3 13l3-8h12l3 8v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M3 13h5l1 3h6l1-3h5"/>',
   tablero: '<rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/>',
+  dashboard: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  metas: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/>',
+  ausencias: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 14l6 5M15 14l-6 5"/>',
+  cobros: '<rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h4"/>',
   casos: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
 };
 
@@ -25,6 +29,11 @@ const MENU = [
   { href: "flujos.html", texto: "Flujos de trabajo", icono: "flujos", roles: ["admin"] },
   { href: "asignaciones.html", texto: "Asignaciones", icono: "asignaciones", roles: ["admin"] },
   { href: "calendario.html", texto: "Calendario y reglas", icono: "calendario", roles: ["admin"] },
+  { href: "areas.html", texto: "Áreas y metas", icono: "metas", roles: ["admin"] },
+  { grupo: "Operación", roles: ["admin", "supervisor", "operaciones", "facturacion"] },
+  { href: "dashboard.html", texto: "Dashboard", icono: "dashboard", roles: ["admin", "supervisor", "operaciones"] },
+  { href: "ausencias.html", texto: "Ausencias", icono: "ausencias", roles: ["admin", "supervisor"] },
+  { href: "cobros.html", texto: "Cobros", icono: "cobros", roles: ["admin", "supervisor", "operaciones", "facturacion"] },
   { grupo: "Solicitudes", roles: null },
   { href: "nueva-solicitud.html", texto: "Nueva solicitud", icono: "solicitud", roles: ["doctor", "admin", "supervisor", "ingresos"] },
   { href: "bandeja.html", texto: "Mi bandeja", icono: "bandeja", roles: ["ingresos", "tecnico", "qa", "facturacion", "logistica"] },
@@ -33,7 +42,8 @@ const MENU = [
   { href: "tablero.html", texto: "Mi tablero", icono: "tablero", roles: ["doctor"] },
   { href: "casos.html", texto: "Mis casos", icono: "casos", roles: ["doctor"] },
   { href: "tablero.html", texto: "Tablero por cliente", icono: "tablero", roles: ["admin", "supervisor", "ingresos"] },
-  { href: "casos.html", texto: "Solicitudes", icono: "casos", roles: ["admin", "supervisor", "ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"] },
+  { href: "casos.html", texto: "Solicitudes", icono: "casos", roles: ["admin", "supervisor", "operaciones", "ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"] },
+  { href: "mis-metricas.html", texto: "Mis métricas", icono: "dashboard", roles: ["ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"] },
 ];
 // Pantallas que no están en el menú: se marca la opción de la que dependen
 const PADRES = { "caso.html": "casos.html", "reapertura.html": "casos.html" };

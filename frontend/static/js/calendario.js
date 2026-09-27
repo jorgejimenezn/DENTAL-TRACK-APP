@@ -9,6 +9,7 @@ const fechaLarga = s => new Date(s + "T12:00:00").toLocaleDateString("es-GT", { 
 async function cargarReglas() {
   try {
     const p = await api("GET", "/config/parametros");
+    $("pInicio").value = p.inicio_jornada || "08:00";
     $("pCorteSemana").value = p.corte_semana; $("pCorteSabado").value = p.corte_sabado;
     $("pMinDigital").value = p.min_digital; $("pMinAnalogo").value = p.min_analogo; $("pMinEmergencia").value = p.min_emergencia;
   } catch (error) { mostrarErrores($("errorReglas"), error); }
@@ -19,7 +20,7 @@ $("formReglas").onsubmit = async e => {
   $("errorReglas").hidden = true;
   try {
     await api("PUT", "/config/parametros", {
-      corte_semana: $("pCorteSemana").value, corte_sabado: $("pCorteSabado").value,
+      corte_semana: $("pCorteSemana").value, corte_sabado: $("pCorteSabado").value, inicio_jornada: $("pInicio").value,
       min_digital: Number($("pMinDigital").value), min_analogo: Number($("pMinAnalogo").value),
       min_emergencia: Number($("pMinEmergencia").value),
     });

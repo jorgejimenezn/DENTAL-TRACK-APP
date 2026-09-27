@@ -25,6 +25,7 @@
           <p class="nota" style="margin:0 0 14px">Después de la hora de corte, la solicitud cuenta desde el siguiente día hábil. Sábados y domingos no son hábiles.</p>
           <div class="error-form" id="errorReglas" hidden></div>
           <form id="formReglas" class="grid" novalidate>
+            <div class="campo"><label>Inicio de jornada</label><input type="time" id="pInicio" required><div class="ayuda">Desde aquí cuentan las horas laborales de las metas.</div></div>
             <div class="campo"><label>Corte lunes a viernes</label><input type="time" id="pCorteSemana" required></div>
             <div class="campo"><label>Corte sábado</label><input type="time" id="pCorteSabado" required></div>
             <div class="campo"><label>Mínimo digital (días hábiles)</label><input type="number" id="pMinDigital" min="0" max="30" required></div>

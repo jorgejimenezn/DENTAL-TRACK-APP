@@ -88,6 +88,27 @@ def migrar() -> None:
     if pasos_solicitud and "receptor" not in pasos_solicitud:
         pasos.append("ALTER TABLE solicitud_pasos ADD COLUMN receptor VARCHAR(120)")
 
+    # --- Operación por área: lote, simultáneos y meta de horas --------------
+    areas = _columnas(inspector, "areas")
+    if areas and "meta_horas" not in areas:
+        pasos += [
+            "ALTER TABLE areas ADD COLUMN lote BOOLEAN NOT NULL DEFAULT FALSE",
+            "ALTER TABLE areas ADD COLUMN max_simultaneos INTEGER NOT NULL DEFAULT 1",
+            "ALTER TABLE areas ADD COLUMN meta_horas DOUBLE PRECISION NOT NULL DEFAULT 4",
+            "UPDATE areas SET lote = TRUE, max_simultaneos = 15 WHERE UPPER(nombre) LIKE 'YESO%' OR UPPER(nombre) LIKE 'CAM%'",
+            "UPDATE areas SET meta_horas = 8 WHERE UPPER(nombre) LIKE 'CAM%'",
+        ]
+    # --- Cobros ------------------------------------------------------------
+    if solicitudes and "pago_estado" not in solicitudes:
+        pasos += [
+            "ALTER TABLE solicitudes ADD COLUMN factura_fecha TIMESTAMPTZ",
+            "ALTER TABLE solicitudes ADD COLUMN pago_estado VARCHAR(12)",
+            "ALTER TABLE solicitudes ADD COLUMN pagado_en DATE",
+            "ALTER TABLE solicitudes ADD COLUMN pago_referencia VARCHAR(80)",
+            "ALTER TABLE solicitudes ADD COLUMN pago_por_id INTEGER REFERENCES usuarios(id)",
+            "UPDATE solicitudes SET pago_estado = 'pendiente', factura_fecha = creado_en WHERE factura_numero IS NOT NULL",
+        ]
+
     if not pasos:
         return
     with engine.begin() as conexion:

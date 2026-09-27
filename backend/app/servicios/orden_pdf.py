@@ -87,12 +87,16 @@ def _odontograma(piezas: list[int], ancho: float) -> Table:
     t = Table([[str(n) for n in sup], [str(n) for n in inf]], colWidths=[ancho / 16] * 16, rowHeights=[7 * mm] * 2)
     estilo = [("FONT", (0, 0), (-1, -1), "Helvetica-Bold", 8), ("ALIGN", (0, 0), (-1, -1), "CENTER"),
               ("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("GRID", (0, 0), (-1, -1), 0.5, LINEA),
-              ("TEXTCOLOR", (0, 0), (-1, -1), GRIS), ("LINEAFTER", (7, 0), (7, 1), 1.6, NEGRO),
+              ("TEXTCOLOR", (0, 0), (-1, -1), colors.HexColor("#9a9a9a")), ("LINEAFTER", (7, 0), (7, 1), 1.6, NEGRO),
               ("LINEBELOW", (0, 0), (-1, 0), 1.2, NEGRO)]
+    # Piezas marcadas: gris muy claro, borde grueso y número en negro (ahorra tinta al imprimir)
     for fila, lista in enumerate((sup, inf)):
         for col, n in enumerate(lista):
             if n in piezas:
-                estilo += [("BACKGROUND", (col, fila), (col, fila), NEGRO), ("TEXTCOLOR", (col, fila), (col, fila), colors.white)]
+                estilo += [("BACKGROUND", (col, fila), (col, fila), colors.HexColor("#e3e3e3")),
+                           ("TEXTCOLOR", (col, fila), (col, fila), NEGRO),
+                           ("FONT", (col, fila), (col, fila), "Helvetica-Bold", 10),
+                           ("BOX", (col, fila), (col, fila), 1.8, NEGRO)]
     t.setStyle(TableStyle(estilo))
     return t
 
@@ -203,7 +207,8 @@ def generar_orden(s, generado_por: str) -> bytes:
     rec = Table(filas, colWidths=[8 * mm, 34 * mm, 32 * mm, ancho - 8 * mm - 34 * mm - 32 * mm - 28 * mm - 36 * mm,
                                   28 * mm, 36 * mm], repeatRows=1)
     rec.setStyle(TableStyle([("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 7.5), ("FONT", (0, 1), (-1, -1), "Helvetica", 7.5),
-                             ("BACKGROUND", (0, 0), (-1, 0), NEGRO), ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                             ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#e6e6e6")), ("TEXTCOLOR", (0, 0), (-1, 0), NEGRO),
+                             ("LINEBELOW", (0, 0), (-1, 0), 1, NEGRO),
                              ("GRID", (0, 0), (-1, -1), 0.4, LINEA), ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                              ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#fafafa")]),
                              ("TOPPADDING", (0, 1), (-1, -1), 5), ("BOTTOMPADDING", (0, 1), (-1, -1), 5)]))

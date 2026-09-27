@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core.dependencias import Actor
 from app.core.errores import Conflicto, ErrorNegocio, NoEncontrado
-from app.esquemas.bandeja import (CLASIFICACIONES, AreaBandeja, AsignarIn, Bandeja, Candidato, ModificacionIn,
+from app.esquemas.bandeja import (CLASIFICACIONES, AreaBandeja, AsignarIn, Bandeja, Candidato, LoteArea, ModificacionIn,
                                   PasoBandeja, PasoPrevio, Produccion, RechazoIn, ResumenArea, TerminarIn,
                                   ValidacionRpIn)
 from app.modelos import ROL_CLIENTE, Area, Usuario
@@ -14,7 +14,7 @@ from app.modelos.configuracion import ColorCaja, DiaNoLaborable, MotivoRP
 from app.modelos.solicitud import ESTADOS_CERRADOS
 from app.modelos.solicitud import (PASO_ASIGNADO, PASO_EN_AREA, PASO_EN_COLA, PASO_EN_PROCESO, PASO_PENDIENTE,
                                    PASO_SIN_TECNICO, PASOS_ACTIVOS, PASOS_CARGA, Solicitud, SolicitudHistorial,
-                                   SolicitudPaso)
+                                   SolicitudPaso, TiempoPaso)
 from app.servicios.auditoria_servicio import AuditoriaServicio
 from app.servicios.configuracion_servicio import ZONA
 from app.servicios.recorrido import ESTADO_POR_ETAPA, NOMBRE_ETAPA, Motor, ahora, tipo_area
@@ -93,6 +93,7 @@ class ProduccionServicio:
             direccion=(f"{s.recolecta_direccion}, {s.recolecta_municipio}" if p.etapa == "recolecta"
                        and s.recolecta_direccion else f"{s.entrega_direccion}, {s.entrega_municipio}"),
             archivos=len(s.archivos), telefono=s.cliente.telefono_celular or s.cliente.telefono_fijo,
+            devolucion=p.nota if p.vuelta > 1 and p.estado != "terminado" else None,
             receptor=p.receptor, caja=f"{s.caja_color} {s.caja_numero}" if s.caja_numero else None,
             acciones=acciones, pasos_previos=previos)
 
@@ -123,14 +124,26 @@ class ProduccionServicio:
             SolicitudPaso.estado.in_(PASOS_CARGA))), key=self._orden_prioridad)
         produccion = None
         if mios or any(tipo_area(a.nombre) == "produccion" for a in areas):
-            actual = next((p for p in mios if p.estado == PASO_EN_PROCESO), None)
-            en_espera = [p for p in mios if p.estado == PASO_ASIGNADO]
+            normales = [p for p in mios if not p.area.lote]
+            actual = next((p for p in normales if p.estado == PASO_EN_PROCESO), None)
+            en_espera = [p for p in normales if p.estado == PASO_ASIGNADO]
             siguiente = en_espera[0] if en_espera else None
+            # Áreas por lote: todo lo asignado a la vista, varios en proceso hasta el máximo del área
+            lotes = []
+            for area in sorted({p.area for p in mios if p.area.lote} | {a for a in areas if a.lote},
+                               key=lambda a: a.nombre):
+                del_area = [p for p in mios if p.area_id == area.id]
+                proceso = [p for p in del_area if p.estado == PASO_EN_PROCESO]
+                espera = [p for p in del_area if p.estado == PASO_ASIGNADO]
+                puede = len(proceso) < area.max_simultaneos
+                lotes.append(LoteArea(area_id=area.id, area=area.nombre, max_simultaneos=area.max_simultaneos,
+                                      en_proceso=[self._salida(p, ["terminar"]) for p in proceso],
+                                      en_espera=[self._salida(p, ["iniciar"] if puede else []) for p in espera]))
             usuario = self.sesion.get(Usuario, actor.id)
             produccion = Produccion(
                 actual=self._salida(actual, ["terminar"]) if actual else None,
                 siguiente=self._salida(siguiente, [] if actual else ["iniciar"]) if siguiente else None,
-                asignados=[self._salida(p, []) for p in en_espera[1:]], total=len(mios),
+                asignados=[], en_espera=max(len(en_espera) - 1, 0), lotes=lotes, total=len(mios),
                 max_trabajos=usuario.max_trabajos if usuario else None)
 
         # --- Mensajero: sus recolectas y entregas ---
@@ -196,11 +209,18 @@ class ProduccionServicio:
         mios = sorted(self.sesion.scalars(select(SolicitudPaso).where(
             SolicitudPaso.tecnico_id == actor.id, SolicitudPaso.etapa == "produccion",
             SolicitudPaso.estado.in_(PASOS_CARGA))), key=self._orden_prioridad)
-        if any(p.estado == PASO_EN_PROCESO for p in mios):
-            raise Conflicto("Termina el trabajo que tienes en proceso antes de iniciar otro")
-        primero = next(p for p in mios if p.estado == PASO_ASIGNADO)
-        if primero.id != paso.id:
-            raise Conflicto(f"El sistema te entrega primero {primero.solicitud.codigo} por prioridad")
+        if paso.area.lote:
+            en_area = sum(1 for p in mios if p.estado == PASO_EN_PROCESO and p.area_id == paso.area_id)
+            if en_area >= paso.area.max_simultaneos:
+                raise Conflicto(f"Ya tienes {en_area} en proceso en {paso.area.nombre} "
+                                f"(máximo {paso.area.max_simultaneos})")
+        else:
+            normales = [p for p in mios if not p.area.lote]
+            if any(p.estado == PASO_EN_PROCESO for p in normales):
+                raise Conflicto("Termina el trabajo que tienes en proceso antes de iniciar otro")
+            primero = next(p for p in normales if p.estado == PASO_ASIGNADO)
+            if primero.id != paso.id:
+                raise Conflicto(f"El sistema te entrega primero {primero.solicitud.codigo} por prioridad")
         paso.estado, paso.iniciado_en = PASO_EN_PROCESO, ahora()
         self.sesion.commit()
         self.auditoria.registrar("iniciar", "solicitud", paso.solicitud_id, actor,
@@ -244,7 +264,9 @@ class ProduccionServicio:
         elif paso.etapa == "facturacion":
             if not datos.factura_numero:
                 raise ErrorNegocio("Ingresa el número de factura")
-            s.factura_numero = datos.factura_numero
+            s.factura_numero, s.factura_fecha = datos.factura_numero, ahora()
+            sin_cobro = s.tipo_caso == "RP" and s.qa_clasificacion in ("garantia_total", "garantia_parcial_sin_cobro")
+            s.pago_estado = "no_aplica" if sin_cobro else "pendiente"
             detalle["factura"] = datos.factura_numero
             nota = f"Factura {datos.factura_numero} · empacado"
         elif paso.etapa == "entrega":
@@ -309,10 +331,14 @@ class ProduccionServicio:
         for p in despues:
             p.orden += len(repetir)
         self.sesion.flush()
+        motivo = " ".join(datos.motivo.split())
         for i, p in enumerate(repetir, start=1):
             s.pasos.append(SolicitudPaso(orden=paso.orden + i, area_id=p.area_id, area=p.area, etapa=p.etapa,
-                                         estado=PASO_PENDIENTE, vuelta=paso.vuelta + 1))
-        motivo = " ".join(datos.motivo.split())
+                                         estado=PASO_PENDIENTE, vuelta=paso.vuelta + 1,
+                                         nota=f"Devuelto por QA: {motivo}"[:300]))
+        ids_devueltos = [p.id for p in repetir if p is not paso]
+        for t in self.sesion.scalars(select(TiempoPaso).where(TiempoPaso.paso_id.in_(ids_devueltos))):
+            t.devuelto = True
         self.motor.terminar(paso, actor.id, f"Devuelto a {destino.area.nombre}: {motivo}")
         self.sesion.flush()
         self._finalizar(s, paso, actor, f"QA devolvió el caso a {destino.area.nombre}: {motivo}", "rechazar_qa",

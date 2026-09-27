@@ -3,14 +3,14 @@ from fastapi import APIRouter, Depends, Response
 
 from app.backend import llamar
 from app.esquemas import EmpleadoActualizar, EmpleadoCrear, EstadoIn, PasswordIn
-from app.seguridad import solo_admin
+from app.seguridad import requiere_rol, solo_admin
 
 router = APIRouter(prefix="/empleados", tags=["Empleados"])
 
 
 @router.get("", summary="Listar empleados")
 async def listar(q: str | None = None, rol: str | None = None, activo: bool | None = None,
-                 u: dict = Depends(solo_admin)):
+                 u: dict = Depends(requiere_rol("admin", "supervisor"))):
     return await llamar("GET", "/empleados", u, params={"q": q, "rol": rol, "activo": activo})
 
 

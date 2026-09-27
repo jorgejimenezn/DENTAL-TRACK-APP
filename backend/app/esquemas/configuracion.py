@@ -160,11 +160,12 @@ class DiaOut(DiaIn):
 class Parametros(BaseModel):
     corte_semana: str = Field(description="Hora de corte lunes a viernes (HH:MM)", examples=["18:00"])
     corte_sabado: str = Field(description="Hora de corte sábado (HH:MM)", examples=["12:00"])
+    inicio_jornada: str = Field(default="08:00", description="Hora en que empieza la jornada (horas laborales)")
     min_digital: int = Field(ge=0, le=30)
     min_analogo: int = Field(ge=0, le=30)
     min_emergencia: int = Field(ge=0, le=30)
 
-    @field_validator("corte_semana", "corte_sabado")
+    @field_validator("corte_semana", "corte_sabado", "inicio_jornada")
     @classmethod
     def validar_hora(cls, v: str) -> str:
         if not _HORA.match(v):

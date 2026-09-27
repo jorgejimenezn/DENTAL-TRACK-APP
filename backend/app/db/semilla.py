@@ -6,7 +6,7 @@ from app.core.seguridad import cifrar_password
 from app.db.migraciones import migrar
 from app.db.postgres import Base, SesionLocal, engine
 from app.db.semilla_configuracion import sembrar_configuracion
-from app.modelos import Area, Usuario
+from app.modelos import Area, Usuario, valores_area
 
 AREAS_INICIALES = [
     "Ingresos", "Logística", "Yesos", "Diseño", "CAD", "CAM_IMP",
@@ -21,7 +21,7 @@ def inicializar_base():
         existentes = set(sesion.scalars(select(Area.nombre)))
         for nombre in AREAS_INICIALES:
             if nombre not in existentes:
-                sesion.add(Area(nombre=nombre))
+                sesion.add(Area(nombre=nombre, **valores_area(nombre)))
 
         hay_admin = sesion.scalar(select(Usuario.id).where(Usuario.rol == "admin").limit(1))
         if not hay_admin:

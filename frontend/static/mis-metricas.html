@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mis métricas · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="marca" id="marca" aria-hidden="true"></div>
+<div class="app">
+  <aside class="lateral" id="lateral"></aside>
+  <main class="contenido">
+    <div class="encabezado">
+      <div>
+        <h1>Mis métricas</h1>
+        <p>Solo tus datos de los últimos 30 días. Nadie más ve esta pantalla con tu información.</p>
+      </div>
+    </div>
+    <div class="error-form" id="errorMias" hidden></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="panel-metricas">
+      <section class="card"><h2>Terminados por día <span style="font-weight:400;color:var(--texto-3);font-size:12px">últimos 14 días</span></h2><div class="columnas-dia" id="serie"></div></section>
+      <section class="card"><h2>Próximos vencimientos</h2><div id="proximos"></div></section>
+    </div>
+    <section class="card">
+      <h2 class="t">Mis tiempos frente a la meta</h2>
+      <div class="tabla-wrap"><table class="responsiva">
+        <thead><tr><th>Área</th><th>Meta</th><th>Terminados</th><th>Mi promedio</th><th>Dentro de meta</th><th>Devueltos por QA</th></tr></thead>
+        <tbody id="tabla"></tbody></table></div>
+    </section>
+  </main>
+</div>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/metricas.js"></script>
+<script>
+if (!iniciarPagina(["ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"])) throw new Error("sin acceso");
+api("GET", "/metricas/mias").then(m => {
+  $("kpis").innerHTML = kpi("Hoy", num(m.hoy), "pasos terminados") + kpi("Esta semana", num(m.semana)) + kpi("Últimos 30 días", num(m.mes))
+    + kpi("Dentro de meta", pct(m.resumen.cumplimiento)) + kpi("Devueltos por QA", num(m.resumen.devueltos), "para aprender, no para castigar");
+  const max = Math.max(...m.serie.map(d => d.terminados), 1);
+  $("serie").innerHTML = m.serie.map(d => `<div title="${escapar(fechaCortaM(d.fecha))}: ${d.terminados}"><em>${d.terminados || ""}</em><i style="height:${d.terminados * 100 / max}%"></i><small>${new Date(d.fecha + "T12:00:00").getDate()}</small></div>`).join("");
+  $("proximos").innerHTML = m.proximos.length ? `<div class="espera">${m.proximos.map(p => `<a href="caso.html?id=${p.solicitud_id}"><b class="codigo-caso">${escapar(p.codigo)}</b>${p.emergencia ? '<span class="badge rojo">EMERGENCIA</span>' : ""}<span>${escapar(p.area)} · ${p.estado === "en_proceso" ? "en proceso" : "asignado"}</span><span class="fecha" style="${p.vencido ? "color:var(--rojo-texto)" : ""}">${escapar(fechaCortaM(p.fecha_entrega))}</span></a>`).join("")}</div>` : '<div class="vacio" style="padding:18px">No tienes trabajos pendientes.</div>';
+  $("tabla").innerHTML = m.por_area.length ? m.por_area.map(a => `<tr><td class="principal"><b>${escapar(a.area)}</b></td>
+    <td data-label="Meta">${horas(a.meta_horas)}</td><td data-label="Terminados">${num(a.terminados)}</td>
+    <td data-label="Mi promedio">${horas(a.promedio_horas)}</td><td data-label="Dentro de meta">${estadoMeta(a.cumplimiento)}</td>
+    <td data-label="Devueltos">${num(a.devueltos)}</td></tr>`).join("") : '<tr><td colspan="6" class="vacio">Aún no terminas pasos en los últimos 30 días.</td></tr>';
+}).catch(e => mostrarErrores($("errorMias"), e));
+</script>
+</body>
+</html>

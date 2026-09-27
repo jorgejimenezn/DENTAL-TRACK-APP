@@ -48,6 +48,9 @@
            + tarjeta("flujos.html", "Flujos de trabajo", "Pasos por tipo de trabajo y modalidad, con cobertura de técnicos.")
            + tarjeta("asignaciones.html", "Asignaciones", "Tipos de trabajo que atiende cada empleado por área.")
            + tarjeta("calendario.html", "Calendario y reglas", "Horas de corte, días mínimos y días no laborables.")
+           + tarjeta("areas.html", "Áreas y metas", "Trabajo por lote, simultáneos y meta de horas por área.")
+           + tarjeta("dashboard.html", "Dashboard", "Operación en vivo y desempeño del laboratorio.")
+           + tarjeta("cobros.html", "Cobros", "Facturas pendientes de pago por antigüedad.")
            + tarjeta("bandeja.html", "Bandeja del laboratorio", "Carga de cada área, colas y casos sin técnico.")
            + tarjeta("casos.html", "Solicitudes", "Casos nuevos (CN) y reaperturas (RP) de todos los clientes.")
            + tarjeta("nueva-solicitud.html", "Nueva solicitud", "Capturar un caso a nombre de un cliente.");
@@ -55,8 +58,14 @@
       html = tarjeta("nueva-solicitud.html", "Nueva solicitud", "Ingresa un caso nuevo (CN), digital o analógico.")
            + tarjeta("casos.html", "Mis casos", "Casos vigentes e historial. Desde un caso entregado puedes pedir una reapertura (RP).")
            + tarjeta("tablero.html", "Mi tablero", "Tus casos vigentes en Kanban, por etapa.");
+    } else if (usuario.rol === "operaciones") {
+      html = tarjeta("dashboard.html", "Dashboard de operación", "Carga en vivo, cumplimiento de metas, puntualidad, retrabajos y reaperturas.")
+           + tarjeta("cobros.html", "Cobros", "Facturas pendientes de pago por antigüedad.")
+           + tarjeta("casos.html", "Solicitudes", "Consulta de casos nuevos y reaperturas.");
     } else if (usuario.rol === "supervisor") {
-      html = tarjeta("bandeja.html", "Bandeja del laboratorio", "Carga de cada área, colas y casos sin técnico.")
+      html = tarjeta("dashboard.html", "Dashboard", "Operación en vivo y cumplimiento de metas.")
+           + tarjeta("bandeja.html", "Bandeja del laboratorio", "Carga de cada área, colas y casos sin técnico.")
+           + tarjeta("ausencias.html", "Ausencias", "Quién no labora: el sistema no le asigna y reparte lo suyo.")
            + tarjeta("casos.html", "Solicitudes", "Casos nuevos y reaperturas de todos los clientes.")
            + tarjeta("nueva-solicitud.html", "Nueva solicitud", "Capturar un caso a nombre de un cliente.")
            + tarjeta(null, "Reasignaciones", "Mover trabajos entre técnicos. Próxima fase.");
@@ -65,6 +74,8 @@
            + tarjeta("casos.html", "Solicitudes", "Consulta de casos.");
     } else {
       html = tarjeta("bandeja.html", "Mi bandeja", usuario.rol === "tecnico" ? "Tu trabajo actual y el siguiente que te entrega el sistema por prioridad." : "Casos que esperan a tu área.")
+           + tarjeta("mis-metricas.html", "Mis métricas", "Tu avance: terminados, tiempos frente a la meta y próximos vencimientos.")
+           + (usuario.rol === "facturacion" ? tarjeta("cobros.html", "Cobros", "Facturas pendientes de pago por antigüedad.") : "")
            + tarjeta("casos.html", "Solicitudes", "Consulta de casos nuevos y reaperturas.")
            + (usuario.rol === "ingresos" ? tarjeta("nueva-solicitud.html", "Nueva solicitud", "Capturar un caso a nombre de un cliente.") : "");
     }

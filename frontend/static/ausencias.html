@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ausencias · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="marca" id="marca" aria-hidden="true"></div>
+<div class="app">
+  <aside class="lateral" id="lateral"></aside>
+  <main class="contenido">
+    <div class="encabezado">
+      <div>
+        <h1>Ausencias</h1>
+        <p>Mientras un empleado no labora, el sistema no le asigna trabajo y reparte lo que tenía sin iniciar.</p>
+      </div>
+    </div>
+    <div class="dos-columnas">
+      <section class="card">
+        <h2 class="t">Registrar ausencia</h2>
+        <div class="error-form" id="errorAus" hidden></div>
+        <form id="formAus" class="grid" novalidate>
+          <div class="campo span2"><label>Empleado <span class="req">*</span></label><select id="aEmpleado"></select></div>
+          <div class="campo"><label>Desde</label><input type="date" id="aDesde"></div>
+          <div class="campo"><label>Hasta</label><input type="date" id="aHasta"></div>
+          <div class="campo span2"><label>Motivo <span class="req">*</span></label><input id="aMotivo" maxlength="150" placeholder="Vacaciones, cita médica, suspensión…"></div>
+          <div class="span2" style="display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" class="btn" id="btnHoy">Solo hoy</button>
+            <button class="btn verde" style="flex:1">Registrar</button>
+          </div>
+        </form>
+        <p class="nota">Lo que el empleado tenga <b>en proceso</b> no se mueve solo: aparece en el Dashboard para que el supervisor lo reasigne. Las recolectas y entregas de un mensajero ausente regresan a Logística.</p>
+      </section>
+      <section class="card">
+        <h2 class="t">Registradas</h2>
+        <div class="lista-items" id="lista"><div class="cargando">Cargando…</div></div>
+      </section>
+    </div>
+  </main>
+</div>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script>
+if (!iniciarPagina(["admin", "supervisor"])) throw new Error("sin acceso");
+const hoy = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })();
+const fecha = s => new Date(s + "T12:00:00").toLocaleDateString("es-GT", { weekday: "short", day: "numeric", month: "short" });
+$("aDesde").value = $("aHasta").value = hoy;
+$("btnHoy").onclick = () => { $("aDesde").value = $("aHasta").value = hoy; $("aMotivo").focus(); };
+async function cargar() {
+  try {
+    const lista = await api("GET", "/ausencias");
+    $("lista").innerHTML = lista.length ? lista.map(a => `
+      <div class="item ${a.pasada ? "inactivo" : ""}">
+        <span class="nombre">${escapar(a.empleado)}<small>${escapar(NOMBRES_ROL[a.rol] || a.rol)} · ${escapar(a.motivo)}</small></span>
+        <span class="badge ${a.vigente ? "rojo" : a.pasada ? "gris" : "azul"}">${a.vigente ? "Hoy no labora" : a.pasada ? "Terminó" : "Programada"}</span>
+        <span style="font-size:12px;color:var(--texto-2)">${fecha(a.desde)}${a.hasta !== a.desde ? " → " + fecha(a.hasta) : ""}</span>
+        ${a.pasada ? "" : `<div class="botones"><button class="btn chico rojo-borde" data-quitar="${a.id}">Quitar</button></div>`}
+      </div>`).join("") : '<div class="vacio">Sin ausencias registradas.</div>';
+  } catch (error) { $("lista").innerHTML = `<div class="vacio">${escapar(error.message)}</div>`; }
+}
+$("formAus").onsubmit = async e => {
+  e.preventDefault(); $("errorAus").hidden = true;
+  if (!$("aEmpleado").value || $("aMotivo").value.trim().length < 3) return mostrarErrores($("errorAus"), new Error("Elige el empleado y escribe el motivo"));
+  try {
+    const r = await api("POST", "/ausencias", { usuario_id: Number($("aEmpleado").value), desde: $("aDesde").value, hasta: $("aHasta").value, motivo: $("aMotivo").value.trim() });
+    $("aMotivo").value = ""; toast(r.reasignados ? `Ausencia registrada · ${r.reasignados} trabajo(s) repartidos` : "Ausencia registrada"); cargar();
+  } catch (error) { mostrarErrores($("errorAus"), error); }
+};
+$("lista").addEventListener("click", async e => {
+  const b = e.target.closest("[data-quitar]");
+  if (!b || !confirm("¿Quitar esta ausencia? El empleado vuelve a recibir trabajo.")) return;
+  try { await api("DELETE", `/ausencias/${b.dataset.quitar}`); toast("Ausencia quitada"); cargar(); } catch (error) { toast(error.message, true); }
+});
+api("GET", "/empleados?activo=true").then(lista => {
+  $("aEmpleado").innerHTML = '<option value="">Selecciona</option>' + lista.filter(u => !["admin", "doctor"].includes(u.rol))
+    .map(u => `<option value="${u.id}">${escapar(u.nombre)} ${escapar(u.apellido)} · ${escapar(NOMBRES_ROL[u.rol] || u.rol)}</option>`).join("");
+}).catch(error => mostrarErrores($("errorAus"), error));
+cargar();
+</script>
+</body>
+</html>

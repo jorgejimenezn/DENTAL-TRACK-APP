@@ -16,11 +16,12 @@ from datetime import datetime, timezone
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.modelos import ROL_CLIENTE, Area, Usuario, usuario_area
+from app.core.jornada import ZONA, Jornada
+from app.modelos import ROL_CLIENTE, Area, Ausencia, Usuario, usuario_area
 from app.modelos.configuracion import Flujo, usuario_area_tipo
 from app.modelos.solicitud import (PASO_ASIGNADO, PASO_EN_AREA, PASO_EN_COLA, PASO_OMITIDO, PASO_PENDIENTE,
                                    PASO_SIN_TECNICO, PASO_TERMINADO, PASOS_ACTIVOS, PASOS_CARGA, Solicitud,
-                                   SolicitudHistorial, SolicitudPaso)
+                                   SolicitudHistorial, SolicitudPaso, TiempoPaso)
 
 ESTADO_POR_ETAPA = {
     "recolecta": "pendiente_recolecta", "ingresos": "recibida", "validacion_rp": "validacion_qa",
@@ -128,6 +129,24 @@ class Motor:
         paso.terminado_en = ahora()
         paso.atendido_por_id = usuario_id
         paso.nota = (nota or "").strip()[:300] or paso.nota
+        self.registrar_tiempo(paso, usuario_id)
+
+    def registrar_tiempo(self, paso: SolicitudPaso, usuario_id: int | None) -> None:
+        """Auditoría de tiempos en horas laborales, con la meta del área vigente en este momento."""
+        if not hasattr(self, "_jornada"):
+            self._jornada = Jornada(self.sesion)
+        j, s = self._jornada, paso.solicitud
+        produccion = paso.etapa == "produccion"
+        total = j.horas(paso.activado_en, paso.terminado_en)
+        meta = float(paso.area.meta_horas or 4)
+        self.sesion.add(TiempoPaso(
+            paso_id=paso.id, solicitud_id=s.id, codigo=s.codigo, area_id=paso.area_id, area=paso.area.nombre,
+            etapa=paso.etapa, tipo_trabajo=s.tipo_trabajo, responsable_id=paso.tecnico_id if produccion else usuario_id,
+            vuelta=paso.vuelta, activado_en=paso.activado_en, iniciado_en=paso.iniciado_en,
+            terminado_en=paso.terminado_en,
+            espera_horas=j.horas(paso.activado_en, paso.iniciado_en) if produccion and paso.iniciado_en else None,
+            trabajo_horas=j.horas(paso.iniciado_en, paso.terminado_en) if produccion and paso.iniciado_en else None,
+            total_horas=total, meta_horas=meta, cumplio=total <= meta))
 
     def avanzar(self, s: Solicitud, usuario_id: int | None, nota: str | None = None) -> None:
         """Activa el siguiente paso pendiente y actualiza el estado visible del caso."""
@@ -168,7 +187,33 @@ class Motor:
                                                            usuario_area_tipo.c.tipo_trabajo_id)
                                                     .where(usuario_area_tipo.c.area_id == area_id)):
             restricciones.setdefault(usuario_id, set()).add(tipo)
-        return [u for u in usuarios if u.id not in restricciones or (tipo_id in restricciones[u.id])]
+        ausentes = self.ausentes_hoy()
+        return [u for u in usuarios if u.id not in ausentes
+                and (u.id not in restricciones or tipo_id in restricciones[u.id])]
+
+    def ausentes_hoy(self) -> set[int]:
+        hoy = datetime.now(ZONA).date()
+        return set(self.sesion.scalars(select(Ausencia.usuario_id).where(Ausencia.desde <= hoy, Ausencia.hasta >= hoy)))
+
+    def liberar_ausentes(self) -> int:
+        """Trabajos asignados (sin iniciar) a quien hoy no labora: vuelven a repartirse o a Logística."""
+        ausentes = self.ausentes_hoy()
+        if not ausentes:
+            return 0
+        pasos = list(self.sesion.scalars(select(SolicitudPaso).where(
+            SolicitudPaso.tecnico_id.in_(ausentes), SolicitudPaso.estado == PASO_ASIGNADO)))
+        for p in pasos:
+            quien = f"{p.tecnico.nombre} {p.tecnico.apellido}".strip()
+            p.tecnico_id, p.tecnico, p.asignado_en = None, None, None
+            if p.etapa == "produccion":
+                p.estado = PASO_EN_COLA
+            else:  # recolecta o entrega de un mensajero ausente
+                p.estado = PASO_EN_AREA
+                p.solicitud.estado = ESTADO_POR_ETAPA[p.etapa]
+            p.solicitud.historial.append(SolicitudHistorial(
+                estado=p.solicitud.estado, nota=f"{p.area.nombre}: se liberó porque {quien} no labora hoy"[:300]))
+        self.sesion.flush()
+        return len(pasos)
 
     def carga(self, usuario_id: int, etapas: tuple[str, ...] = ("produccion",)) -> int:
         return self.sesion.scalar(select(func.count()).select_from(SolicitudPaso)
@@ -191,6 +236,7 @@ class Motor:
 
     def repartir_colas(self) -> int:
         """Intenta asignar los pasos en cola o sin técnico, por prioridad y fecha de entrega."""
+        liberados = self.liberar_ausentes()
         pendientes = list(self.sesion.execute(
             select(SolicitudPaso, Solicitud).join(Solicitud)
             .where(SolicitudPaso.estado.in_([PASO_EN_COLA, PASO_SIN_TECNICO]))
@@ -200,7 +246,7 @@ class Motor:
             self.asignar(s, paso)
             self.sesion.flush()
             asignados += paso.estado == PASO_ASIGNADO
-        return asignados
+        return asignados + liberados
 
     # ================= Casos creados antes del motor =================
     def preparar_existentes(self) -> int:

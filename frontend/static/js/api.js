@@ -160,7 +160,7 @@ function fechaHora(valor) {
 }
 
 const NOMBRES_ROL = {
-  admin: "Administrador", supervisor: "Supervisor", mensajero: "Mensajero", ingresos: "Ingresos", tecnico: "Técnico", qa: "Control de calidad",
+  admin: "Administrador", supervisor: "Supervisor", operaciones: "Operaciones", mensajero: "Mensajero", ingresos: "Ingresos", tecnico: "Técnico", qa: "Control de calidad",
   facturacion: "Facturación", logistica: "Logística", doctor: "Doctor",
 };
 
