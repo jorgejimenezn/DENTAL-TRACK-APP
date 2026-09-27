@@ -93,4 +93,4 @@ def sembrar_configuracion(sesion: Session) -> None:
     if _vacia(sesion, DiaNoLaborable):
         anio = date.today().year
         for a in (anio, anio + 1):
-            sesion.add_all(DiaNoLaborable(fecha=f, motivo=m) for f, m in feriados_guatemala(a))
+            sesion.add_all(DiaNoLaborable(fecha=f, motivo=m, hora_corte=h) for f, m, h in feriados_guatemala(a))

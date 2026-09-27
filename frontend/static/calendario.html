@@ -47,17 +47,24 @@
       </div>
 
       <section class="card">
-        <h2 style="font-size:16px;margin-bottom:12px">Días no laborables</h2>
+        <h2 style="font-size:16px;margin-bottom:4px">Días no laborables y horarios especiales</h2>
+        <p class="nota" style="margin:0 0 12px"><b>Sin labores</b>: no cuenta como día hábil ni se puede elegir para entrega. <b>Horario especial</b>: se trabaja, pero cierra antes (ej. 24 y 31 de diciembre hasta las 12:00).</p>
         <div class="filtros" style="align-items:flex-end">
           <div class="campo"><label>Año</label><select id="fAnio"></select></div>
           <button class="btn" id="btnFeriados" style="flex:2 1 220px">Cargar feriados de Guatemala</button>
         </div>
         <div class="error-form" id="errorCal" hidden></div>
-        <form id="formDia" class="agregar-linea" novalidate>
-          <div class="campo" style="flex:0 1 170px"><input type="date" id="dFecha" required></div>
-          <div class="campo"><input id="dMotivo" placeholder="Motivo (asueto, feriado, inventario…)" maxlength="120" required></div>
-          <button class="btn verde">Bloquear</button>
+        <form id="formDia" novalidate>
+          <div class="grid">
+            <div class="campo"><label>Fecha</label><input type="date" id="dFecha" required></div>
+            <div class="campo"><label>Tipo</label>
+              <select id="dTipo"><option value="bloqueo">Sin labores</option><option value="especial">Horario especial</option></select></div>
+            <div class="campo span2"><label>Motivo</label><input id="dMotivo" placeholder="Asueto, feriado, inventario…" maxlength="120" required></div>
+            <div class="campo" id="campoHora" hidden><label>Cierra a las</label><input type="time" id="dHora" value="12:00"></div>
+            <div class="campo" style="display:flex;align-items:flex-end"><button class="btn verde" style="width:100%">Agregar al calendario</button></div>
+          </div>
         </form>
+        <div style="height:14px"></div>
         <div class="lista-items lista-fechas" id="listaDias"><div class="cargando">Cargando…</div></div>
       </section>
     </div>

@@ -25,7 +25,7 @@ function pintar() {
     && (!area || a.areas.some(x => x.area_id === area)));
   $("tabla").innerHTML = lista.length ? lista.map(a => `
     <tr>
-      <td class="principal"><b>${escapar(a.nombre)}</b><span class="sub">${escapar(NOMBRES_ROL[a.rol] || a.rol)}</span></td>
+      <td class="principal"><b>${escapar(a.nombre)}</b><span class="sub">${escapar(NOMBRES_ROL[a.rol] || a.rol)} · ${a.max_trabajos ? `máx. ${a.max_trabajos} trabajos` : "sin límite de trabajos"}</span></td>
       <td data-label="Áreas"><div class="chips" style="flex-direction:column;align-items:flex-end;gap:6px">${a.areas.map(x => `
         <span><span class="badge azul">${escapar(x.area)}</span>
           <span class="sub" style="display:inline;margin-left:4px">${x.tipo_ids.length ? x.tipo_ids.map(nombreTipo).map(escapar).join(", ") : "Todos"}</span></span>`).join("")}

@@ -4,11 +4,13 @@ if (!yo) throw new Error("sin acceso");
 
 const ROLES = {
   admin: "Administra usuarios, clientes, catálogos y flujos.",
+  supervisor: "Supervisa todo el laboratorio: ve todas las órdenes, reasigna y autoriza pendientes. Sin acceso a configuración ni usuarios.",
   ingresos: "Recibe y valida las solicitudes nuevas.",
   tecnico: "Trabaja las órdenes asignadas en la línea de producción.",
   qa: "Valida los RP y hace el control de calidad final.",
   facturacion: "Facturación, empaque y cobros.",
-  logistica: "Recolectas y entregas.",
+  logistica: "Coordina rutas y asigna recolectas y entregas a los mensajeros.",
+  mensajero: "Realiza las recolectas y entregas asignadas y las marca desde su celular.",
 };
 
 let empleados = [];
@@ -36,18 +38,19 @@ async function cargar() {
     empleados = await api("GET", "/empleados?" + params);
     pintar();
   } catch (error) {
-    $("tabla").innerHTML = `<tr><td colspan="6" class="vacio">${escapar(error.message)}</td></tr>`;
+    $("tabla").innerHTML = `<tr><td colspan="7" class="vacio">${escapar(error.message)}</td></tr>`;
   }
 }
 
 function pintar() {
   if (!empleados.length) {
-    $("tabla").innerHTML = '<tr><td colspan="6" class="vacio">No hay empleados con esos filtros.</td></tr>';
+    $("tabla").innerHTML = '<tr><td colspan="7" class="vacio">No hay empleados con esos filtros.</td></tr>';
     return;
   }
   $("tabla").innerHTML = empleados.map(e => `
     <tr>
       <td class="principal"><b>${escapar(e.nombre)} ${escapar(e.apellido)}</b>${e.id === yo.id ? ' <span class="badge gris">Tú</span>' : ""}<span class="sub">${escapar(e.email)}${e.telefono ? " · " + escapar(e.telefono) : ""}</span></td>
+      <td data-label="Máx. trabajos">${e.max_trabajos ? `<span class="badge gris">${e.max_trabajos}</span>` : '<span class="sub" style="display:inline">Sin límite</span>'}</td>
       <td data-label="Rol"><span class="badge ${e.rol === "admin" ? "blanco" : "gris"}">${NOMBRES_ROL[e.rol] || e.rol}</span></td>
       <td data-label="Áreas"><div class="chips">${e.areas.length ? e.areas.map(a => `<span class="badge azul">${escapar(a.nombre)}</span>`).join("") : '<span style="color:var(--texto-3)">—</span>'}</div></td>
       <td data-label="Último acceso">${fechaHora(e.ultimo_acceso)}</td>
@@ -91,6 +94,7 @@ function abrir(empleado = null) {
   $("eEmail").value = empleado?.email || "";
   $("eTelefono").value = empleado?.telefono || "";
   $("eDireccion").value = empleado?.direccion || "";
+  $("eMax").value = empleado?.max_trabajos ?? "";
   $("eRol").value = empleado?.rol || "tecnico";
   $("eRol").onchange();
   const ids = new Set((empleado?.areas || []).map(a => a.id));
@@ -106,6 +110,7 @@ $("formEmpleado").onsubmit = async ev => {
     apellido: $("eApellido").value.trim().length < 2,
     email: !correoValido($("eEmail").value),
     telefono: !!$("eTelefono").value.trim() && !telefonoValido($("eTelefono").value),
+    max_trabajos: !!$("eMax").value && !(Number.isInteger(Number($("eMax").value)) && Number($("eMax").value) >= 1 && Number($("eMax").value) <= 200),
     password: modo === "crear" && $("ePassword").value.length < 8,
   };
   document.querySelectorAll("#formEmpleado [data-campo]").forEach(c => c.classList.toggle("error", !!errores[c.dataset.campo]));
@@ -114,6 +119,7 @@ $("formEmpleado").onsubmit = async ev => {
   const datos = {
     nombre: $("eNombre").value.trim(), apellido: $("eApellido").value.trim(), email: $("eEmail").value.trim(),
     telefono: limpiarNumero($("eTelefono").value) || null, direccion: $("eDireccion").value.trim() || null,
+    max_trabajos: $("eMax").value ? Number($("eMax").value) : null,
     rol: $("eRol").value, area_ids: [...$("eAreas").querySelectorAll("input:checked")].map(i => +i.value),
   };
   $("btnGuardar").disabled = true;

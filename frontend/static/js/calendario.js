@@ -57,7 +57,8 @@ async function cargarDias() {
     $("listaDias").innerHTML = dias.length ? dias.map(d => `
       <div class="item ${d.fecha < hoyTxt ? "pasado" : ""}">
         <span class="fecha">${escapar(fechaLarga(d.fecha))}</span>
-        <span class="nombre" style="font-weight:400">${escapar(d.motivo)}</span>
+        <span class="nombre" style="font-weight:400">${escapar(d.motivo)}
+          <small>${d.hora_corte ? `<span class="badge azul">Horario especial · cierra ${escapar(d.hora_corte)}</span>` : '<span class="badge rojo">Sin labores</span>'}</small></span>
         <div class="botones"><button class="btn chico rojo-borde" data-quitar="${d.id}" data-fecha="${d.fecha}">Quitar</button></div>
       </div>`).join("") : `<div class="vacio">No hay días bloqueados en ${anio()}.</div>`;
   } catch (error) { mostrarErrores($("errorCal"), error); }
@@ -72,24 +73,29 @@ $("btnFeriados").onclick = async () => {
   } catch (error) { mostrarErrores($("errorCal"), error); }
 };
 
+$("dTipo").onchange = () => { $("campoHora").hidden = $("dTipo").value !== "especial"; };
+
 $("formDia").onsubmit = async e => {
   e.preventDefault();
   $("errorCal").hidden = true;
-  if (!$("dFecha").value || $("dMotivo").value.trim().length < 2) {
-    return mostrarErrores($("errorCal"), new Error("Indica la fecha y un motivo."));
+  const especial = $("dTipo").value === "especial";
+  if (!$("dFecha").value || $("dMotivo").value.trim().length < 2 || (especial && !$("dHora").value)) {
+    return mostrarErrores($("errorCal"), new Error(especial ? "Indica la fecha, el motivo y la hora de cierre." : "Indica la fecha y un motivo."));
   }
   try {
-    await api("POST", "/config/calendario", { fecha: $("dFecha").value, motivo: $("dMotivo").value.trim() });
+    await api("POST", "/config/calendario", { fecha: $("dFecha").value, motivo: $("dMotivo").value.trim(),
+      hora_corte: especial ? $("dHora").value : null });
     const a = Number($("dFecha").value.slice(0, 4));
     if (a !== anio() && [...$("fAnio").options].some(o => Number(o.value) === a)) $("fAnio").value = a;
-    $("formDia").reset(); toast("Día bloqueado"); cargarDias(); probar();
+    $("formDia").reset(); $("dHora").value = "12:00"; $("campoHora").hidden = true;
+    toast(especial ? "Horario especial agregado" : "Día bloqueado"); cargarDias(); probar();
   } catch (error) { mostrarErrores($("errorCal"), error); }
 };
 
 $("listaDias").addEventListener("click", async e => {
   const b = e.target.closest("[data-quitar]");
-  if (!b || !confirm(`¿Desbloquear el ${fechaLarga(b.dataset.fecha)}?`)) return;
-  try { await api("DELETE", `/config/calendario/${b.dataset.quitar}`); toast("Día desbloqueado"); cargarDias(); probar(); }
+  if (!b || !confirm(`¿Quitar el ${fechaLarga(b.dataset.fecha)} del calendario?`)) return;
+  try { await api("DELETE", `/config/calendario/${b.dataset.quitar}`); toast("Fecha quitada del calendario"); cargarDias(); probar(); }
   catch (error) { toast(error.message, true); }
 });
 

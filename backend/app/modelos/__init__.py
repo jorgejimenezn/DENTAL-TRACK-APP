@@ -6,7 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.postgres import Base
 
-ROLES_INTERNOS = ["admin", "ingresos", "tecnico", "qa", "facturacion", "logistica"]
+ROLES_INTERNOS = ["admin", "supervisor", "ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"]
 ROL_CLIENTE = "doctor"
 NIVELES_CLIENTE = {2: "VIP", 3: "Normal"}  # la prioridad 1 es exclusiva de emergencias
 
@@ -38,6 +38,8 @@ class Usuario(Base):
     password_hash: Mapped[str] = mapped_column(String(200))
     rol: Mapped[str] = mapped_column(String(20))
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Tope de órdenes asignadas o en proceso al mismo tiempo. None = sin límite.
+    max_trabajos: Mapped[int | None] = mapped_column(Integer, nullable=True)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     ultimo_acceso: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 

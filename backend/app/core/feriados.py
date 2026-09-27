@@ -17,20 +17,21 @@ def domingo_de_pascua(anio: int) -> date:
     return date(anio, mes, dia)
 
 
-def feriados_guatemala(anio: int) -> list[tuple[date, str]]:
+def feriados_guatemala(anio: int) -> list[tuple[date, str, str | None]]:
+    """(fecha, motivo, hora_corte). hora_corte None = día sin labores; "12:00" = medio día."""
     pascua = domingo_de_pascua(anio)
     return sorted([
-        (date(anio, 1, 1), "Año Nuevo"),
-        (pascua - timedelta(days=3), "Jueves Santo"),
-        (pascua - timedelta(days=2), "Viernes Santo"),
-        (pascua - timedelta(days=1), "Sábado Santo"),
-        (date(anio, 5, 1), "Día del Trabajo"),
-        (date(anio, 6, 30), "Día del Ejército"),
-        (date(anio, 8, 15), "Día de la Asunción (Ciudad de Guatemala)"),
-        (date(anio, 9, 15), "Día de la Independencia"),
-        (date(anio, 10, 20), "Día de la Revolución"),
-        (date(anio, 11, 1), "Día de Todos los Santos"),
-        (date(anio, 12, 24), "Nochebuena (medio día)"),
-        (date(anio, 12, 25), "Navidad"),
-        (date(anio, 12, 31), "Fin de año (medio día)"),
+        (date(anio, 1, 1), "Año Nuevo", None),
+        (pascua - timedelta(days=3), "Jueves Santo", None),
+        (pascua - timedelta(days=2), "Viernes Santo", None),
+        (pascua - timedelta(days=1), "Sábado Santo", None),
+        (date(anio, 5, 1), "Día del Trabajo", None),
+        (date(anio, 6, 30), "Día del Ejército", None),
+        (date(anio, 8, 15), "Día de la Asunción (Ciudad de Guatemala)", None),
+        (date(anio, 9, 15), "Día de la Independencia", None),
+        (date(anio, 10, 20), "Día de la Revolución", None),
+        (date(anio, 11, 1), "Día de Todos los Santos", None),
+        (date(anio, 12, 24), "Nochebuena (medio día)", "12:00"),
+        (date(anio, 12, 25), "Navidad", None),
+        (date(anio, 12, 31), "Fin de año (medio día)", "12:00"),
     ])

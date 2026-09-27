@@ -22,7 +22,7 @@ class EmpleadoServicio:
     @staticmethod
     def a_salida(u: Usuario) -> EmpleadoOut:
         return EmpleadoOut(id=u.id, nombre=u.nombre, apellido=u.apellido, email=u.email,
-                           telefono=u.telefono, direccion=u.direccion, rol=u.rol,
+                           telefono=u.telefono, direccion=u.direccion, rol=u.rol, max_trabajos=u.max_trabajos,
                            activo=u.activo, areas=[AreaOut(id=a.id, nombre=a.nombre) for a in u.areas],
                            creado_en=u.creado_en, ultimo_acceso=u.ultimo_acceso)
 
@@ -52,7 +52,7 @@ class EmpleadoServicio:
         if self.usuarios.email_existe(datos.email):
             raise Conflicto("Ya existe un usuario con ese correo")
         u = Usuario(nombre=datos.nombre, apellido=datos.apellido, email=datos.email.lower(),
-                    telefono=datos.telefono, direccion=datos.direccion,
+                    telefono=datos.telefono, direccion=datos.direccion, max_trabajos=datos.max_trabajos,
                     password_hash=cifrar_password(datos.password), rol=datos.rol, activo=True)
         u.areas = self._areas(datos.area_ids)
         self.usuarios.agregar(u)
@@ -67,10 +67,10 @@ class EmpleadoServicio:
             raise Conflicto("Ya existe un usuario con ese correo")
         if datos.rol != "admin" and self._es_ultimo_admin(u):
             raise ErrorNegocio("No puedes quitar el rol al único administrador activo")
-        campos = ("nombre", "apellido", "email", "telefono", "direccion", "rol")
+        campos = ("nombre", "apellido", "email", "telefono", "direccion", "rol", "max_trabajos")
         antes = {c: getattr(u, c) for c in campos} | {"areas": [a.nombre for a in u.areas]}
         u.nombre, u.apellido, u.email, u.rol = datos.nombre, datos.apellido, datos.email.lower(), datos.rol
-        u.telefono, u.direccion = datos.telefono, datos.direccion
+        u.telefono, u.direccion, u.max_trabajos = datos.telefono, datos.direccion, datos.max_trabajos
         u.areas = self._areas(datos.area_ids)
         despues = {c: getattr(u, c) for c in campos} | {"areas": [a.nombre for a in u.areas]}
         self.sesion.commit()

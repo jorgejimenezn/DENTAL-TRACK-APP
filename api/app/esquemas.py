@@ -74,7 +74,7 @@ class ClienteActualizar(_ClienteBase):
     pass
 
 
-RolInterno = Literal["admin", "ingresos", "tecnico", "qa", "facturacion", "logistica"]
+RolInterno = Literal["admin", "supervisor", "ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"]
 
 
 class _EmpleadoBase(BaseModel):
@@ -85,6 +85,8 @@ class _EmpleadoBase(BaseModel):
     direccion: str | None = None
     rol: RolInterno
     area_ids: list[int] = []
+    max_trabajos: int | None = Field(default=None, ge=1, le=200,
+                                     description="Máximo de trabajos activos al mismo tiempo. Vacío = sin límite")
 
 
 class EmpleadoCrear(_EmpleadoBase):
@@ -138,6 +140,8 @@ class AsignacionIn(BaseModel):
 class DiaIn(BaseModel):
     fecha: date
     motivo: str = Field(min_length=2, max_length=120, examples=["Asueto del laboratorio"])
+    hora_corte: str | None = Field(default=None, description="Vacío = no se labora; HH:MM = horario especial",
+                                   examples=["12:00"])
 
 
 class ParametrosIn(BaseModel):

@@ -116,10 +116,14 @@ usuario_area_tipo = Table(
 
 # ---------------- Calendario y parámetros ----------------
 class DiaNoLaborable(Base):
+    """Fecha especial del calendario.
+    hora_corte = None → no se labora (no cuenta como hábil ni se puede elegir para entrega).
+    hora_corte = "HH:MM" → se labora con horario especial: cierra a esa hora (ej. 24 de diciembre)."""
     __tablename__ = "dias_no_laborables"
     id: Mapped[int] = mapped_column(primary_key=True)
     fecha: Mapped[date] = mapped_column(Date, unique=True, index=True)
     motivo: Mapped[str] = mapped_column(String(120))
+    hora_corte: Mapped[str | None] = mapped_column(String(5), nullable=True)
 
 
 class Parametro(Base):

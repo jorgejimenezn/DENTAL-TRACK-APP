@@ -123,6 +123,7 @@ class AsignacionEmpleado(BaseModel):
     usuario_id: int
     nombre: str
     rol: str
+    max_trabajos: int | None = None
     areas: list[AsignacionArea]
 
 
@@ -131,16 +132,27 @@ class AsignacionIn(BaseModel):
 
 
 # --- Calendario y parámetros ---
+_HORA = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
+
+
 class DiaIn(BaseModel):
     fecha: date
     motivo: str = Field(min_length=2, max_length=120)
+    hora_corte: str | None = Field(default=None, description="Vacío = no se labora; HH:MM = horario especial",
+                                   examples=["12:00"])
+
+    @field_validator("hora_corte")
+    @classmethod
+    def validar_hora(cls, v: str | None) -> str | None:
+        if not v:
+            return None
+        if not _HORA.match(v):
+            raise ValueError("Formato de hora HH:MM (00:00 a 23:59)")
+        return v
 
 
 class DiaOut(DiaIn):
     id: int
-
-
-_HORA = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
 
 class Parametros(BaseModel):

@@ -19,6 +19,10 @@ def _mensaje(error: dict) -> str:
         return "Debe incluir al menos un elemento"
     if tipo == "literal_error":
         return "Valor no permitido"
+    if tipo == "greater_than_equal":
+        return f"Debe ser mayor o igual a {ctx.get('ge')}"
+    if tipo == "less_than_equal":
+        return f"Debe ser menor o igual a {ctx.get('le')}"
     if tipo in ("int_parsing", "int_type"):
         return "Debe ser un número"
     if tipo == "value_error" and "email" in error.get("msg", "").lower():

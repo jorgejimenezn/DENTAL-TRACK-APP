@@ -32,7 +32,24 @@ Proyecto de graduación. Arquitectura en N capas con cinco servicios en Railway 
 
 - **Login** con token JWT, contraseñas cifradas con bcrypt y redirección según rol.
 - **Clientes**: razón social y nombre de facturación, alta, edición, activar/desactivar, restablecer contraseña, varias direcciones de entrega (una principal), clínica en red, prioridad 2 (VIP) o 3 (normal), visible solo para el laboratorio. La prioridad 1 queda reservada para emergencias. Validación real de **NIT** (dígito verificador) y **DPI** (CUI de 13 dígitos) en el frontend y en el backend.
-- **Empleados**: alta, edición, roles (admin, ingresos, técnico, QA, facturación, logística), áreas del laboratorio, activar/desactivar, restablecer contraseña. No se puede desactivar ni quitar el rol al último administrador.
+- **Empleados**: alta, edición, roles, áreas del laboratorio, **máximo de trabajos activos** (vacío = sin límite), activar/desactivar, restablecer contraseña. No se puede desactivar ni quitar el rol al último administrador.
+
+### Roles y áreas
+El **rol** define qué puede hacer una persona en el sistema (pantallas y permisos) y está fijo en el código porque cada uno tiene lógica propia. El **área** define dónde trabaja dentro del laboratorio y es administrable (Catálogos → Áreas).
+
+| Rol | Función |
+|---|---|
+| Administrador | Usuarios, clientes, configuración completa. |
+| Supervisor | Supervisión general del laboratorio: todas las órdenes, reasignaciones y pendientes de autorizar. Sin acceso a configuración ni usuarios. |
+| Ingresos | Recibe y valida solicitudes nuevas. |
+| Técnico | Trabaja las órdenes de su bandeja, una a la vez. |
+| QA | Valida los RP (garantía o cobro) y hace el control de calidad final. |
+| Facturación | Facturación, empaque y cobros. |
+| Logística | Coordina rutas y asigna recolectas y entregas. |
+| Mensajero | Ejecuta las recolectas y entregas asignadas desde su celular. |
+| Doctor | Cliente: crea solicitudes y sigue sus casos. |
+
+**Máximo de trabajos activos:** si todos los empleados que pueden atender un paso llegaron a su tope, la orden espera en la cola del área y se asigna cuando alguien libera cupo.
 - **Bitácora** en MongoDB: inicios de sesión (exitosos y fallidos), creaciones, ediciones con valores antes/después.
 - **Registro público de clientes** desde el login (`registro.html`): la cuenta se crea siempre como cliente (rol doctor) con prioridad 3 (normal); el servidor ignora cualquier otro rol o prioridad enviados. Al terminar, la sesión queda iniciada.
 - **Prototipo** del formulario de nueva solicitud (`nueva-solicitud.html`).
@@ -46,7 +63,7 @@ Todo lo que define cómo trabaja el laboratorio se administra desde el menú **C
 | **Catálogos** | Tipos de trabajo → materiales → (unidades y guías de color) → colores; motivos de RP; áreas. Activar/desactivar sin borrar historial y vista previa de la cadena. |
 | **Flujos de trabajo** | Pasos (áreas en orden) por tipo de trabajo y modalidad digital/analógica. Cada paso muestra cuántos empleados pueden atenderlo; en rojo si nadie. |
 | **Asignaciones** | Por empleado y área: todos los tipos de trabajo o solo algunos (ej. CAD solo coronas). Las áreas se asignan en Empleados. |
-| **Calendario y reglas** | Horas de corte (lun-vie y sábado), días hábiles mínimos (digital, analógico, emergencia), días no laborables y carga de feriados de Guatemala (Semana Santa calculada por año). Incluye un probador de la fecha mínima de entrega. |
+| **Calendario y reglas** | Horas de corte (lun-vie y sábado), días hábiles mínimos (digital, analógico, emergencia), días **sin labores** y días con **horario especial** (se trabaja pero cierra antes, ej. 24 y 31 de diciembre hasta las 12:00), carga de feriados de Guatemala (Semana Santa calculada por año) y un probador de la fecha mínima de entrega. |
 
 Al primer arranque se cargan datos iniciales de ejemplo (6 tipos de trabajo, 6 materiales, guías VITA Classic y 3D-Master, 12 flujos, 8 motivos de RP y feriados del año actual y el siguiente). Solo se cargan si las tablas están vacías, así que tus cambios nunca se sobrescriben.
 

@@ -205,7 +205,7 @@ class AsignacionServicio(_Base):
     def listar(self) -> list[AsignacionEmpleado]:
         restricciones = self._restricciones()
         return [AsignacionEmpleado(
-            usuario_id=e.id, nombre=f"{e.nombre} {e.apellido}".strip(), rol=e.rol,
+            usuario_id=e.id, nombre=f"{e.nombre} {e.apellido}".strip(), rol=e.rol, max_trabajos=e.max_trabajos,
             areas=[AsignacionArea(area_id=a.id, area=a.nombre,
                                   tipo_ids=sorted(restricciones.get((e.id, a.id), set()))) for a in e.areas])
             for e in self._empleados() if e.areas]
@@ -282,17 +282,18 @@ class CalendarioServicio(_Base):
         consulta = select(DiaNoLaborable).order_by(DiaNoLaborable.fecha)
         if anio:
             consulta = consulta.where(DiaNoLaborable.fecha.between(date(anio, 1, 1), date(anio, 12, 31)))
-        return [DiaOut(id=d.id, fecha=d.fecha, motivo=d.motivo) for d in self.sesion.scalars(consulta)]
+        return [DiaOut(id=d.id, fecha=d.fecha, motivo=d.motivo, hora_corte=d.hora_corte) for d in self.sesion.scalars(consulta)]
 
     def agregar(self, datos: DiaIn, actor: Actor) -> DiaOut:
         if self.sesion.scalar(select(DiaNoLaborable.id).where(DiaNoLaborable.fecha == datos.fecha)):
             raise Conflicto("Esa fecha ya está bloqueada")
-        dia = DiaNoLaborable(fecha=datos.fecha, motivo=datos.motivo.strip())
+        dia = DiaNoLaborable(fecha=datos.fecha, motivo=datos.motivo.strip(), hora_corte=datos.hora_corte)
         self.sesion.add(dia)
         self.sesion.commit()
-        self._registrar("calendario", actor, {"accion": "bloquear", "fecha": str(dia.fecha), "motivo": dia.motivo},
-                        dia.id)
-        return DiaOut(id=dia.id, fecha=dia.fecha, motivo=dia.motivo)
+        self._registrar("calendario", actor, {
+            "accion": f"horario especial hasta {dia.hora_corte}" if dia.hora_corte else "bloquear",
+            "fecha": str(dia.fecha), "motivo": dia.motivo}, dia.id)
+        return DiaOut(id=dia.id, fecha=dia.fecha, motivo=dia.motivo, hora_corte=dia.hora_corte)
 
     def eliminar(self, dia_id: int, actor: Actor) -> None:
         dia = self.sesion.get(DiaNoLaborable, dia_id)
@@ -305,7 +306,8 @@ class CalendarioServicio(_Base):
 
     def cargar_feriados(self, anio: int, actor: Actor) -> list[DiaOut]:
         existentes = set(self.sesion.scalars(select(DiaNoLaborable.fecha)))
-        nuevos = [DiaNoLaborable(fecha=f, motivo=m) for f, m in feriados_guatemala(anio) if f not in existentes]
+        nuevos = [DiaNoLaborable(fecha=f, motivo=m, hora_corte=h) for f, m, h in feriados_guatemala(anio)
+                  if f not in existentes]
         self.sesion.add_all(nuevos)
         self.sesion.commit()
         self._registrar("calendario", actor, {"accion": "cargar_feriados", "anio": anio, "agregados": len(nuevos)})
@@ -339,8 +341,10 @@ class CalendarioServicio(_Base):
         p = self.parametros()
         ahora = (ahora.astimezone(ZONA) if ahora and ahora.tzinfo else (ahora.replace(tzinfo=ZONA) if ahora
                                                                            else datetime.now(ZONA)))
-        bloqueados = set(self.sesion.scalars(select(DiaNoLaborable.fecha).where(
-            DiaNoLaborable.fecha.between(ahora.date() - timedelta(days=1), ahora.date() + timedelta(days=120)))))
+        especiales = {d.fecha: d.hora_corte for d in self.sesion.scalars(select(DiaNoLaborable).where(
+            DiaNoLaborable.fecha.between(ahora.date() - timedelta(days=1), ahora.date() + timedelta(days=120))))}
+        bloqueados = {f for f, h in especiales.items() if not h}   # sin labores
+        horarios = {f: h for f, h in especiales.items() if h}        # se labora con cierre anticipado
 
         def habil(d: date) -> bool:
             return d.weekday() < 5 and d not in bloqueados
@@ -352,7 +356,12 @@ class CalendarioServicio(_Base):
             return d
 
         hoy, hora = ahora.date(), ahora.strftime("%H:%M")
-        if habil(hoy) and hora < p.corte_semana:
+        if hoy in horarios and hora < horarios[hoy]:
+            base, nota = hoy, f"Horario especial: registrado antes de las {horarios[hoy]}"
+        elif hoy in horarios:
+            base = siguiente_habil(hoy)
+            nota = f"Horario especial (cierre {horarios[hoy]}): se cuenta desde el siguiente día hábil"
+        elif habil(hoy) and hora < p.corte_semana:
             base, nota = hoy, f"Registrado antes de las {p.corte_semana}"
         elif hoy.weekday() == 5 and hoy not in bloqueados and hora < p.corte_sabado:
             base, nota = hoy, f"Sábado antes de las {p.corte_sabado}"

@@ -27,8 +27,8 @@
       </div>
       <div class="tabla-wrap">
         <table class="responsiva">
-          <thead><tr><th>Empleado</th><th>Rol</th><th>Áreas</th><th>Último acceso</th><th>Estado</th><th></th></tr></thead>
-          <tbody id="tabla"><tr><td colspan="6" class="cargando">Cargando…</td></tr></tbody>
+          <thead><tr><th>Empleado</th><th>Máx. trabajos</th><th>Rol</th><th>Áreas</th><th>Último acceso</th><th>Estado</th><th></th></tr></thead>
+          <tbody id="tabla"><tr><td colspan="7" class="cargando">Cargando…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -53,6 +53,10 @@
       <div class="grid">
         <div class="campo"><label>Rol <span class="req">*</span></label><select id="eRol"></select>
           <div class="ayuda" id="ayudaRol"></div></div>
+        <div class="campo" data-campo="max_trabajos"><label>Máximo de trabajos activos</label>
+          <input id="eMax" type="number" min="1" max="200" inputmode="numeric" placeholder="Sin límite">
+          <div class="msg-error">Número entero de 1 a 200.</div>
+          <div class="ayuda">Órdenes asignadas o en proceso al mismo tiempo. Vacío = sin límite. Si todos los del paso están al tope, la orden espera en la cola del área.</div></div>
       </div>
       <div class="campo" style="margin-top:14px"><label>Áreas del laboratorio</label>
         <div class="selector-chips" id="eAreas"></div>

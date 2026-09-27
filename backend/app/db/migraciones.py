@@ -55,6 +55,18 @@ def migrar() -> None:
     if clientes and not clientes.get("telefono_celular", {}).get("nullable", True):
         pasos.append("ALTER TABLE clientes ALTER COLUMN telefono_celular DROP NOT NULL")
 
+    # --- Fase 2A+: tope de trabajos por empleado ------------------------------
+    if "max_trabajos" not in usuarios:
+        pasos.append("ALTER TABLE usuarios ADD COLUMN max_trabajos INTEGER")
+
+    # --- Fase 2A+: días con horario especial (medio día) ---------------------
+    dias = _columnas(inspector, "dias_no_laborables")
+    if dias and "hora_corte" not in dias:
+        pasos += [
+            "ALTER TABLE dias_no_laborables ADD COLUMN hora_corte VARCHAR(5)",
+            "UPDATE dias_no_laborables SET hora_corte = '12:00' WHERE motivo ILIKE '%medio día%'",
+        ]
+
     if not pasos:
         return
     with engine.begin() as conexion:

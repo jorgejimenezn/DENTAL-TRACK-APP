@@ -8,7 +8,7 @@ from app.core.validaciones import limpiar_numero, telefono_valido
 
 from app.esquemas.comun import AreaOut
 
-RolInterno = Literal["admin", "ingresos", "tecnico", "qa", "facturacion", "logistica"]
+RolInterno = Literal["admin", "supervisor", "ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"]
 
 
 class _EmpleadoBase(BaseModel):
@@ -19,6 +19,8 @@ class _EmpleadoBase(BaseModel):
     direccion: str | None = Field(default=None, max_length=250)
     rol: RolInterno
     area_ids: list[int] = []
+    max_trabajos: int | None = Field(default=None, ge=1, le=200,
+                                     description="Máximo de trabajos activos al mismo tiempo. Vacío = sin límite")
 
     @field_validator("telefono")
     @classmethod
@@ -47,6 +49,7 @@ class EmpleadoOut(BaseModel):
     direccion: str | None
     rol: str
     activo: bool
+    max_trabajos: int | None
     areas: list[AreaOut]
     creado_en: datetime | None
     ultimo_acceso: datetime | None

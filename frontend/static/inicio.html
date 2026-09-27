@@ -52,6 +52,10 @@
       html = tarjeta("nueva-solicitud.html", "Nueva solicitud", "Prototipo del formulario de ingreso.")
            + tarjeta(null, "Mi tablero", "Tus casos vigentes en Kanban. Próxima fase.")
            + tarjeta(null, "Historial", "Casos entregados y reprocesos. Próxima fase.");
+    } else if (usuario.rol === "supervisor") {
+      html = tarjeta(null, "Tablero del laboratorio", "Todas las órdenes por área, reasignaciones y pendientes de autorizar. Próxima fase.");
+    } else if (usuario.rol === "mensajero") {
+      html = tarjeta(null, "Mis rutas", "Recolectas y entregas asignadas por logística. Próxima fase.");
     } else {
       html = tarjeta(null, "Mi bandeja", "Órdenes asignadas por el flujo de pasos. Próxima fase.");
     }
