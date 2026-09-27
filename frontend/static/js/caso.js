@@ -28,6 +28,8 @@ function pintar() {
     c.prioridad ? `<span class="badge gris">Prioridad ${c.prioridad}</span>` : "",
   ].join("");
 
+  if (c.caja) $("etiquetas").insertAdjacentHTML("beforeend", etiquetaCaja(c.caja));
+  $("btnOrden").hidden = !(c.caja && usuario.rol !== "doctor");
   if (c.factura_numero && usuario.rol !== "doctor") $("etiquetas").insertAdjacentHTML("beforeend", `<span class="badge gris">Factura ${escapar(c.factura_numero)}</span>`);
   if (c.tipo_caso === "RP") {
     $("bloqueRp").hidden = false;
@@ -102,6 +104,8 @@ $("archivos").addEventListener("click", async e => {
   catch (error) { toast(error.message, true); }
   a.textContent = "Descargar";
 });
+
+$("btnOrden").onclick = () => abrirPdf(`/solicitudes/${casoId}/orden.pdf`, `Orden ${caso.codigo}.pdf`).catch(e => toast(e.message, true));
 
 $("formPrioridad").onsubmit = async e => {
   e.preventDefault();

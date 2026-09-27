@@ -78,6 +78,14 @@ class MotivoRP(Base):
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
+class ColorCaja(Base):
+    """Colores de las cajas físicas donde viaja el trabajo dentro del laboratorio (Ingresos los asigna)."""
+    __tablename__ = "colores_caja"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    nombre: Mapped[str] = mapped_column(String(120), unique=True)
+    activo: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
 # ---------------- Flujos de pasos ----------------
 class Flujo(Base):
     """Secuencia de áreas que recorre una orden según su tipo de trabajo y modalidad."""

@@ -100,7 +100,7 @@ class EmpleadoActualizar(_EmpleadoBase):
 # ---------------- Configuración ----------------
 from datetime import date  # noqa: E402
 
-CatalogoSimple = Literal["tipos", "materiales", "unidades", "guias", "motivos-rp", "areas"]
+CatalogoSimple = Literal["tipos", "materiales", "unidades", "guias", "motivos-rp", "areas", "colores-caja"]
 Modalidad = Literal["digital", "analogo"]
 
 
@@ -205,6 +205,8 @@ class TerminarIn(BaseModel):
     nota: str | None = Field(default=None, max_length=300)
     factura_numero: str | None = Field(default=None, max_length=40, description="Obligatorio en Facturación")
     receptor: str | None = Field(default=None, max_length=120, description="Obligatorio al entregar: quién recibe")
+    caja_color_id: int | None = Field(default=None, description="Ingresos: color de caja (GET /config/arbol → colores_caja)")
+    caja_numero: str | None = Field(default=None, max_length=20, description="Ingresos: número de caja")
 
 
 class RechazoIn(BaseModel):

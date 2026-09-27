@@ -12,15 +12,15 @@ from app.esquemas.configuracion import (Arbol, AsignacionArea, AsignacionEmplead
                                         DiaIn, DiaOut, FechaMinimaOut, FlujoIn, FlujoOut, GuiaOut, ItemOut,
                                         MaterialOut, NodoGuia, NodoMaterial, NodoTipo, Parametros, PasoOut, TipoOut)
 from app.modelos import ROL_CLIENTE, Area, Usuario
-from app.modelos.configuracion import (Color, DiaNoLaborable, Flujo, FlujoPaso, GuiaColor, Material, MotivoRP,
+from app.modelos.configuracion import (Color, ColorCaja, DiaNoLaborable, Flujo, FlujoPaso, GuiaColor, Material, MotivoRP,
                                        Parametro, TipoTrabajo, Unidad, usuario_area_tipo)
 from app.servicios.auditoria_servicio import AuditoriaServicio
 
 ZONA = ZoneInfo("America/Guatemala")
 MODELOS = {"tipos": TipoTrabajo, "materiales": Material, "unidades": Unidad, "guias": GuiaColor,
-           "motivos-rp": MotivoRP, "areas": Area}
+           "motivos-rp": MotivoRP, "areas": Area, "colores-caja": ColorCaja}
 NOMBRES = {"tipos": "tipo de trabajo", "materiales": "material", "unidades": "unidad", "guias": "guía de color",
-           "motivos-rp": "motivo de RP", "areas": "área"}
+           "motivos-rp": "motivo de RP", "areas": "área", "colores-caja": "color de caja"}
 
 
 def _item(o) -> ItemOut:
@@ -59,6 +59,7 @@ class CatalogoServicio(_Base):
             guias=[GuiaOut(**_item(g).model_dump(), colores=[_item(c) for c in g.colores]) for g in guias],
             motivos=[_item(m) for m in s.scalars(select(MotivoRP).order_by(MotivoRP.nombre))],
             areas=[_item(a) for a in s.scalars(select(Area).order_by(Area.id))],
+            colores_caja=[_item(c) for c in s.scalars(select(ColorCaja).order_by(ColorCaja.id))],
         )
 
     def _validar_unico(self, modelo, nombre: str, excluir_id=None, etiqueta="elemento"):
@@ -172,7 +173,8 @@ class CatalogoServicio(_Base):
             nodos.append(NodoTipo(id=t.id, nombre=t.nombre, materiales=materiales,
                                   modalidades=sorted(modalidades.get(t.id, []))))
         motivos = self.sesion.scalars(select(MotivoRP).where(MotivoRP.activo.is_(True)).order_by(MotivoRP.nombre))
-        return Arbol(tipos=nodos, motivos_rp=[_item(m) for m in motivos])
+        cajas = self.sesion.scalars(select(ColorCaja).where(ColorCaja.activo.is_(True)).order_by(ColorCaja.id))
+        return Arbol(tipos=nodos, motivos_rp=[_item(m) for m in motivos], colores_caja=[_item(c) for c in cajas])
 
 
 # ======================================================================

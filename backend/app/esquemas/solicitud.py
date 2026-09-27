@@ -205,6 +205,7 @@ class SolicitudResumen(BaseModel):
     caso_origen: str | None
     fuera_catalogo: bool
     area_actual: str | None = None
+    caja: str | None = None
     pasos_total: int = 0
     pasos_hechos: int = 0
     entregado_en: datetime | None = None

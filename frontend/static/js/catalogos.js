@@ -10,6 +10,8 @@ const TABS = {
     ayuda: "Forma en que se trabaja: pieza individual, puente, arcada… La cantidad sale de las piezas marcadas." },
   "motivos-rp": { titulo: "Motivos de RP", singular: "motivo", clave: "motivos",
     ayuda: "Motivos que QA elige al validar un reproceso (garantía o cobro). También podrá escribir \"Otro\"." },
+  "colores-caja": { titulo: "Colores de caja", singular: "color de caja", clave: "colores_caja",
+    ayuda: "Colores de las cajas físicas. Ingresos elige color y número al aprobar un caso; una caja no puede estar en dos casos abiertos." },
   areas: { titulo: "Áreas", singular: "área", clave: "areas",
     ayuda: "Departamentos del laboratorio. Se usan en los flujos y en las asignaciones de empleados." },
 };

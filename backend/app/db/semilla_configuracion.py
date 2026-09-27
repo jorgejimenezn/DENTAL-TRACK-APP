@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.feriados import feriados_guatemala
 from app.modelos import Area
-from app.modelos.configuracion import (Color, DiaNoLaborable, Flujo, FlujoPaso, GuiaColor, Material, MotivoRP,
+from app.modelos.configuracion import (Color, ColorCaja, DiaNoLaborable, Flujo, FlujoPaso, GuiaColor, Material, MotivoRP,
                                        Parametro, TipoTrabajo, Unidad)
 
 PARAMETROS_INICIALES = {
@@ -42,6 +42,7 @@ MATERIALES = {
     "Resina de impresión": (["Arcada superior", "Arcada inferior", "Ambas arcadas"], []),
 }
 UNIDADES = ["Pieza individual", "Pieza en puente", "Arcada superior", "Arcada inferior", "Ambas arcadas"]
+COLORES_CAJA = ["Azul", "Celeste", "Verde", "Naranja", "Roja"]
 MOTIVOS_RP = ["Fractura", "Desadaptación marginal", "Ajuste oclusal", "Contacto proximal",
               "Color no coincide", "Error de diseño del laboratorio", "Cambio solicitado por el doctor",
               "Nueva impresión o escaneo del doctor"]
@@ -86,6 +87,9 @@ def sembrar_configuracion(sesion: Session) -> None:
             for modalidad, pasos in (("digital", digital), ("analogo", analogo)):
                 sesion.add(Flujo(tipo_trabajo=tipos[tipo], modalidad=modalidad, pasos=[
                     FlujoPaso(orden=i + 1, area_id=areas[a].id) for i, a in enumerate(pasos) if a in areas]))
+
+    if _vacia(sesion, ColorCaja):
+        sesion.add_all(ColorCaja(nombre=n) for n in COLORES_CAJA)
 
     if _vacia(sesion, MotivoRP):
         sesion.add_all(MotivoRP(nombre=m) for m in MOTIVOS_RP)

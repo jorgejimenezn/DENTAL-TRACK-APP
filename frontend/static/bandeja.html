@@ -33,6 +33,10 @@
     <div class="modal-cuerpo">
       <div class="error-form" id="errorTerminar" hidden></div>
       <p id="textoTerminar" style="color:var(--texto-2);margin-bottom:12px"></p>
+      <div id="campoCaja" hidden style="margin-bottom:12px">
+        <div class="campo"><label>Color de caja <span class="req">*</span></label><div class="muestras-caja" id="tCajaColor"></div></div>
+        <div class="campo" style="margin-top:10px"><label>Número de caja <span class="req">*</span></label><input id="tCajaNumero" maxlength="20" inputmode="numeric" placeholder="Ej. 12" autocomplete="off"></div>
+      </div>
       <div class="campo" id="campoReceptor" hidden style="margin-bottom:12px"><label>Nombre de quien recibe <span class="req">*</span></label><input id="tReceptor" maxlength="120" placeholder="Ej. Ana López, recepción" autocomplete="off"></div>
       <div class="campo" id="campoFactura" hidden style="margin-bottom:12px"><label>Número de factura <span class="req">*</span></label><input id="tFactura" maxlength="40" placeholder="Ej. FAC-00123"></div>
       <div class="campo"><label>Nota</label><textarea id="tNota" maxlength="300" rows="3" placeholder="Opcional"></textarea></div>
@@ -124,6 +128,13 @@
     </div>
     <div class="modal-pie"><button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" class="btn verde">Asignar</button></div>
   </form>
+</dialog>
+
+<!-- Imprimir la orden después de aprobar -->
+<dialog class="modal chico" id="modalImprimir">
+  <div class="modal-cabecera"><h2 id="tituloImprimir">Caso ingresado</h2><button type="button" class="cerrar" data-cerrar>&times;</button></div>
+  <div class="modal-cuerpo"><p id="textoImprimir" style="color:var(--texto-2)"></p></div>
+  <div class="modal-pie"><button type="button" class="btn" data-cerrar>Después</button><button type="button" class="btn verde" id="btnImprimir">Imprimir orden (PDF)</button></div>
 </dialog>
 
 <!-- Prioridad -->

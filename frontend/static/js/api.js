@@ -105,6 +105,28 @@ async function descargarArchivo(ruta, nombre) {
 
 const ROLES_CAPTURA = ["admin", "supervisor", "ingresos"];
 
+/** Abre un PDF protegido en otra pestaña (se abre antes de pedirlo para que el navegador no la bloquee). */
+async function abrirPdf(ruta, nombre) {
+  const ventana = window.open("", "_blank");
+  try {
+    const respuesta = await fetch(API + ruta, { headers: { Authorization: "Bearer " + (Sesion.obtener()?.token || "") } });
+    if (!respuesta.ok) throw new ErrorApi(respuesta.status, (await respuesta.json().catch(() => ({}))).detail);
+    const url = URL.createObjectURL(new Blob([await respuesta.blob()], { type: "application/pdf" }));
+    if (ventana) ventana.location.href = url;
+    else Object.assign(document.createElement("a"), { href: url, download: nombre }).click();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (error) { ventana?.close(); throw error; }
+}
+
+/** Etiqueta de caja con muestra de color: "Azul 12". */
+const COLORES_CAJA = { azul: "#1f6feb", celeste: "#5bc0eb", verde: "#1a7f37", naranja: "#f28c28", roja: "#cf222e", rojo: "#cf222e",
+  amarilla: "#e3b505", amarillo: "#e3b505", morada: "#7e57c2", morado: "#7e57c2", negra: "#111", blanca: "#fff", gris: "#8a8a8a", rosada: "#e75480" };
+function etiquetaCaja(texto) {
+  if (!texto) return "";
+  const color = COLORES_CAJA[texto.split(" ")[0].toLowerCase()] || "#8a8a8a";
+  return `<span class="caja-chip"><i style="background:${color}"></i>Caja ${escapar(texto)}</span>`;
+}
+
 /* ---------- Utilidades de interfaz ---------- */
 const $ = id => document.getElementById(id);
 

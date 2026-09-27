@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-CatalogoSimple = Literal["tipos", "materiales", "unidades", "guias", "motivos-rp", "areas"]
+CatalogoSimple = Literal["tipos", "materiales", "unidades", "guias", "motivos-rp", "areas", "colores-caja"]
 Modalidad = Literal["digital", "analogo"]
 
 
@@ -51,6 +51,7 @@ class CatalogoCompleto(BaseModel):
     guias: list[GuiaOut]
     motivos: list[ItemOut]
     areas: list[ItemOut]
+    colores_caja: list[ItemOut] = []
 
 
 class IdsIn(BaseModel):
@@ -86,6 +87,7 @@ class NodoTipo(BaseModel):
 class Arbol(BaseModel):
     tipos: list[NodoTipo]
     motivos_rp: list[ItemOut]
+    colores_caja: list[ItemOut] = []
 
 
 # --- Flujos ---

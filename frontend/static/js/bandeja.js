@@ -57,6 +57,7 @@ function tarjeta(p, { actual = false, mostrarTecnico = false } = {}) {
   return `<article class="trabajo ${p.emergencia ? "urgente" : ""} ${actual ? "actual" : ""}">
     <div class="cabeza"><a class="codigo-caso" href="caso.html?id=${p.solicitud_id}">${escapar(p.codigo)}</a>${etiquetas}
       <span class="fecha ${tarde ? "tarde" : ""}">Entrega ${escapar(fechaCorta(p.fecha_entrega))}</span></div>
+    ${p.caja ? `<div>${etiquetaCaja(p.caja)}</div>` : ""}
     <div class="linea"><b>${escapar(p.trabajo)}</b>${p.color ? ` · ${escapar(p.color)}` : ""}</div>
     <div class="linea">Piezas <b>${escapar(p.piezas.join(", "))}</b> · ${escapar(p.paciente)} · ${escapar(p.cliente)}</div>
     ${extra.join("")}
@@ -171,6 +172,8 @@ document.addEventListener("click", async e => {
     : accion === "terminar" ? "El caso pasa al siguiente paso de su flujo." : "";
   if (accion === "hecho") $("tituloTerminar").textContent = `${pasoActivo.etapa === "recolecta" ? "Recolectado" : "Entregado"} · ${pasoActivo.codigo}`;
   $("campoFactura").hidden = accion !== "facturar";
+  $("campoCaja").hidden = accion !== "aprobar";
+  if (accion === "aprobar") prepararCaja();
   $("campoReceptor").hidden = !(accion === "entregado" || (accion === "hecho" && pasoActivo.etapa === "entrega"));
   $("tReceptor").value = "";
   $("tFactura").value = pasoActivo.factura_numero || ""; $("tNota").value = ""; $("errorTerminar").hidden = true;
@@ -180,10 +183,16 @@ document.addEventListener("click", async e => {
 $("formTerminar").onsubmit = async e => {
   e.preventDefault();
   if (!$("campoFactura").hidden && !$("tFactura").value.trim()) return mostrarErrores($("errorTerminar"), new Error("Ingresa el número de factura"));
+  const cajaColor = document.querySelector("[name=cajaColor]:checked")?.value;
+  if (!$("campoCaja").hidden && (!cajaColor || !$("tCajaNumero").value.trim())) return mostrarErrores($("errorTerminar"), new Error("Elige el color y escribe el número de caja"));
   if (!$("campoReceptor").hidden && $("tReceptor").value.trim().length < 2) return mostrarErrores($("errorTerminar"), new Error("Escribe el nombre de quien recibe"));
   const cuerpo = { nota: $("tNota").value.trim() || null, factura_numero: $("campoFactura").hidden ? null : $("tFactura").value.trim(),
-                   receptor: $("campoReceptor").hidden ? null : $("tReceptor").value.trim() };
+                   receptor: $("campoReceptor").hidden ? null : $("tReceptor").value.trim(),
+                   caja_color_id: $("campoCaja").hidden ? null : Number(cajaColor),
+                   caja_numero: $("campoCaja").hidden ? null : $("tCajaNumero").value.trim() };
+  const aprobado = !$("campoCaja").hidden ? { ...pasoActivo } : null;
   await ejecutar($("btnTerminar"), () => api("POST", `/pasos/${pasoActivo.paso_id}/terminar`, cuerpo), `${pasoActivo.codigo} avanzó al siguiente paso`)
+    .then(() => { if (aprobado) ofrecerImpresion(aprobado); })
     .catch(err => mostrarErrores($("errorTerminar"), err));
 };
 
@@ -327,3 +336,24 @@ $("formModificar").onsubmit = async e => {
 
 document.querySelectorAll("[data-cerrar]").forEach(b => b.onclick = () => b.closest("dialog").close());
 cargar();
+
+/* ---------- Caja al aprobar en Ingresos e impresión de la orden ---------- */
+async function prepararCaja() {
+  $("tCajaNumero").value = "";
+  const a = await obtenerArbol();
+  $("tCajaColor").innerHTML = a.colores_caja.length
+    ? a.colores_caja.map(c => `<label><input type="radio" name="cajaColor" value="${c.id}"><i style="background:${COLORES_CAJA[c.nombre.toLowerCase()] || "#8a8a8a"}"></i>${escapar(c.nombre)}</label>`).join("")
+    : '<span class="nota">No hay colores de caja activos. El administrador los crea en Catálogos → Colores de caja.</span>';
+}
+let porImprimir = null;
+function ofrecerImpresion(p) {
+  porImprimir = p;
+  $("tituloImprimir").textContent = `${p.codigo} ingresado`;
+  $("textoImprimir").textContent = "El caso entró a producción. Imprime la orden para colocarla en la caja.";
+  $("modalImprimir").showModal();
+}
+$("btnImprimir").onclick = () => {
+  const p = porImprimir;
+  $("modalImprimir").close();
+  abrirPdf(`/solicitudes/${p.solicitud_id}/orden.pdf`, `Orden ${p.codigo}.pdf`).catch(e => toast(e.message, true));
+};

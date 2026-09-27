@@ -55,6 +55,7 @@ class PasoBandeja(BaseModel):
     archivos: int
     telefono: str | None = None
     receptor: str | None = None
+    caja: str | None = None
     acciones: list[str]
     pasos_previos: list[PasoPrevio] = []
 
@@ -96,8 +97,10 @@ class TerminarIn(BaseModel):
     nota: str | None = Field(default=None, max_length=300)
     factura_numero: str | None = Field(default=None, max_length=40, description="Obligatorio en Facturación")
     receptor: str | None = Field(default=None, max_length=120, description="Obligatorio al entregar: quién recibe")
+    caja_color_id: int | None = Field(default=None, description="Obligatorio al aprobar en Ingresos")
+    caja_numero: str | None = Field(default=None, max_length=20, description="Obligatorio al aprobar en Ingresos")
 
-    @field_validator("nota", "factura_numero", "receptor")
+    @field_validator("nota", "factura_numero", "receptor", "caja_numero")
     @classmethod
     def limpiar(cls, v: str | None) -> str | None:
         return " ".join((v or "").split()) or None

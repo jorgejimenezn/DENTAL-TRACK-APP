@@ -27,7 +27,7 @@ async function cargar() {
           <span class="sub">${escapar(c.paciente)}${c.caso_origen ? ` · reapertura de ${escapar(c.caso_origen)}` : ""}</span></td>
         ${esDoctor ? "" : `<td data-label="Cliente">${escapar(c.cliente)}${c.prioridad ? `<span class="sub">Prioridad ${c.prioridad}</span>` : ""}</td>`}
         <td data-label="Trabajo">${escapar(c.trabajo)}<span class="sub">Piezas ${escapar(c.piezas.join(", "))}</span></td>
-        <td data-label="Estado"><span class="badge ${COLOR_ESTADO[c.estado] || "gris"}">${escapar(c.estado_texto)}</span>${!esDoctor && c.area_actual ? `<span class="sub">${escapar(c.area_actual)}</span>` : ""}</td>
+        <td data-label="Estado"><span class="badge ${COLOR_ESTADO[c.estado] || "gris"}">${escapar(c.estado_texto)}</span>${!esDoctor && c.area_actual ? `<span class="sub">${escapar(c.area_actual)}</span>` : ""}${c.caja ? `<span class="sub">${etiquetaCaja(c.caja)}</span>` : ""}</td>
         <td data-label="Entrega">${escapar(fechaCorta(c.fecha_entrega))}</td>
         <td class="acciones"><a class="btn chico" href="caso.html?id=${c.id}">Ver</a>
           ${c.estado === "entregada" && (esDoctor || ROLES_CAPTURA.includes(usuario.rol)) ? `<a class="btn chico verde-borde" href="reapertura.html?caso=${c.id}">Reabrir</a>` : ""}</td>

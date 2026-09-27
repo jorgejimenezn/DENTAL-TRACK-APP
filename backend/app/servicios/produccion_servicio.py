@@ -10,7 +10,8 @@ from app.esquemas.bandeja import (CLASIFICACIONES, AreaBandeja, AsignarIn, Bande
                                   PasoBandeja, PasoPrevio, Produccion, RechazoIn, ResumenArea, TerminarIn,
                                   ValidacionRpIn)
 from app.modelos import ROL_CLIENTE, Area, Usuario
-from app.modelos.configuracion import DiaNoLaborable, MotivoRP
+from app.modelos.configuracion import ColorCaja, DiaNoLaborable, MotivoRP
+from app.modelos.solicitud import ESTADOS_CERRADOS
 from app.modelos.solicitud import (PASO_ASIGNADO, PASO_EN_AREA, PASO_EN_COLA, PASO_EN_PROCESO, PASO_PENDIENTE,
                                    PASO_SIN_TECNICO, PASOS_ACTIVOS, PASOS_CARGA, Solicitud, SolicitudHistorial,
                                    SolicitudPaso)
@@ -92,7 +93,8 @@ class ProduccionServicio:
             direccion=(f"{s.recolecta_direccion}, {s.recolecta_municipio}" if p.etapa == "recolecta"
                        and s.recolecta_direccion else f"{s.entrega_direccion}, {s.entrega_municipio}"),
             archivos=len(s.archivos), telefono=s.cliente.telefono_celular or s.cliente.telefono_fijo,
-            receptor=p.receptor, acciones=acciones, pasos_previos=previos)
+            receptor=p.receptor, caja=f"{s.caja_color} {s.caja_numero}" if s.caja_numero else None,
+            acciones=acciones, pasos_previos=previos)
 
     @staticmethod
     def _orden_prioridad(p: SolicitudPaso):
@@ -234,8 +236,11 @@ class ProduccionServicio:
             if not self.motor.flujo(s):
                 raise ErrorNegocio(f"{s.tipo_trabajo} no tiene flujo activo en modalidad "
                                    f"{'digital' if s.modalidad == 'digital' else 'analógica'}")
+            self._asignar_caja(s, datos, actor)
             self.motor.completar_despues_de_ingresos(s, paso)
-            nota = "Aprobado por Ingresos" + (" · material recibido" if s.modalidad == "analogo" else "")
+            nota = ("Aprobado por Ingresos" + (" · material recibido" if s.modalidad == "analogo" else "")
+                    + f" · caja {s.caja_color} {s.caja_numero}")
+            detalle["caja"] = f"{s.caja_color} {s.caja_numero}"
         elif paso.etapa == "facturacion":
             if not datos.factura_numero:
                 raise ErrorNegocio("Ingresa el número de factura")
@@ -252,6 +257,24 @@ class ProduccionServicio:
             nota += f" · {datos.nota}"
         self.motor.terminar(paso, actor.id, datos.nota)
         self._finalizar(s, paso, actor, nota, "terminar_paso", detalle)
+
+    def _asignar_caja(self, s: Solicitud, datos: TerminarIn, actor: Actor) -> None:
+        """Color y número de la caja física. Una caja no puede estar en dos casos abiertos a la vez."""
+        if not datos.caja_color_id or not datos.caja_numero:
+            raise ErrorNegocio("Indica el color y el número de caja")
+        color = self.sesion.get(ColorCaja, datos.caja_color_id)
+        if not color or not color.activo:
+            raise ErrorNegocio("Color de caja no válido")
+        numero = datos.caja_numero.upper()
+        if not all(ch.isalnum() or ch in "-_ " for ch in numero):
+            raise ErrorNegocio("El número de caja solo puede tener letras, números y guiones")
+        ocupada = self.sesion.scalar(select(Solicitud.codigo).where(
+            Solicitud.id != s.id, Solicitud.caja_color_id == color.id,
+            func.upper(Solicitud.caja_numero) == numero, Solicitud.estado.not_in(ESTADOS_CERRADOS)))
+        if ocupada:
+            raise Conflicto(f"La caja {color.nombre} {numero} está en uso por {ocupada}")
+        s.caja_color_id, s.caja_color, s.caja_numero = color.id, color.nombre, numero
+        s.ingresado_en, s.ingresado_por_id = ahora(), actor.id
 
     # ================= QA =================
     def validar_rp(self, paso_id: int, datos: ValidacionRpIn, actor: Actor) -> None:

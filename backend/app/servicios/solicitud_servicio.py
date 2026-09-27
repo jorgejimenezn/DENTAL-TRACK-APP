@@ -6,7 +6,7 @@ también se puede usar directamente desde Swagger.
 from datetime import date, datetime, timedelta
 from pathlib import PurePath
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session, selectinload
 
@@ -361,6 +361,19 @@ class SolicitudServicio:
             "codigo": solicitud.codigo, "cambios": {"prioridad": [anterior, prioridad]}, "motivo": motivo})
         return self.obtener(solicitud.id, actor)
 
+    def orden_pdf(self, solicitud_id: int, actor: Actor) -> tuple[bytes, str]:
+        """PDF de la orden de trabajo. Solo personal del laboratorio y después del Ok de Ingresos."""
+        if self._es_doctor(actor):
+            raise ErrorNegocio("La orden de trabajo es un documento interno del laboratorio", 403)
+        s = self._visible(solicitud_id, actor)
+        if not s.caja_numero:
+            raise ErrorNegocio("La orden se imprime cuando Ingresos aprueba el caso y le asigna caja")
+        from app.servicios.orden_pdf import generar_orden
+        usuario = self.sesion.get(Usuario, actor.id) if actor.id else None
+        contenido = generar_orden(s, f"{usuario.nombre} {usuario.apellido}".strip() if usuario else "sistema")
+        self.auditoria.registrar("imprimir_orden", "solicitud", s.id, actor, {"codigo": s.codigo})
+        return contenido, f"Orden {s.codigo}.pdf"
+
     # ================= Consultas =================
     def _resumen(self, s: Solicitud, actor: Actor) -> dict:
         texto, columna = ESTADOS[s.estado]
@@ -374,6 +387,7 @@ class SolicitudServicio:
             fecha_entrega=s.fecha_entrega, creado_en=s.creado_en,
             caso_origen=s.caso_origen.codigo if s.caso_origen else None, fuera_catalogo=s.fuera_catalogo,
             area_actual=(lambda p: p.area.nombre if p else None)(Motor.paso_actual(s)),
+            caja=None if self._es_doctor(actor) or not s.caja_numero else f"{s.caja_color} {s.caja_numero}",
             pasos_total=len([p for p in s.pasos if p.estado != "omitido"]),
             pasos_hechos=len([p for p in s.pasos if p.estado == "terminado"]),
             entregado_en=next((h.fecha for h in reversed(s.historial) if h.estado == "entregada"), None)
@@ -412,8 +426,11 @@ class SolicitudServicio:
             consulta = consulta.where(Solicitud.tipo_caso == tipo_caso.upper())
         if q:
             patron = f"%{q.strip()}%"
-            consulta = consulta.where(or_(Solicitud.codigo.ilike(patron), Solicitud.paciente.ilike(patron),
-                                          Solicitud.doctor_tratante.ilike(patron)))
+            condiciones = [Solicitud.codigo.ilike(patron), Solicitud.paciente.ilike(patron),
+                           Solicitud.doctor_tratante.ilike(patron)]
+            if not self._es_doctor(actor):  # el personal también busca por caja: "azul 12"
+                condiciones.append(func.concat(Solicitud.caja_color, " ", Solicitud.caja_numero).ilike(patron))
+            consulta = consulta.where(or_(*condiciones))
         orden = ((Solicitud.prioridad, Solicitud.fecha_entrega, Solicitud.id) if vigentes
                  else (Solicitud.creado_en.desc(), Solicitud.id.desc()))
         filas = self.sesion.scalars(consulta.order_by(*orden).limit(limite))

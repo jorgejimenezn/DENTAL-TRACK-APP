@@ -92,9 +92,17 @@ class Solicitud(Base):
 
     instrucciones: Mapped[str | None] = mapped_column(Text, nullable=True)
     factura_numero: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    # Caja física que asigna Ingresos al aprobar
+    caja_color_id: Mapped[int | None] = mapped_column(ForeignKey("colores_caja.id"), nullable=True)
+    caja_color: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    caja_numero: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    ingresado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    ingresado_por_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
 
     cliente: Mapped["Cliente"] = relationship()  # noqa: F821
     creado_por: Mapped["Usuario | None"] = relationship(foreign_keys=[creado_por_id])  # noqa: F821
+    ingresado_por: Mapped["Usuario | None"] = relationship(foreign_keys=[ingresado_por_id])  # noqa: F821
+    qa_motivo: Mapped["MotivoRP | None"] = relationship()  # noqa: F821
     caso_origen: Mapped["Solicitud | None"] = relationship(remote_side=[id], foreign_keys=[caso_origen_id])
     archivos: Mapped[list["SolicitudArchivo"]] = relationship(back_populates="solicitud", order_by="SolicitudArchivo.id",
                                                              cascade="all, delete-orphan")

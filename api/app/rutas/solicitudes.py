@@ -77,6 +77,11 @@ async def cancelar(solicitud_id: int, datos: MotivoIn, u: dict = Depends(admin_o
     return await llamar("POST", f"/solicitudes/{solicitud_id}/cancelar", u, json=datos.model_dump())
 
 
+@router.get("/solicitudes/{solicitud_id}/orden.pdf", summary="Orden de trabajo en PDF (personal, después del Ok de Ingresos)")
+async def orden_pdf(solicitud_id: int, u: dict = Depends(usuario_actual)):
+    return await descargar(f"/solicitudes/{solicitud_id}/orden.pdf", u)
+
+
 @router.get("/solicitudes/{solicitud_id}/archivos/{archivo_id}", summary="Descargar un archivo de la solicitud")
 async def descargar_archivo(solicitud_id: int, archivo_id: str, u: dict = Depends(usuario_actual)):
     return await descargar(f"/solicitudes/{solicitud_id}/archivos/{archivo_id}", u)

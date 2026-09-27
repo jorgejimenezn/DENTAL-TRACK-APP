@@ -71,6 +71,17 @@ def migrar() -> None:
     solicitudes = _columnas(inspector, "solicitudes")
     if solicitudes and "factura_numero" not in solicitudes:
         pasos.append("ALTER TABLE solicitudes ADD COLUMN factura_numero VARCHAR(40)")
+    # --- Caja física asignada por Ingresos -----------------------------------
+    if solicitudes and "caja_numero" not in solicitudes:
+        pasos += [
+            "CREATE TABLE IF NOT EXISTS colores_caja (id SERIAL PRIMARY KEY, nombre VARCHAR(120) UNIQUE NOT NULL, "
+            "activo BOOLEAN NOT NULL DEFAULT TRUE)",
+            "ALTER TABLE solicitudes ADD COLUMN caja_color_id INTEGER REFERENCES colores_caja(id)",
+            "ALTER TABLE solicitudes ADD COLUMN caja_color VARCHAR(120)",
+            "ALTER TABLE solicitudes ADD COLUMN caja_numero VARCHAR(20)",
+            "ALTER TABLE solicitudes ADD COLUMN ingresado_en TIMESTAMPTZ",
+            "ALTER TABLE solicitudes ADD COLUMN ingresado_por_id INTEGER REFERENCES usuarios(id)",
+        ]
 
     # --- Fase 3C: nombre de quien recibe la entrega ------------------------
     pasos_solicitud = _columnas(inspector, "solicitud_pasos")

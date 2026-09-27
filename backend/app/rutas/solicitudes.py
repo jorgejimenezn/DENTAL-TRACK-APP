@@ -86,6 +86,13 @@ def cancelar(solicitud_id: int, datos: MotivoIn, actor: Actor = Depends(obtener_
     return s.cancelar(solicitud_id, datos.motivo, actor)
 
 
+@router.get("/solicitudes/{solicitud_id}/orden.pdf")
+def orden_pdf(solicitud_id: int, actor: Actor = Depends(obtener_actor), s: SolicitudServicio = Depends(_servicio)):
+    contenido, nombre = s.orden_pdf(solicitud_id, actor)
+    return Response(content=contenido, media_type="application/pdf",
+                    headers={"Content-Disposition": f"inline; filename*=UTF-8''{quote(nombre)}"})
+
+
 @router.get("/solicitudes/{solicitud_id}/archivos/{archivo_id}")
 def descargar(solicitud_id: int, archivo_id: str, actor: Actor = Depends(obtener_actor),
               s: SolicitudServicio = Depends(_servicio)):

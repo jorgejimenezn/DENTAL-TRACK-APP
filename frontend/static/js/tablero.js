@@ -15,6 +15,7 @@ function tarjeta(c) {
       ${c.emergencia ? '<span class="badge rojo">EMERGENCIA</span>' : ""}${c.tipo_caso === "RP" ? '<span class="badge azul">RP</span>' : ""}
       <span class="fecha ${tarde ? "tarde" : ""}">${entregado ? "Entregado " + escapar(fechaHora(c.entregado_en).split(",")[0]) : "Entrega " + escapar(fecha(c.fecha_entrega))}</span></div>
     <div class="pac">${escapar(c.paciente)}</div>
+    ${c.caja ? `<div style="margin-top:4px">${etiquetaCaja(c.caja)}</div>` : ""}
     <div class="trab">${escapar(c.trabajo)} · piezas ${escapar(c.piezas.join(", "))}</div>
     ${c.doctor_tratante ? `<div class="trab">${escapar(c.doctor_tratante)}</div>` : ""}
     ${entregado ? "" : `<div class="progreso" title="${c.pasos_hechos} de ${c.pasos_total} pasos"><span style="width:${pct}%"></span></div>
