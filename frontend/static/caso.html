@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detalle del caso · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="marca" id="marca" aria-hidden="true"></div>
+<div class="app">
+  <aside class="lateral" id="lateral"></aside>
+  <main class="contenido">
+    <p style="margin-bottom:10px"><a href="casos.html" id="volver">← Volver a la lista</a></p>
+    <div class="encabezado">
+      <div>
+        <h1 id="titulo">Cargando…</h1>
+        <p id="subtitulo"></p>
+        <div class="chips" id="etiquetas" style="margin-top:8px;gap:6px"></div>
+      </div>
+    </div>
+    <div class="aviso verde" id="avisoNuevo" hidden style="margin:0 0 16px"></div>
+    <div class="error-form" id="errorCaso" hidden></div>
+
+    <div class="detalle-grid" id="contenidoCaso" hidden>
+      <div>
+        <section class="card paso-card" id="bloqueRp" hidden>
+          <h2>Reapertura</h2>
+          <div class="datos" id="datosRp"></div>
+        </section>
+        <section class="card paso-card">
+          <h2>Datos del caso</h2>
+          <div class="datos" id="datos"></div>
+        </section>
+        <section class="card paso-card">
+          <h2>Entrega</h2>
+          <div class="datos" id="entrega"></div>
+        </section>
+        <section class="card paso-card">
+          <h2>Archivos</h2>
+          <div class="lista-archivos" id="archivos"></div>
+        </section>
+      </div>
+      <div>
+        <section class="card paso-card">
+          <h2>Acciones</h2>
+          <div id="acciones"></div>
+          <form id="formEstado" hidden style="margin-top:14px;border-top:1px solid var(--panel-borde);padding-top:14px">
+            <div class="campo"><label>Cambiar estado (administración)</label><select id="nuevoEstado"></select></div>
+            <div class="campo" style="margin-top:10px"><label>Nota</label><input id="notaEstado" maxlength="300" placeholder="Opcional"></div>
+            <button class="btn" style="margin-top:10px;width:100%">Guardar estado</button>
+            <div class="ayuda nota">Temporal: sirve para probar el recorrido hasta que cada área tenga su bandeja.</div>
+          </form>
+        </section>
+        <section class="card paso-card" id="bloqueReaperturas" hidden>
+          <h2>Reaperturas de este caso</h2>
+          <div class="lista-items" id="reaperturas"></div>
+        </section>
+        <section class="card paso-card">
+          <h2>Línea de tiempo</h2>
+          <ul class="linea-tiempo" id="historial"></ul>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/caso.js"></script>
+</body>
+</html>

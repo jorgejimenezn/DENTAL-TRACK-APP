@@ -150,3 +150,53 @@ class ParametrosIn(BaseModel):
     min_digital: int = Field(ge=0, le=30, examples=[2])
     min_analogo: int = Field(ge=0, le=30, examples=[3])
     min_emergencia: int = Field(ge=0, le=30, examples=[1])
+
+
+# ---------------- Solicitudes (CN / RP) ----------------
+class SeleccionIn(BaseModel):
+    """Elemento del catálogo (id) o texto libre fuera de catálogo. Solo uno de los dos."""
+    id: int | None = Field(default=None, examples=[1])
+    fuera_catalogo: str | None = Field(default=None, max_length=120, examples=[None])
+
+
+class DireccionSelIn(BaseModel):
+    tipo: Literal["existente", "nueva", "misma_que_entrega"] = Field(examples=["existente"])
+    direccion_id: int | None = Field(default=None, examples=[1])
+    departamento: str | None = None
+    municipio: str | None = None
+    direccion: str | None = None
+    guardar: bool = Field(default=False, description="Nueva dirección: guardarla en las direcciones del cliente")
+
+
+class _EntregaIn(BaseModel):
+    modalidad: Modalidad
+    piezas: list[int] = Field(min_length=1, description="Numeración FDI", examples=[[11, 21]])
+    fecha_entrega: date
+    emergencia: bool = Field(default=False, description="Prioridad 1: permite la fecha mínima de emergencia")
+    direccion_entrega: DireccionSelIn
+    direccion_recolecta: DireccionSelIn | None = Field(default=None, description="Solo analógico. Vacío = misma de entrega")
+    instrucciones: str | None = Field(default=None, max_length=2000)
+    archivo_ids: list[str] = Field(default=[], description="IDs devueltos por POST /archivos (STL obligatorio en digital)")
+
+
+class SolicitudIn(_EntregaIn):
+    cliente_id: int | None = Field(default=None, description="Solo personal del laboratorio (admin, supervisor, ingresos)")
+    paciente: str = Field(min_length=2, max_length=120, examples=["Carlos Pérez"])
+    referencia_clinica: str | None = Field(default=None, max_length=60)
+    doctor_tratante: str | None = Field(default=None, max_length=120)
+    tipo_trabajo: SeleccionIn
+    material: SeleccionIn
+    unidad: SeleccionIn
+    guia_color: SeleccionIn | None = None
+    color: SeleccionIn | None = None
+
+
+class ReaperturaIn(_EntregaIn):
+    tipo_reapertura: Literal["garantia", "modificacion"]
+    motivo: str = Field(min_length=5, max_length=1000, examples=["La corona quedó alta en oclusión"])
+
+
+class EstadoSolicitudIn(BaseModel):
+    estado: Literal["pendiente_recolecta", "validacion_qa", "recibida", "en_produccion", "control_calidad",
+                    "facturacion", "en_ruta", "entregada", "cancelada"]
+    nota: str | None = Field(default=None, max_length=300)

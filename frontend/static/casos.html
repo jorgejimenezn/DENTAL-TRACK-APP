@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Casos · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="marca" id="marca" aria-hidden="true"></div>
+<div class="app">
+  <aside class="lateral" id="lateral"></aside>
+  <main class="contenido">
+    <div class="encabezado">
+      <div>
+        <h1 id="titulo">Mis casos</h1>
+        <p id="descripcion">Casos vigentes e historial de entregados. Desde un caso entregado puedes solicitar una reapertura (RP).</p>
+      </div>
+      <a class="btn verde" href="nueva-solicitud.html" id="btnNueva" hidden>+ Nueva solicitud</a>
+    </div>
+
+    <div class="card">
+      <div class="pestanas" id="pestanas">
+        <button class="activa" data-vista="true">Vigentes</button>
+        <button data-vista="false">Historial</button>
+        <button data-vista="">Todos</button>
+      </div>
+      <div class="filtros">
+        <div class="campo ancho"><input id="fTexto" placeholder="Buscar por código, paciente o doctor"></div>
+        <div class="campo"><select id="fTipo"><option value="">CN y RP</option><option value="CN">Solo casos nuevos (CN)</option><option value="RP">Solo reaperturas (RP)</option></select></div>
+      </div>
+      <div class="tabla-wrap">
+        <table class="responsiva">
+          <thead><tr><th>Caso</th><th class="col-cliente">Cliente</th><th>Trabajo</th><th>Estado</th><th>Entrega</th><th></th></tr></thead>
+          <tbody id="tabla"><tr><td colspan="6" class="cargando">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/casos.js"></script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+/* ============ Detalle de un caso (CN o RP) ============ */
+const usuario = iniciarPagina();
+if (!usuario) throw new Error("sin acceso");
+const parametros = new URLSearchParams(location.search);
+const casoId = Number(parametros.get("id"));
+const ESTADOS = {
+  pendiente_recolecta: "Pendiente de recolecta", validacion_qa: "Validación de QA", recibida: "Recibida",
+  en_produccion: "En producción", control_calidad: "Control de calidad", facturacion: "Facturación y empaque",
+  en_ruta: "En ruta de entrega", entregada: "Entregada", cancelada: "Cancelada",
+};
+const COLOR_ESTADO = { entregada: "verde", cancelada: "rojo", validacion_qa: "azul", pendiente_recolecta: "azul" };
+const fechaLarga = s => new Date(s + "T12:00:00").toLocaleDateString("es-GT", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+const dato = (etiqueta, valor, clase = "") => `<div class="${clase}"><span>${etiqueta}</span><b>${valor}</b></div>`;
+const valorCat = v => !v ? "No aplica" : escapar(v.nombre) + (v.fuera_catalogo ? ' <span class="badge azul">fuera de catálogo</span>' : "");
+const tamano = b => b >= 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
+let caso = null;
+
+function pintar() {
+  const c = caso;
+  document.title = `${c.codigo} · DENTAL TRACK`;
+  $("titulo").innerHTML = `<span class="codigo-caso">${escapar(c.codigo)}</span>`;
+  $("subtitulo").textContent = `${c.paciente} · ${c.trabajo}`;
+  $("etiquetas").innerHTML = [
+    `<span class="badge ${c.tipo_caso === "RP" ? "azul" : "blanco"}">${c.tipo_caso === "RP" ? "Reapertura" : "Caso nuevo"}</span>`,
+    `<span class="badge ${COLOR_ESTADO[c.estado] || "gris"}">${escapar(c.estado_texto)}</span>`,
+    c.emergencia ? '<span class="badge rojo">EMERGENCIA</span>' : "",
+    c.fuera_catalogo ? '<span class="badge azul">Fuera de catálogo</span>' : "",
+    c.prioridad ? `<span class="badge gris">Prioridad ${c.prioridad}</span>` : "",
+  ].join("");
+
+  if (c.tipo_caso === "RP") {
+    $("bloqueRp").hidden = false;
+    $("datosRp").innerHTML =
+      dato("Caso original", `<a href="caso.html?id=${c.caso_origen_id}" class="codigo-caso">${escapar(c.caso_origen)}</a>`)
+      + dato("Solicitada como", c.reapertura_tipo === "garantia" ? "Garantía" : "Modificación o cambio")
+      + dato("Validación de QA", c.qa_clasificacion ? escapar(c.qa_clasificacion) : '<span class="badge azul">Pendiente</span>')
+      + dato("Motivo del doctor", escapar(c.reapertura_motivo), "ancho");
+  }
+  $("datos").innerHTML =
+    (usuario.rol !== "doctor" ? dato("Cliente", escapar(c.cliente) + (c.clinica ? `<br><small style="color:var(--texto-3)">${escapar(c.clinica)}</small>` : "")) : "")
+    + dato("Paciente", escapar(c.paciente))
+    + dato("Doctor tratante", escapar(c.doctor_tratante || "Titular de la cuenta"))
+    + dato("Referencia de la clínica", escapar(c.referencia_clinica || "—"))
+    + dato("Modalidad", c.modalidad === "digital" ? "Digital (STL)" : "Analógico (recolecta)")
+    + dato("Tipo de trabajo", valorCat(c.tipo_trabajo))
+    + dato("Material", valorCat(c.material))
+    + dato("Unidades", valorCat(c.unidad))
+    + dato("Color", c.color ? `${valorCat(c.guia_color)} · ${valorCat(c.color)}` : "No aplica")
+    + dato("Piezas", `<span class="piezas-lista">${c.piezas.map(p => `<span>${p}</span>`).join("")}</span>`, "ancho")
+    + dato("Instrucciones", escapar(c.instrucciones || "Sin instrucciones"), "ancho")
+    + dato("Registrado", `${escapar(fechaHora(c.creado_en))}${c.creado_por ? ` por ${escapar(c.creado_por)}` : ""}`, "ancho");
+  const dir = d => `${escapar(d.direccion)}<br><small style="color:var(--texto-3)">${escapar(d.municipio)}, ${escapar(d.departamento)}</small>`;
+  $("entrega").innerHTML = dato("Fecha de entrega", escapar(fechaLarga(c.fecha_entrega)))
+    + dato("Dirección de entrega", dir(c.entrega))
+    + (c.recolecta ? dato("Dirección de recolecta", dir(c.recolecta)) : "");
+  $("archivos").innerHTML = c.archivos.length ? c.archivos.map(a => `
+    <div class="archivo"><span class="tipo ${a.tipo === "stl" ? "stl" : ""}">${escapar(a.nombre.split(".").pop().toUpperCase())}</span>
+      <span class="nombre-archivo">${escapar(a.nombre)}</span><span class="peso">${tamano(a.tamano)}</span>
+      <a href="#" data-archivo="${escapar(a.id)}" data-nombre="${escapar(a.nombre)}">Descargar</a></div>`).join("")
+    : '<div class="vacio" style="padding:14px">Sin archivos adjuntos.</div>';
+
+  // Acciones: reabrir solo desde un caso entregado
+  const puedeCapturar = usuario.rol === "doctor" || ROLES_CAPTURA.includes(usuario.rol);
+  $("acciones").innerHTML = c.puede_reabrir && puedeCapturar
+    ? `<a class="btn verde" style="width:100%" href="reapertura.html?caso=${c.id}">Reabrir caso (RP)</a>
+       <p class="nota">Para garantía o modificación. Pasa primero por QA, que define si aplica garantía o cobro.</p>`
+    : `<p class="nota" style="margin:0">${escapar(c.motivo_no_reabrir || "Este caso no se puede reabrir")}.</p>`;
+  if (["admin", "supervisor"].includes(usuario.rol)) {
+    $("formEstado").hidden = false;
+    $("nuevoEstado").innerHTML = Object.entries(ESTADOS).map(([k, v]) => `<option value="${k}" ${k === c.estado ? "selected" : ""}>${v}</option>`).join("");
+  }
+  $("bloqueReaperturas").hidden = !c.reaperturas.length;
+  $("reaperturas").innerHTML = c.reaperturas.map(r => `
+    <a class="item" href="caso.html?id=${r.id}" style="text-decoration:none;color:inherit">
+      <span class="nombre codigo-caso">${escapar(r.codigo)}<small>${escapar(fechaHora(r.creado_en))}</small></span>
+      <span class="badge ${COLOR_ESTADO[r.estado] || "gris"}">${escapar(r.estado_texto)}</span></a>`).join("");
+  $("historial").innerHTML = [...c.historial].reverse().map(h => `
+    <li><b>${escapar(h.estado_texto)}</b>${h.nota ? ` · ${escapar(h.nota)}` : ""}
+      <small>${escapar(fechaHora(h.fecha))}${h.usuario ? ` · ${escapar(h.usuario)}` : ""}</small></li>`).join("");
+  $("contenidoCaso").hidden = false;
+}
+
+async function cargar() {
+  try { caso = await api("GET", `/solicitudes/${casoId}`); pintar(); }
+  catch (error) { $("titulo").textContent = "Caso no disponible"; mostrarErrores($("errorCaso"), error); }
+}
+
+$("archivos").addEventListener("click", async e => {
+  const a = e.target.closest("[data-archivo]");
+  if (!a) return;
+  e.preventDefault();
+  a.textContent = "Descargando…";
+  try { await descargarArchivo(`/solicitudes/${casoId}/archivos/${a.dataset.archivo}`, a.dataset.nombre); }
+  catch (error) { toast(error.message, true); }
+  a.textContent = "Descargar";
+});
+
+$("formEstado").onsubmit = async e => {
+  e.preventDefault();
+  try {
+    caso = await api("PATCH", `/solicitudes/${casoId}/estado`, { estado: $("nuevoEstado").value, nota: $("notaEstado").value.trim() || null });
+    $("notaEstado").value = ""; toast("Estado actualizado"); pintar();
+  } catch (error) { toast(error.message, true); }
+};
+
+if (parametros.get("nuevo")) {
+  cargar().then(() => {
+    if (!caso) return;
+    $("avisoNuevo").hidden = false;
+    $("avisoNuevo").innerHTML = caso.tipo_caso === "RP"
+      ? `Reapertura <b>${escapar(caso.codigo)}</b> enviada. QA la revisará para definir si aplica garantía o cobro.`
+      : `Solicitud <b>${escapar(caso.codigo)}</b> enviada. ${caso.modalidad === "analogo" ? "Logística programará la recolecta del material." : "El laboratorio ya recibió tus archivos."}`;
+    history.replaceState(null, "", `caso.html?id=${casoId}`);
+  });
+} else cargar();

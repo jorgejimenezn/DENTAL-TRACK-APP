@@ -5,4 +5,5 @@ psycopg[binary]==3.3.6
 pymongo==4.18.2
 bcrypt==5.0.0
 email-validator==2.3.0
+python-multipart==0.0.26
 tzdata==2026.4

@@ -69,6 +69,21 @@ Al primer arranque se cargan datos iniciales de ejemplo (6 tipos de trabajo, 6 m
 
 La regla de **fecha mínima de entrega** se calcula en el servidor (`GET /config/fecha-minima`) con la hora de Guatemala.
 
+## Solicitudes: caso nuevo (CN) y reapertura (RP) (Fase 2B)
+
+| Pantalla | Quién | Qué hace |
+|---|---|---|
+| **Nueva solicitud** | doctor; admin, supervisor e ingresos (a nombre de un cliente) | Caso nuevo **CN-00001…**: modalidad digital (STL obligatorio) o analógica (genera recolecta), paciente, doctor tratante, tipo → material → unidades / guía → color (cada uno con "fuera de catálogo"), odontograma FDI, emergencia, fecha de entrega con las reglas del calendario, dirección existente o nueva, instrucciones y adjuntos. |
+| **Mis casos / Solicitudes** | todos | Pestañas vigentes, historial y todos; búsqueda por código, paciente o doctor. El personal ve el cliente y la prioridad; el doctor no ve su nivel. |
+| **Detalle del caso** | todos | Datos, archivos descargables, línea de tiempo, reaperturas. Botón **Reabrir caso (RP)** solo si el caso está entregado y no tiene otra reapertura en curso. Admin y supervisor pueden cambiar el estado manualmente (temporal, para probar el recorrido). |
+| **Reabrir caso** | doctor; admin, supervisor, ingresos | Reapertura **RP-00001…** ligada al caso original: garantía o modificación, motivo obligatorio, solo piezas del caso original, recolecta física o nuevo STL. Entra en estado **Validación de QA**. |
+
+Reglas que valida el servidor (aunque se use Swagger directamente): cadena de catálogos, modalidad con flujo activo, fecha mínima, fines de semana y días sin labores, piezas FDI válidas, dirección del propio cliente, STL obligatorio en digital, un solo RP abierto por caso.
+
+**Archivos:** se suben primero con `POST /archivos` (STL hasta 80 MB; JPG, PNG y PDF hasta 15 MB) y se guardan en **MongoDB con GridFS**; PostgreSQL guarda la referencia en `solicitud_archivos`. Los que no se usan en 24 h se borran solos.
+
+**Estados:** pendiente de recolecta · validación de QA · recibida · en producción · control de calidad · facturación y empaque · en ruta · entregada · cancelada. Las bandejas de cada área (asignación automática, QA, logística) son la siguiente fase.
+
 ## Diseño adaptable
 
 Todas las pantallas se ajustan a celular, tablet y computadora: en pantallas de hasta 900 px el menú lateral se abre como cajón con el botón ☰, las tablas se convierten en tarjetas en pantallas de hasta 760 px y los formularios modales ocupan toda la pantalla en celular.
@@ -236,4 +251,9 @@ Sin servidor Mongo se puede probar con `MONGO_URL=mongomock://local` (requiere `
 | GET/POST/PUT | `/config/catalogos`, `/config/tipos/…`, `/config/materiales/…`, `/config/guias/…`, `/config/colores/…` | admin |
 | GET/PUT | `/config/flujos`, `/config/asignaciones`, `/config/parametros` | admin |
 | POST/DELETE | `/config/calendario`, `/config/calendario/feriados/{anio}` | admin |
+| POST/DELETE | `/archivos`, `/archivos/{id}` | cualquiera con sesión |
+| GET | `/solicitudes`, `/solicitudes/{id}`, `/solicitudes/{id}/archivos/{archivo}` | con sesión (el doctor solo lo suyo) |
+| GET | `/solicitudes/perfil`, `/solicitudes/clientes` | doctor / admin, supervisor, ingresos |
+| POST | `/solicitudes`, `/solicitudes/{id}/reapertura` | doctor, admin, supervisor, ingresos |
+| PATCH | `/solicitudes/{id}/estado` | admin, supervisor |
 | GET | `/salud` | público |

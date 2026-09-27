@@ -9,6 +9,7 @@ const ICONOS = {
   flujos: '<circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M7 6h10M6 8l5 8M18 8l-5 8"/>',
   asignaciones: '<circle cx="8" cy="8" r="3"/><path d="M3 19c0-2.8 2.2-5 5-5s5 2.2 5 5"/><path d="M15 9l2 2 4-4"/>',
   calendario: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  casos: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
 };
 
 const MENU = [
@@ -22,9 +23,13 @@ const MENU = [
   { href: "flujos.html", texto: "Flujos de trabajo", icono: "flujos", roles: ["admin"] },
   { href: "asignaciones.html", texto: "Asignaciones", icono: "asignaciones", roles: ["admin"] },
   { href: "calendario.html", texto: "Calendario y reglas", icono: "calendario", roles: ["admin"] },
-  { grupo: "Prototipos", roles: ["admin", "doctor"] },
-  { href: "nueva-solicitud.html", texto: "Nueva solicitud", icono: "solicitud", roles: ["admin", "doctor"] },
+  { grupo: "Solicitudes", roles: null },
+  { href: "nueva-solicitud.html", texto: "Nueva solicitud", icono: "solicitud", roles: ["doctor", "admin", "supervisor", "ingresos"] },
+  { href: "casos.html", texto: "Mis casos", icono: "casos", roles: ["doctor"] },
+  { href: "casos.html", texto: "Solicitudes", icono: "casos", roles: ["admin", "supervisor", "ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"] },
 ];
+// Pantallas que no están en el menú: se marca la opción de la que dependen
+const PADRES = { "caso.html": "casos.html", "reapertura.html": "casos.html" };
 
 const LOGO = '<svg viewBox="0 0 40 40" fill="none"><path d="M12 5c-5 0-8 4-8 10 0 5 2 8 3 13 1 5 2 8 4 8 3 0 3-8 5-11 1-2 3-2 4 0 2 3 2 11 5 11 2 0 3-3 4-8 1-5 3-8 3-13 0-6-3-10-8-10-3 0-5 2-8 2s-5-2-8-2z" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/></svg>';
 
@@ -38,8 +43,10 @@ function iniciarPagina(rolesPermitidos = null) {
   const usuario = sesion.usuario;
   if (rolesPermitidos && !rolesPermitidos.includes(usuario.rol)) { location.href = "inicio.html"; return null; }
 
-  const actual = location.pathname.split("/").pop() || "inicio.html";
-  const enlaces = MENU.filter(m => !m.roles || m.roles.includes(usuario.rol)).map(m => m.grupo
+  const pagina = location.pathname.split("/").pop() || "inicio.html";
+  const actual = PADRES[pagina] || pagina;
+  const visibles = MENU.filter(m => !m.roles || m.roles.includes(usuario.rol));
+  const enlaces = visibles.map(m => m.grupo
     ? `<div class="titulo-menu">${m.grupo}</div>`
     : `<a href="${m.href}" class="${m.href === actual ? "activo" : ""}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round">${ICONOS[m.icono]}</svg>${m.texto}</a>`
   ).join("");
@@ -53,7 +60,7 @@ function iniciarPagina(rolesPermitidos = null) {
       <button class="btn chico" id="btnSalir">Cerrar sesión</button>
     </div>`;
   $("btnSalir").onclick = () => Sesion.cerrar();
-  prepararMenuMovil(MENU.find(m => m.href === actual)?.texto || "");
+  prepararMenuMovil(visibles.find(m => m.href === pagina)?.texto || document.title.split("·")[0].trim());
   dibujarMarcaAgua();
   return usuario;
 }

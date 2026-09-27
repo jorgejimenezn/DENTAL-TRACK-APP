@@ -16,10 +16,12 @@ def verificar_clave_interna(x_internal_key: str = Header(default="")):
 class Actor:
     id: int | None
     email: str | None
+    rol: str | None = None
 
 
 def obtener_actor(x_usuario_id: str | None = Header(default=None),
-                  x_usuario_email: str | None = Header(default=None)) -> Actor:
-    """La API envía quién hizo la petición para registrarlo en la bitácora."""
+                  x_usuario_email: str | None = Header(default=None),
+                  x_usuario_rol: str | None = Header(default=None)) -> Actor:
+    """La API envía quién hizo la petición (bitácora y permisos por rol)."""
     return Actor(id=int(x_usuario_id) if x_usuario_id and x_usuario_id.isdigit() else None,
-                 email=x_usuario_email)
+                 email=x_usuario_email, rol=x_usuario_rol)

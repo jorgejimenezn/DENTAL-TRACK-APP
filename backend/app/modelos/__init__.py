@@ -88,3 +88,6 @@ from app.modelos.configuracion import (  # noqa: E402,F401
     Color, DiaNoLaborable, Flujo, FlujoPaso, GuiaColor, Material, MotivoRP, Parametro, TipoTrabajo, Unidad,
     material_guia, material_unidad, tipo_material, usuario_area_tipo,
 )
+from app.modelos.solicitud import (  # noqa: E402,F401
+    ESTADOS, ESTADOS_CERRADOS, Correlativo, Solicitud, SolicitudArchivo, SolicitudHistorial,
+)

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reabrir caso · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="marca" id="marca" aria-hidden="true"></div>
+<div class="app">
+  <aside class="lateral" id="lateral"></aside>
+  <main class="contenido">
+    <p style="margin-bottom:10px"><a href="casos.html" id="volver">← Volver al caso</a></p>
+    <div class="encabezado">
+      <div>
+        <h1>Reabrir caso (RP)</h1>
+        <p>Garantía o modificación de un trabajo ya entregado. Se conserva el trabajo original y pasa primero por QA.</p>
+      </div>
+    </div>
+    <div class="error-form" id="errorCarga" hidden></div>
+
+    <div class="form-caso" id="contenido" hidden>
+    <form id="form" novalidate>
+      <!-- Caso original -->
+      <section class="card paso-card">
+        <h2><span class="n">0</span>Caso original<span class="sub" id="origenCodigo"></span></h2>
+        <div class="caso-origen" id="origen"></div>
+      </section>
+
+      <!-- 1. Motivo -->
+      <section class="card paso-card">
+        <h2><span class="n">1</span>¿Qué necesitas?</h2>
+        <div class="segmento" id="tipoReapertura">
+          <button type="button" data-t="garantia" class="activo">Garantía</button>
+          <button type="button" data-t="modificacion">Modificación o cambio</button>
+        </div>
+        <p class="nota" id="ayudaTipo" style="margin:0 0 12px"></p>
+        <div class="campo" id="campoMotivo">
+          <label>Describe el problema o el cambio <span class="req">*</span></label>
+          <textarea id="motivo" rows="4" maxlength="1000" placeholder="Ej. La corona quedó alta en oclusión y el contacto con la 12 está abierto."></textarea>
+          <div class="msg-error">Describe el motivo (mínimo 5 caracteres).</div>
+        </div>
+        <div class="aviso azul">QA revisará la solicitud y la clasificará como garantía total, garantía parcial sin cobro, garantía parcial con cobro o cobro, con su motivo. Después entra a producción.</div>
+      </section>
+
+      <!-- 2. Piezas -->
+      <section class="card paso-card">
+        <h2><span class="n">2</span>Piezas a trabajar<span class="sub">Solo las del caso original</span></h2>
+        <div id="odontograma"></div>
+      </section>
+
+      <!-- 3. Modalidad -->
+      <section class="card paso-card">
+        <h2><span class="n">3</span>¿Cómo nos llega el trabajo?</h2>
+        <div class="modalidades">
+          <label class="opcion-mod" data-mod="analogo">
+            <input type="radio" name="modalidad" value="analogo">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg></div>
+            <div><b>Recolecta física</b><span>Pasamos a recoger la pieza, el modelo o una nueva impresión.</span></div>
+          </label>
+          <label class="opcion-mod activa" data-mod="digital">
+            <input type="radio" name="modalidad" value="digital" checked>
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></div>
+            <div><b>Nuevo escaneo (STL)</b><span>Envías un escaneo intraoral actualizado.</span></div>
+          </label>
+        </div>
+        <div class="panel-mod" id="panelDigital">
+          <div class="campo">
+            <label>Archivo STL <span class="req">*</span></label>
+            <div class="dropzone" id="dropStl" tabindex="0" role="button"><b>Arrastra el archivo .stl aquí o toca para seleccionar</b><small>máx. 80 MB c/u</small></div>
+            <input type="file" id="inputStl" accept=".stl" multiple hidden>
+            <div class="lista-archivos" id="listaStl"></div>
+            <div class="error-suelto" id="errStl" hidden>Adjunta al menos un archivo STL.</div>
+          </div>
+        </div>
+        <div class="panel-mod" id="panelAnalogo" hidden>
+          <label class="check-linea"><input type="checkbox" id="recolectaIgual" checked> Recoger en la misma dirección de entrega</label>
+          <div id="bloqueRecolecta" hidden style="margin-top:12px">
+            <div class="campo"><label>Dirección de recolecta <span class="req">*</span></label></div>
+            <div id="dirRecolecta"></div>
+          </div>
+          <div class="aviso azul">Se generará una recolecta para Logística.</div>
+        </div>
+      </section>
+
+      <!-- 4. Entrega -->
+      <section class="card paso-card">
+        <h2><span class="n">4</span>Entrega y prioridad</h2>
+        <div class="emergencia" id="cajaEmergencia">
+          <div><b>Trabajo de emergencia · Prioridad 1</b><span>Prioridad máxima. Habilita la fecha mínima de emergencia.</span></div>
+          <label class="switch"><input type="checkbox" id="emergencia" aria-label="Trabajo de emergencia"><span class="pista"></span></label>
+        </div>
+        <div class="grid" style="margin-top:14px">
+          <div class="campo" id="campoFecha">
+            <label>Fecha de entrega propuesta <span class="req">*</span></label>
+            <input type="date" id="fecha">
+            <div class="msg-error" id="msgFecha">Fecha no válida.</div>
+          </div>
+          <div class="campo"><label>Reglas aplicadas</label><div class="fecha-info" id="fechaInfo"><span class="chip">Calculando…</span></div></div>
+        </div>
+        <h3>Dirección de entrega <span style="color:var(--rojo-texto)">*</span></h3>
+        <div id="dirEntrega"></div>
+      </section>
+
+      <!-- 5. Instrucciones -->
+      <section class="card paso-card">
+        <h2><span class="n">5</span>Instrucciones y evidencia</h2>
+        <div class="campo">
+          <label>Instrucciones adicionales</label>
+          <textarea id="instrucciones" rows="3" maxlength="2000" placeholder="Opcional"></textarea>
+        </div>
+        <div class="campo" style="margin-top:14px">
+          <label>Fotos o documentos del problema</label>
+          <div class="dropzone" id="dropOtros" tabindex="0" role="button"><b>Adjuntar archivos</b><small>JPG, PNG o PDF · máx. 15 MB c/u</small></div>
+          <input type="file" id="inputOtros" accept=".jpg,.jpeg,.png,.pdf" multiple hidden>
+          <div class="lista-archivos" id="listaOtros"></div>
+        </div>
+      </section>
+    </form>
+
+    <div>
+      <div class="resumen-caso">
+        <div class="codigo">Código de la reapertura<b>RP-·····</b><span style="font-size:11px" id="rOrigen"></span></div>
+        <dl>
+          <dt>Tipo</dt><dd id="rTipo">—</dd>
+          <dt>Paciente</dt><dd id="rPaciente">—</dd>
+          <dt>Trabajo</dt><dd id="rTrabajo">—</dd>
+          <dt>Piezas</dt><dd id="rPiezas">—</dd>
+          <dt>Llega por</dt><dd id="rModalidad">—</dd>
+          <dt>Entrega</dt><dd id="rFecha">—</dd>
+          <dt>Dirección</dt><dd id="rDireccion">—</dd>
+          <dt>Prioridad</dt><dd id="rPrioridad">—</dd>
+        </dl>
+        <hr>
+        <ul class="check" id="checklist"></ul>
+        <div class="error-form" id="errorEnvio" hidden style="margin:14px 0 0"></div>
+        <div class="acciones-final">
+          <button type="submit" form="form" class="btn verde" id="btnEnviar">Enviar reapertura</button>
+          <a class="btn cancelar" id="btnCancelar" href="casos.html">Cancelar</a>
+        </div>
+      </div>
+    </div>
+    </div>
+  </main>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/validaciones.js"></script>
+<script src="js/formulario-caso.js"></script>
+<script src="js/reapertura.js"></script>
+</body>
+</html>

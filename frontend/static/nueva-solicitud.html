@@ -3,828 +3,195 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nueva Solicitud · DENTAL TRACK</title>
-<style>
-:root{
-  color-scheme:dark;
-  --fondo:#000000;
-  --panel:rgba(17,17,17,.88); --panel-borde:#262626;
-  --campo:#0b0b0b; --campo-borde:#3a3a3a; --campo-off:#161616;
-  --texto:#f2f2f2; --texto-2:#a9a9a9; --texto-3:#6f6f6f;
-  --blanco:#ffffff; --negro:#111111;
-  --azul:#1f6feb; --azul-suave:rgba(31,111,235,.16); --azul-texto:#8fb8ff;
-  --verde:#1a7f37; --verde-claro:#3fb862; --verde-suave:rgba(26,127,55,.18);
-  --rojo:#cf222e; --rojo-suave:rgba(207,34,46,.16); --rojo-texto:#ff8f98;
-  --marca-linea:#2a2a2a; --marca-punto:#3b3b3b;
-  --radio:10px;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-[hidden]{display:none!important}
-body{font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;background:var(--fondo);color:var(--texto);font-size:14px;line-height:1.45;min-height:100vh}
-
-/* ---------- Marca de agua ---------- */
-.marca{position:fixed;right:-1vw;bottom:-3vh;height:94vh;aspect-ratio:420/590;pointer-events:none;z-index:0}
-.marca svg{width:100%;height:100%;display:block}
-@media (max-width:980px){.marca{right:50%;transform:translateX(50%);height:78vh;bottom:4vh}}
-
-/* ---------- Encabezado ---------- */
-header.top{position:sticky;top:0;z-index:20;background:rgba(0,0,0,.92);border-bottom:1px solid var(--panel-borde);display:flex;align-items:center;justify-content:space-between;padding:12px 24px}
-.logo{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.12em;font-size:15px}
-.logo svg{width:26px;height:26px}
-.usuario{font-size:12px;color:var(--texto-2);text-align:right}
-.usuario b{color:var(--texto);font-size:13px}
-.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;vertical-align:middle}
-.badge.gris{background:#2a2a2a;color:#d6d6d6}
-.badge.rojo{background:var(--rojo);color:#fff}
-.badge.gris-claro{background:#e4e4e4;color:#333}
-
-/* ---------- Layout ---------- */
-.contenido{position:relative;z-index:1}
-.titulo-pagina{max-width:1280px;margin:0 auto;padding:24px 24px 0}
-.titulo-pagina h1{font-size:22px;font-weight:700}
-.titulo-pagina p{color:var(--texto-2);margin-top:2px}
-main{max-width:1280px;margin:0 auto;padding:16px 24px 48px;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;align-items:start}
-@media (max-width:980px){main{grid-template-columns:1fr;padding:16px}.titulo-pagina{padding:16px 16px 0}header.top{padding:12px 16px}}
-
-.card{background:var(--panel);border:1px solid var(--panel-borde);border-radius:var(--radio);padding:20px;margin-bottom:16px}
-.card h2{font-size:15px;font-weight:700;display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
-.card h2 .n{width:24px;height:24px;border-radius:50%;background:var(--blanco);color:var(--negro);font-size:12px;display:grid;place-items:center;flex:none}
-.card h2 .sub{font-weight:400;color:var(--texto-3);font-size:12px;margin-left:auto}
-.card h3{font-size:13px;font-weight:700;margin:18px 0 10px;color:var(--texto)}
-
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.grid.tres{grid-template-columns:repeat(3,minmax(0,1fr))}
-@media (max-width:640px){.grid,.grid.tres{grid-template-columns:1fr}.span2{grid-column:auto!important}}
-.span2{grid-column:span 2}
-.campo label{display:block;font-size:12px;font-weight:600;color:#d0d0d0;margin-bottom:5px}
-.campo label .req{color:var(--rojo-texto)}
-.campo input,.campo select,.campo textarea{width:100%;padding:9px 11px;border:1px solid var(--campo-borde);border-radius:8px;font:inherit;background:var(--campo);color:var(--texto)}
-.campo input::placeholder,.campo textarea::placeholder{color:var(--texto-3)}
-.campo select:disabled,.campo input:disabled{background:var(--campo-off);color:var(--texto-3)}
-.campo input:focus,.campo select:focus,.campo textarea:focus{outline:none;border-color:var(--azul);box-shadow:0 0 0 3px var(--azul-suave)}
-.campo.error input,.campo.error select,.campo.error textarea{border-color:var(--rojo)}
-.campo .ayuda{font-size:11px;color:var(--texto-3);margin-top:4px}
-.campo .msg-error{font-size:11px;color:var(--rojo-texto);margin-top:4px;display:none}
-.campo.error .msg-error{display:block}
-.campo input.fdc{margin-top:6px;border-style:dashed;border-color:var(--azul)}
-.check-linea{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--texto-2);cursor:pointer}
-.check-linea input{accent-color:var(--azul);width:15px;height:15px}
-
-/* ---------- Segmento existente / nueva ---------- */
-.segmento{display:inline-flex;border:1px solid var(--campo-borde);border-radius:8px;overflow:hidden;margin-bottom:12px}
-.segmento button{background:transparent;color:var(--texto-2);border:0;padding:7px 14px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
-.segmento button+button{border-left:1px solid var(--campo-borde)}
-.segmento button.activo{background:var(--azul);color:#fff}
-
-/* ---------- Modalidad ---------- */
-.modalidades{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media (max-width:640px){.modalidades{grid-template-columns:1fr}}
-.opcion-mod{border:1.5px solid var(--campo-borde);border-radius:var(--radio);padding:14px;cursor:pointer;display:flex;gap:12px;align-items:flex-start;transition:.15s;background:var(--campo)}
-.opcion-mod:hover{border-color:#777}
-.opcion-mod input{display:none}
-.opcion-mod .ico{width:38px;height:38px;border-radius:8px;background:#1d1d1d;display:grid;place-items:center;flex:none}
-.opcion-mod .ico svg{width:22px;height:22px;stroke:#d0d0d0}
-.opcion-mod b{display:block;font-size:14px}
-.opcion-mod span{font-size:12px;color:var(--texto-2)}
-.opcion-mod.activa{border-color:var(--azul);background:var(--azul-suave)}
-.opcion-mod.activa .ico{background:var(--azul)}
-.opcion-mod.activa .ico svg{stroke:#fff}
-.panel-mod{margin-top:14px}
-
-.dropzone{border:1.5px dashed #555;border-radius:var(--radio);padding:22px;text-align:center;cursor:pointer;background:var(--campo);transition:.15s}
-.dropzone:hover{border-color:var(--azul);background:var(--azul-suave)}
-.dropzone.error{border-color:var(--rojo);background:var(--rojo-suave)}
-.dropzone b{display:block}
-.dropzone small{color:var(--texto-2)}
-.lista-archivos{margin-top:8px;display:flex;flex-direction:column;gap:6px}
-.archivo{display:flex;align-items:center;gap:8px;background:var(--campo);border:1px solid var(--panel-borde);border-radius:8px;padding:7px 10px;font-size:12px;word-break:break-all}
-.archivo .tipo{font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px;background:#e4e4e4;color:#111;flex:none}
-.archivo .tipo.stl{background:var(--azul);color:#fff}
-.archivo button{margin-left:auto;background:none;border:0;color:var(--rojo-texto);cursor:pointer;font-size:16px;line-height:1}
-.error-suelto{font-size:11px;color:var(--rojo-texto);margin-top:4px}
-
-.aviso{display:flex;gap:10px;align-items:flex-start;border-radius:8px;padding:10px 12px;font-size:12px;margin-top:10px}
-.aviso.azul{background:var(--azul-suave);color:var(--azul-texto);border-left:3px solid var(--azul)}
-.aviso.rojo{background:var(--rojo-suave);color:var(--rojo-texto);border-left:3px solid var(--rojo)}
-
-/* ---------- Odontograma ---------- */
-.odonto-wrap{overflow-x:auto;padding-bottom:6px}
-.odonto{min-width:640px;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0}
-.arcada{display:flex;align-items:flex-end;gap:10px}
-.arcada.inf{align-items:flex-start}
-.cuadrante{display:flex;gap:1px}
-.linea-media{width:1.5px;align-self:stretch;background:#3a3a3a}
-.etiqueta-arcada{font-size:11px;color:var(--texto-3);text-transform:uppercase;letter-spacing:.08em}
-.diente{background:none;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 1px;border-radius:6px}
-.diente svg{height:64px;display:block}
-.diente .corona{fill:#ececec;stroke:#8e8e8e;stroke-width:1.3;transition:.12s}
-.diente .raiz{fill:#2c2c2c;stroke:#595959;stroke-width:1}
-.diente .surco{fill:none;stroke:#b5b5b5;stroke-width:1}
-.diente .num{font-size:10px;font-weight:600;color:var(--texto-2);min-width:20px;text-align:center;border-radius:4px;padding:1px 0}
-.diente:hover .corona{stroke:var(--azul);stroke-width:1.8}
-.diente.sel .corona{fill:var(--azul);stroke:#8fb8ff}
-.diente.sel .surco{stroke:#9cbdf7}
-.diente.sel .num{background:var(--azul);color:#fff}
-.diente:focus-visible{outline:2px solid var(--azul)}
-.acciones-odonto{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center}
-.resumen-piezas{font-size:12px;color:var(--texto-2);margin-left:auto}
-.resumen-piezas b{color:var(--texto)}
-
-/* ---------- Botones ---------- */
-.btn{border:1px solid var(--campo-borde);background:var(--campo);color:var(--texto);padding:8px 14px;border-radius:8px;font:inherit;font-weight:600;font-size:13px;cursor:pointer;transition:.15s}
-.btn:hover{border-color:#999}
-.btn.chico{padding:5px 10px;font-size:12px}
-.btn.verde{background:var(--verde);color:#fff;border-color:var(--verde)}
-.btn.verde:hover{background:#136129}
-.btn.rojo-borde{color:var(--rojo-texto);border-color:var(--rojo)}
-
-/* ---------- Emergencia ---------- */
-.emergencia{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1.5px solid var(--campo-borde);border-radius:var(--radio);padding:12px 14px;transition:.15s;background:var(--campo)}
-.emergencia.on{border-color:var(--rojo);background:var(--rojo-suave)}
-.emergencia b{display:block}
-.emergencia span{font-size:12px;color:var(--texto-2)}
-.switch{position:relative;width:46px;height:26px;flex:none}
-.switch input{opacity:0;width:0;height:0}
-.switch .pista{position:absolute;inset:0;background:#3a3a3a;border-radius:999px;cursor:pointer;transition:.15s}
-.switch .pista::after{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.15s}
-.switch input:checked+.pista{background:var(--rojo)}
-.switch input:checked+.pista::after{left:23px}
-
-.fecha-info{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
-.chip{font-size:12px;padding:4px 10px;border-radius:999px;background:#1a1a1a;border:1px solid #2e2e2e;color:#cfcfcf}
-.chip.azul{background:var(--azul-suave);border-color:rgba(31,111,235,.45);color:var(--azul-texto)}
-.chip.rojo{background:var(--rojo-suave);border-color:rgba(207,34,46,.5);color:var(--rojo-texto)}
-.sim{margin-top:12px;padding:10px 12px;border:1px dashed #3a3a3a;border-radius:8px;font-size:12px;color:var(--texto-3);display:flex;flex-wrap:wrap;align-items:center;gap:6px}
-.sim input{padding:5px 8px;border:1px solid var(--campo-borde);border-radius:6px;font:inherit;background:var(--campo);color:var(--texto)}
-
-/* ---------- Resumen lateral (invertido: blanco) ---------- */
-aside{position:sticky;top:70px}
-@media (max-width:980px){aside{position:static}}
-.resumen{background:var(--blanco);color:var(--negro);border-radius:var(--radio);padding:20px}
-.resumen .codigo{font-size:12px;color:#666}
-.resumen .codigo b{display:block;font-size:22px;color:var(--negro);letter-spacing:.05em;margin-top:2px}
-.resumen dl{margin-top:14px;display:grid;grid-template-columns:auto 1fr;gap:7px 12px;font-size:12px}
-.resumen dt{color:#777}
-.resumen dd{color:var(--negro);text-align:right;word-break:break-word;font-weight:500}
-.resumen hr{border:0;border-top:1px solid #e0e0e0;margin:14px 0}
-.check{list-style:none;display:flex;flex-direction:column;gap:6px;font-size:12px}
-.check li{display:flex;align-items:center;gap:8px;color:#8a8a8a}
-.check li::before{content:"";width:14px;height:14px;border-radius:50%;border:1.5px solid #bdbdbd;flex:none}
-.check li.ok{color:var(--negro)}
-.check li.ok::before{background:var(--verde);border-color:var(--verde)}
-.acciones-final{display:flex;flex-direction:column;gap:8px;margin-top:16px}
-.acciones-final .btn{width:100%;padding:11px}
-.acciones-final .btn.cancelar{background:#fff;color:#444;border-color:#cfcfcf}
-.acciones-final .btn.cancelar:hover{border-color:#111}
-
-.payload{background:var(--panel);border:1px solid var(--panel-borde);border-radius:var(--radio);padding:14px}
-.payload summary{cursor:pointer;font-weight:600;font-size:13px}
-.payload pre{margin-top:10px;background:var(--campo);border:1px solid var(--panel-borde);border-radius:8px;padding:10px;font-size:11px;overflow:auto;max-height:340px;color:#d6d6d6}
-
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(140px);background:var(--verde);color:#fff;padding:12px 18px;border-radius:8px;font-weight:600;transition:.25s;z-index:50;max-width:calc(100% - 32px)}
-.toast.rojo{background:var(--rojo)}
-.toast.ver{transform:translateX(-50%) translateY(0)}
-</style>
+<title>Nueva solicitud · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
 </head>
 <body>
-
 <div class="marca" id="marca" aria-hidden="true"></div>
-
-<div class="contenido">
-<header class="top">
-  <div class="logo">
-    <a href="inicio.html" style="color:var(--texto-2);text-decoration:none;font-size:12px;letter-spacing:0;font-weight:600;margin-right:6px">← Inicio</a>
-    <svg viewBox="0 0 40 40" fill="none"><path d="M12 5c-5 0-8 4-8 10 0 5 2 8 3 13 1 5 2 8 4 8 3 0 3-8 5-11 1-2 3-2 4 0 2 3 2 11 5 11 2 0 3-3 4-8 1-5 3-8 3-13 0-6-3-10-8-10-3 0-5 2-8 2s-5-2-8-2z" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/></svg>
-    DENTAL TRACK
-  </div>
-  <div class="usuario">
-    <b>Dra. Leslie Morales</b> · Clínica Dental Sonrisa<br>
-    <span class="badge gris">Doctor</span>
-  </div>
-</header>
-
-<div class="titulo-pagina">
-  <h1>Nueva solicitud</h1>
-  <p>Ingreso de caso nuevo (CN). Los reprocesos (RP) se generan desde el detalle de un caso entregado.</p>
-</div>
-
-<main>
-<form id="form" novalidate>
-
-  <!-- 1. Modalidad -->
-  <section class="card">
-    <h2><span class="n">1</span>Modalidad del trabajo</h2>
-    <div class="modalidades">
-      <label class="opcion-mod activa" data-mod="digital">
-        <input type="radio" name="modalidad" value="digital" checked>
-        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></div>
-        <div><b>Digital</b><span>Se envía el archivo STL del escaneo intraoral. Mínimo 2 días hábiles.</span></div>
-      </label>
-      <label class="opcion-mod" data-mod="analogo">
-        <input type="radio" name="modalidad" value="analogo">
-        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg></div>
-        <div><b>Analógico</b><span>Impresión o modelo físico. Se genera recolecta a Logística. Mínimo 3 días hábiles.</span></div>
-      </label>
-    </div>
-
-    <div class="panel-mod" id="panelDigital">
-      <div class="campo">
-        <label>Archivo STL <span class="req">*</span></label>
-        <div class="dropzone" id="dropStl">
-          <b>Arrastra el archivo .stl aquí o haz clic para seleccionar</b>
-          <small>Escaneo intraoral · puedes subir superior e inferior por separado</small>
-        </div>
-        <input type="file" id="inputStl" accept=".stl" multiple hidden>
-        <div class="lista-archivos" id="listaStl"></div>
-        <div class="error-suelto" id="errStl" hidden>Debes adjuntar al menos un archivo STL para la modalidad digital.</div>
-      </div>
-    </div>
-
-    <div class="panel-mod" id="panelAnalogo" hidden>
-      <label class="check-linea"><input type="checkbox" id="recolectaIgual" checked> Recoger el material en la misma dirección de entrega</label>
-      <div id="bloqueRecolecta" hidden style="margin-top:12px">
-        <div class="campo"><label>Dirección de recolecta <span class="req">*</span></label></div>
-        <div id="dirRecolecta"></div>
-      </div>
-      <div class="aviso azul">Al enviar la solicitud se crea una tarea de recolecta para Logística. La orden entra a producción cuando Ingresos confirma la recepción del material.</div>
-    </div>
-  </section>
-
-  <!-- 2. Paciente -->
-  <section class="card">
-    <h2><span class="n">2</span>Paciente y doctor tratante</h2>
-    <div class="grid">
-      <div class="campo" id="campoPaciente">
-        <label>Nombre del paciente <span class="req">*</span></label>
-        <input type="text" id="paciente" placeholder="Ej. Carlos Pérez">
-        <div class="msg-error">Ingresa el nombre del paciente.</div>
-      </div>
-      <div class="campo">
-        <label>Referencia interna de la clínica</label>
-        <input type="text" id="referencia" placeholder="Opcional, ej. expediente 2231">
-      </div>
-      <div class="campo span2">
-        <label>Doctor tratante</label>
-        <input type="text" id="doctorTratante" list="listaDoctores" placeholder="Dra. Leslie Morales (titular de la cuenta)">
-        <datalist id="listaDoctores">
-          <option value="Dr. Andrés Castillo">
-          <option value="Dra. Paola Recinos">
-        </datalist>
-        <div class="ayuda">Si la clínica es una red, indica qué doctor atiende al paciente. Si lo dejas vacío se usa el titular de la cuenta.</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 3. Trabajo -->
-  <section class="card">
-    <h2><span class="n">3</span>Trabajo solicitado<span class="sub">Catálogos dependientes · datos de ejemplo</span></h2>
-    <div class="grid tres">
-      <div class="campo" id="campoTipo">
-        <label>Tipo de trabajo <span class="req">*</span></label>
-        <select id="tipo"></select>
-        <input type="text" class="fdc" id="tipoFdc" placeholder="Describe el tipo de trabajo" hidden>
-        <div class="msg-error">Requerido.</div>
-      </div>
-      <div class="campo" id="campoMaterial">
-        <label>Material <span class="req">*</span></label>
-        <select id="material"></select>
-        <input type="text" class="fdc" id="materialFdc" placeholder="Describe el material" hidden>
-        <div class="msg-error">Requerido.</div>
-      </div>
-      <div class="campo" id="campoUnidad">
-        <label>Unidades <span class="req">*</span></label>
-        <select id="unidad"></select>
-        <input type="text" class="fdc" id="unidadFdc" placeholder="Describe la unidad" hidden>
-        <div class="msg-error">Requerido.</div>
-      </div>
-      <div class="campo" id="campoGuia">
-        <label>Guía de color <span class="req">*</span></label>
-        <select id="guia"></select>
-        <input type="text" class="fdc" id="guiaFdc" placeholder="Nombre de la guía" hidden>
-        <div class="msg-error">Requerido.</div>
-      </div>
-      <div class="campo" id="campoColor">
-        <label>Color <span class="req">*</span></label>
-        <select id="color"></select>
-        <input type="text" class="fdc" id="colorFdc" placeholder="Describe el color" hidden>
-        <div class="msg-error">Requerido.</div>
-      </div>
-    </div>
-    <div class="aviso azul" id="avisoFdc" hidden>La solicitud incluye elementos fuera de catálogo. El laboratorio la revisará antes de que entre a producción.</div>
-  </section>
-
-  <!-- 4. Piezas -->
-  <section class="card">
-    <h2><span class="n">4</span>Piezas dentales<span class="sub">Numeración FDI · haz clic para seleccionar</span></h2>
-    <div class="odonto-wrap">
-      <div class="odonto">
-        <div class="etiqueta-arcada">Arcada superior</div>
-        <div class="arcada sup">
-          <div class="cuadrante" id="q1"></div>
-          <div class="linea-media"></div>
-          <div class="cuadrante" id="q2"></div>
-        </div>
-        <div class="arcada inf">
-          <div class="cuadrante" id="q4"></div>
-          <div class="linea-media"></div>
-          <div class="cuadrante" id="q3"></div>
-        </div>
-        <div class="etiqueta-arcada">Arcada inferior</div>
-      </div>
-    </div>
-    <div class="acciones-odonto">
-      <button type="button" class="btn chico" data-sel="sup">Arcada superior</button>
-      <button type="button" class="btn chico" data-sel="inf">Arcada inferior</button>
-      <button type="button" class="btn chico" data-sel="todo">Boca completa</button>
-      <button type="button" class="btn chico rojo-borde" data-sel="limpiar">Limpiar</button>
-      <div class="resumen-piezas" id="resumenPiezas">Ninguna pieza seleccionada</div>
-    </div>
-    <div class="aviso rojo" id="errPiezas" hidden>Selecciona al menos una pieza dental.</div>
-  </section>
-
-  <!-- 5. Entrega -->
-  <section class="card">
-    <h2><span class="n">5</span>Entrega y prioridad</h2>
-    <div class="emergencia" id="cajaEmergencia">
+<div class="app">
+  <aside class="lateral" id="lateral"></aside>
+  <main class="contenido">
+    <div class="encabezado">
       <div>
-        <b>Trabajo de emergencia · Prioridad 1</b>
-        <span>Prioridad máxima en la línea de producción. Permite fechas desde 1 día hábil.</span>
-      </div>
-      <label class="switch"><input type="checkbox" id="emergencia"><span class="pista"></span></label>
-    </div>
-
-    <div class="grid" style="margin-top:14px">
-      <div class="campo" id="campoFecha">
-        <label>Fecha de entrega <span class="req">*</span></label>
-        <input type="date" id="fecha">
-        <div class="msg-error" id="msgFecha">Fecha no válida.</div>
-      </div>
-      <div class="campo">
-        <label>Reglas aplicadas</label>
-        <div class="fecha-info" id="fechaInfo"></div>
+        <h1>Nueva solicitud</h1>
+        <p>Caso nuevo (CN). Las reaperturas (RP) se generan desde el detalle de un caso entregado.</p>
       </div>
     </div>
 
-    <div class="sim">
-      Simulación de prototipo · hora de registro:
-      <input type="datetime-local" id="simHora">
-      <button type="button" class="btn chico" id="simAhora">Usar hora actual</button>
-    </div>
+    <div class="form-caso">
+    <form id="form" novalidate>
+      <!-- 0. Cliente (solo personal del laboratorio) -->
+      <section class="card paso-card" id="bloqueCliente" hidden>
+        <h2><span class="n">0</span>Cliente<span class="sub">Captura a nombre de un cliente</span></h2>
+        <div class="campo" id="campoCliente">
+          <label>Cliente <span class="req">*</span></label>
+          <input id="buscarCliente" list="listaClientes" placeholder="Escribe la razón social o la clínica" autocomplete="off">
+          <datalist id="listaClientes"></datalist>
+          <div class="msg-error">Elige un cliente de la lista.</div>
+        </div>
+      </section>
 
-    <h3>Dirección de entrega <span style="color:var(--rojo-texto)">*</span></h3>
-    <div id="dirEntrega"></div>
-  </section>
+      <!-- 1. Modalidad -->
+      <section class="card paso-card">
+        <h2><span class="n">1</span>Modalidad del trabajo</h2>
+        <div class="modalidades">
+          <label class="opcion-mod activa" data-mod="digital">
+            <input type="radio" name="modalidad" value="digital" checked>
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></div>
+            <div><b>Digital</b><span>Envías el archivo STL del escaneo intraoral.</span></div>
+          </label>
+          <label class="opcion-mod" data-mod="analogo">
+            <input type="radio" name="modalidad" value="analogo">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg></div>
+            <div><b>Analógico</b><span>Impresión o modelo físico: pasamos a recogerlo.</span></div>
+          </label>
+        </div>
 
-  <!-- 6. Instrucciones y adjuntos -->
-  <section class="card">
-    <h2><span class="n">6</span>Instrucciones y adjuntos</h2>
-    <div class="campo">
-      <label>Instrucciones adicionales</label>
-      <textarea id="instrucciones" rows="4" placeholder="Ej. Respetar margen subgingival, oclusión ligera, contacto con pieza vecina..."></textarea>
-    </div>
-    <div class="campo" style="margin-top:14px">
-      <label>Otros adjuntos (fotos, radiografías, PDF)</label>
-      <div class="dropzone" id="dropOtros"><b>Adjuntar archivos</b><small>JPG, PNG o PDF</small></div>
-      <input type="file" id="inputOtros" accept=".jpg,.jpeg,.png,.pdf" multiple hidden>
-      <div class="lista-archivos" id="listaOtros"></div>
-    </div>
-  </section>
+        <div class="panel-mod" id="panelDigital">
+          <div class="campo">
+            <label>Archivo STL <span class="req">*</span></label>
+            <div class="dropzone" id="dropStl" tabindex="0" role="button">
+              <b>Arrastra el archivo .stl aquí o toca para seleccionar</b>
+              <small>Escaneo intraoral · puedes subir superior e inferior por separado · máx. 80 MB c/u</small>
+            </div>
+            <input type="file" id="inputStl" accept=".stl" multiple hidden>
+            <div class="lista-archivos" id="listaStl"></div>
+            <div class="error-suelto" id="errStl" hidden>Adjunta al menos un archivo STL para la modalidad digital.</div>
+          </div>
+        </div>
 
-  <details class="payload">
-    <summary>Vista previa del JSON que se enviará a la API (POST /solicitudes)</summary>
-    <pre id="payload"></pre>
-  </details>
-</form>
+        <div class="panel-mod" id="panelAnalogo" hidden>
+          <label class="check-linea"><input type="checkbox" id="recolectaIgual" checked> Recoger el material en la misma dirección de entrega</label>
+          <div id="bloqueRecolecta" hidden style="margin-top:12px">
+            <div class="campo"><label>Dirección de recolecta <span class="req">*</span></label></div>
+            <div id="dirRecolecta"></div>
+          </div>
+          <div class="aviso azul">Al enviar la solicitud se crea una recolecta para Logística. El caso entra a producción cuando Ingresos confirma que recibió el material.</div>
+        </div>
+      </section>
 
-<aside>
-  <div class="resumen">
-    <div class="codigo">Código del caso<b>CN-····</b><span style="font-size:11px">Se asigna al guardar</span></div>
-    <dl>
-      <dt>Modalidad</dt><dd id="rModalidad">—</dd>
-      <dt>Paciente</dt><dd id="rPaciente">—</dd>
-      <dt>Doctor</dt><dd id="rDoctor">—</dd>
-      <dt>Trabajo</dt><dd id="rTipo">—</dd>
-      <dt>Material</dt><dd id="rMaterial">—</dd>
-      <dt>Unidades</dt><dd id="rUnidad">—</dd>
-      <dt>Color</dt><dd id="rColor">—</dd>
-      <dt>Piezas</dt><dd id="rPiezas">—</dd>
-      <dt>Entrega</dt><dd id="rFecha">—</dd>
-      <dt>Dirección</dt><dd id="rDireccion">—</dd>
-      <dt>Prioridad</dt><dd id="rPrioridad">—</dd>
-    </dl>
-    <hr>
-    <ul class="check" id="checklist"></ul>
-    <div class="acciones-final">
-      <button type="submit" form="form" class="btn verde">Enviar solicitud</button>
-      <button type="button" class="btn cancelar" id="btnCancelar">Cancelar</button>
+      <!-- 2. Paciente -->
+      <section class="card paso-card">
+        <h2><span class="n">2</span>Paciente y doctor tratante</h2>
+        <div class="grid">
+          <div class="campo" id="campoPaciente">
+            <label>Nombre del paciente <span class="req">*</span></label>
+            <input id="paciente" maxlength="120" placeholder="Ej. Carlos Pérez" autocomplete="off">
+            <div class="msg-error">Ingresa el nombre del paciente (mínimo 2 letras).</div>
+          </div>
+          <div class="campo">
+            <label>Referencia interna de la clínica</label>
+            <input id="referencia" maxlength="60" placeholder="Opcional, ej. expediente 2231">
+          </div>
+          <div class="campo span2">
+            <label>Doctor tratante</label>
+            <input id="doctorTratante" list="listaDoctores" maxlength="120" autocomplete="off">
+            <datalist id="listaDoctores"></datalist>
+            <div class="ayuda" id="ayudaDoctor">Si lo dejas vacío se usa el titular de la cuenta.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Trabajo -->
+      <section class="card paso-card">
+        <h2><span class="n">3</span>Trabajo solicitado<span class="sub">Si no está en la lista, elige "Fuera de catálogo…"</span></h2>
+        <div class="grid tres">
+          <div class="campo" id="campoTipo"><label>Tipo de trabajo <span class="req">*</span></label>
+            <select id="tipo"></select><input class="fdc" id="tipoFdc" maxlength="120" placeholder="Describe el tipo de trabajo" hidden><div class="msg-error">Requerido.</div></div>
+          <div class="campo" id="campoMaterial"><label>Material <span class="req">*</span></label>
+            <select id="material"></select><input class="fdc" id="materialFdc" maxlength="120" placeholder="Describe el material" hidden><div class="msg-error">Requerido.</div></div>
+          <div class="campo" id="campoUnidad"><label>Unidades <span class="req">*</span></label>
+            <select id="unidad"></select><input class="fdc" id="unidadFdc" maxlength="120" placeholder="Describe la unidad" hidden><div class="msg-error">Requerido.</div></div>
+          <div class="campo" id="campoGuia"><label>Guía de color <span class="req">*</span></label>
+            <select id="guia"></select><input class="fdc" id="guiaFdc" maxlength="120" placeholder="Nombre de la guía" hidden><div class="msg-error">Requerido.</div></div>
+          <div class="campo" id="campoColor"><label>Color <span class="req">*</span></label>
+            <select id="color"></select><input class="fdc" id="colorFdc" maxlength="120" placeholder="Describe el color" hidden><div class="msg-error">Requerido.</div></div>
+        </div>
+        <div class="aviso azul" id="avisoFdc" hidden>La solicitud incluye elementos fuera de catálogo. El laboratorio la revisará antes de que entre a producción.</div>
+      </section>
+
+      <!-- 4. Piezas -->
+      <section class="card paso-card">
+        <h2><span class="n">4</span>Piezas dentales<span class="sub">Numeración FDI · toca para seleccionar</span></h2>
+        <div id="odontograma"></div>
+      </section>
+
+      <!-- 5. Entrega -->
+      <section class="card paso-card">
+        <h2><span class="n">5</span>Entrega y prioridad</h2>
+        <div class="emergencia" id="cajaEmergencia">
+          <div>
+            <b>Trabajo de emergencia · Prioridad 1</b>
+            <span>Prioridad máxima en la línea de producción. Habilita la fecha mínima de emergencia.</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="emergencia" aria-label="Trabajo de emergencia"><span class="pista"></span></label>
+        </div>
+        <div class="grid" style="margin-top:14px">
+          <div class="campo" id="campoFecha">
+            <label>Fecha de entrega <span class="req">*</span></label>
+            <input type="date" id="fecha">
+            <div class="msg-error" id="msgFecha">Fecha no válida.</div>
+          </div>
+          <div class="campo">
+            <label>Reglas aplicadas</label>
+            <div class="fecha-info" id="fechaInfo"><span class="chip">Calculando…</span></div>
+          </div>
+        </div>
+        <h3>Dirección de entrega <span style="color:var(--rojo-texto)">*</span></h3>
+        <div id="dirEntrega"></div>
+      </section>
+
+      <!-- 6. Instrucciones -->
+      <section class="card paso-card">
+        <h2><span class="n">6</span>Instrucciones y adjuntos</h2>
+        <div class="campo">
+          <label>Instrucciones adicionales</label>
+          <textarea id="instrucciones" rows="4" maxlength="2000" placeholder="Ej. Respetar margen subgingival, oclusión ligera, contacto con pieza vecina…"></textarea>
+        </div>
+        <div class="campo" style="margin-top:14px">
+          <label>Otros adjuntos (fotos, radiografías, PDF)</label>
+          <div class="dropzone" id="dropOtros" tabindex="0" role="button"><b>Adjuntar archivos</b><small>JPG, PNG o PDF · máx. 15 MB c/u</small></div>
+          <input type="file" id="inputOtros" accept=".jpg,.jpeg,.png,.pdf" multiple hidden>
+          <div class="lista-archivos" id="listaOtros"></div>
+        </div>
+      </section>
+    </form>
+
+    <div>
+      <div class="resumen-caso">
+        <div class="codigo">Código del caso<b>CN-·····</b><span style="font-size:11px">Se asigna al enviar</span></div>
+        <dl>
+          <dt id="rClienteT" hidden>Cliente</dt><dd id="rCliente" hidden>—</dd>
+          <dt>Modalidad</dt><dd id="rModalidad">—</dd>
+          <dt>Paciente</dt><dd id="rPaciente">—</dd>
+          <dt>Doctor</dt><dd id="rDoctor">—</dd>
+          <dt>Trabajo</dt><dd id="rTipo">—</dd>
+          <dt>Material</dt><dd id="rMaterial">—</dd>
+          <dt>Unidades</dt><dd id="rUnidad">—</dd>
+          <dt>Color</dt><dd id="rColor">—</dd>
+          <dt>Piezas</dt><dd id="rPiezas">—</dd>
+          <dt>Entrega</dt><dd id="rFecha">—</dd>
+          <dt>Dirección</dt><dd id="rDireccion">—</dd>
+          <dt>Prioridad</dt><dd id="rPrioridad">—</dd>
+        </dl>
+        <hr>
+        <ul class="check" id="checklist"></ul>
+        <div class="error-form" id="errorEnvio" hidden style="margin:14px 0 0"></div>
+        <div class="acciones-final">
+          <button type="submit" form="form" class="btn verde" id="btnEnviar">Enviar solicitud</button>
+          <button type="button" class="btn cancelar" id="btnCancelar">Cancelar</button>
+        </div>
+      </div>
     </div>
-  </div>
-</aside>
-</main>
+    </div>
+  </main>
 </div>
 
-<div class="toast" id="toast"></div>
-
-<script>
-/* ================= Datos de ejemplo (vendrán de la API) ================= */
-const USUARIO = "Dra. Leslie Morales";
-const FDC = "__fdc__";
-const AMBAS = ["VITA Classic","VITA 3D-Master"];
-const CATALOGO = {
-  "Corona": {
-    "Zirconio":{unidades:["Pieza individual","Pieza en puente"],guias:AMBAS},
-    "Disilicato de litio":{unidades:["Pieza individual"],guias:AMBAS},
-    "Metal-porcelana":{unidades:["Pieza individual","Pieza en puente"],guias:AMBAS}
-  },
-  "Carilla": {
-    "Disilicato de litio":{unidades:["Pieza individual"],guias:AMBAS},
-    "Resina":{unidades:["Pieza individual"],guias:["VITA Classic"]}
-  },
-  "Puente": {
-    "Zirconio":{unidades:["Pieza en puente"],guias:AMBAS},
-    "Metal-porcelana":{unidades:["Pieza en puente"],guias:AMBAS}
-  },
-  "Incrustación": {
-    "Disilicato de litio":{unidades:["Pieza individual"],guias:AMBAS},
-    "Resina":{unidades:["Pieza individual"],guias:["VITA Classic"]}
-  },
-  "Modelo completo": {
-    "Resina de impresión":{unidades:["Arcada superior","Arcada inferior","Ambas arcadas"],guias:[]}
-  }
-};
-const TODOS_MATERIALES = [...new Set(Object.values(CATALOGO).flatMap(t=>Object.keys(t)))];
-const TODAS_UNIDADES = [...new Set(Object.values(CATALOGO).flatMap(t=>Object.values(t).flatMap(m=>m.unidades)))];
-const COLORES = {
-  "VITA Classic":["A1","A2","A3","A3.5","A4","B1","B2","B3","B4","C1","C2","C3","C4","D2","D3","D4"],
-  "VITA 3D-Master":["0M1","0M2","0M3","1M1","1M2","2L1.5","2L2.5","2M1","2M2","2M3","2R1.5","2R2.5","3L1.5","3L2.5","3M1","3M2","3M3","3R1.5","3R2.5","4L1.5","4L2.5","4M1","4M2","4M3","4R1.5","4R2.5","5M1","5M2","5M3"]
-};
-const DIRECCIONES = [
-  {id:1, departamento:"Guatemala", municipio:"Guatemala", direccion:"6a Av. 12-45 Zona 10, Clínica Sonrisa"},
-  {id:2, departamento:"Guatemala", municipio:"Mixco", direccion:"Blvd. San Cristóbal 8-20, Consultorio 3"}
-];
-const DEPARTAMENTOS = ["Alta Verapaz","Baja Verapaz","Chimaltenango","Chiquimula","El Progreso","Escuintla","Guatemala","Huehuetenango","Izabal","Jalapa","Jutiapa","Petén","Quetzaltenango","Quiché","Retalhuleu","Sacatepéquez","San Marcos","Santa Rosa","Sololá","Suchitepéquez","Totonicapán","Zacapa"];
-const MUNICIPIOS = {
-  "Guatemala":["Guatemala","Santa Catarina Pinula","San José Pinula","San José del Golfo","Palencia","Chinautla","San Pedro Ayampuc","Mixco","San Pedro Sacatepéquez","San Juan Sacatepéquez","San Raymundo","Chuarrancho","Fraijanes","Amatitlán","Villa Nueva","Villa Canales","San Miguel Petapa"],
-  "Sacatepéquez":["Antigua Guatemala","Jocotenango","Pastores","Sumpango","Santo Domingo Xenacoj","Santiago Sacatepéquez","San Bartolomé Milpas Altas","San Lucas Sacatepéquez","Santa Lucía Milpas Altas","Magdalena Milpas Altas","Santa María de Jesús","Ciudad Vieja","San Miguel Dueñas","Alotenango","San Antonio Aguas Calientes","Santa Catarina Barahona"]
-};
-/* Días bloqueados por el admin (feriados / asuetos) */
-const BLOQUEADOS = {
-  "2026-10-20":"Día de la Revolución",
-  "2026-11-01":"Día de Todos los Santos",
-  "2026-12-24":"Nochebuena",
-  "2026-12-25":"Navidad",
-  "2026-12-31":"Fin de año"
-};
-/* Parámetros administrables */
-const PARAM = {corteSemana:18, corteSabado:12, minDigital:2, minAnalogo:3, minEmergencia:1};
-
-/* ================= Utilidades ================= */
-const $ = id => document.getElementById(id);
-const ymd = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-const fmt = d => d.toLocaleDateString("es-GT",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
-const esHabil = d => { const w=d.getDay(); return w>=1 && w<=5 && !BLOQUEADOS[ymd(d)]; };
-function siguienteHabil(d){ const x=new Date(d); do{ x.setDate(x.getDate()+1); }while(!esHabil(x)); return x; }
-function sumarHabiles(base,n){ const x=new Date(base); let i=0; while(i<n){ x.setDate(x.getDate()+1); if(esHabil(x)) i++; } return x; }
-
-/* ================= Marca de agua (diente en malla de líneas) ================= */
-function marcaAgua(){
-  const contorno = [[60,95],[75,55],[105,30],[140,22],[172,30],[195,48],[210,52],[228,45],[255,26],[290,20],[325,32],[350,60],[362,100],[360,150],[350,200],[342,245],
-    [348,290],[350,340],[348,400],[340,460],[328,515],[312,560],[292,566],[282,540],[276,480],[265,420],[248,370],[228,335],[210,328],[192,335],[172,370],[155,420],
-    [142,480],[132,540],[118,566],[98,560],[84,515],[72,460],[64,400],[62,340],[66,290],[72,245],[62,200],[55,150]];
-  let s = 11; const rnd = () => { s = (s*16807) % 2147483647; return (s-1)/2147483646; };
-  const dentro = (x,y) => { let c=false; for(let i=0,j=contorno.length-1;i<contorno.length;j=i++){ const [xi,yi]=contorno[i],[xj,yj]=contorno[j]; if(((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/(yj-yi)+xi)) c=!c; } return c; };
-  const puntos = [];
-  contorno.forEach((p,i)=>{
-    const q = contorno[(i+1)%contorno.length]; puntos.push(p);
-    const dist = Math.hypot(q[0]-p[0], q[1]-p[1]), partes = Math.floor(dist/38);
-    for(let k=1;k<partes;k++) puntos.push([p[0]+(q[0]-p[0])*k/partes, p[1]+(q[1]-p[1])*k/partes]);
-  });
-  const nBorde = puntos.length;
-  while(puntos.length < nBorde+60){ const x=40+rnd()*330, y=20+rnd()*545; if(dentro(x,y)) puntos.push([x,y]); }
-  const segDentro = (a,b) => { for(let t=0.15;t<0.9;t+=0.15){ if(!dentro(a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t)) return false; } return true; };
-  const vistas = new Set(); let lineas = "";
-  puntos.forEach((a,i)=>{
-    const cand = puntos.map((b,j)=>[j,Math.hypot(a[0]-b[0],a[1]-b[1])]).filter(([j,d])=>j!==i && d<190).sort(()=>rnd()-0.5);
-    let usadas = 0;
-    for(const [j] of cand){
-      if(usadas>=4) break;
-      const clave = i<j?i+"-"+j:j+"-"+i;
-      if(vistas.has(clave) || !segDentro(a,puntos[j])) continue;
-      vistas.add(clave); usadas++;
-      lineas += `<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${puntos[j][0].toFixed(1)}" y2="${puntos[j][1].toFixed(1)}"/>`;
-    }
-  });
-  const poly = contorno.map(p=>p.join(",")).join(" ");
-  const circulos = puntos.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3"/>`).join("");
-  $("marca").innerHTML = `<svg viewBox="0 0 420 590" preserveAspectRatio="xMidYMid meet">
-    <g stroke="var(--marca-linea)" stroke-width="1" fill="none">${lineas}<polygon points="${poly}" stroke-width="1.6"/></g>
-    <g fill="var(--marca-punto)">${circulos}</g></svg>`;
-}
-
-/* ================= Odontograma ================= */
-const FORMAS = {
-  incisivo:{w:24,raiz:'<path class="raiz" d="M7 36 C8 20 10 7 12 3 C14 7 16 20 17 36 Z"/>',
-    corona:'<path class="corona" d="M5 36 Q12 32 19 36 L20 58 Q12 67 4 58 Z"/><path class="surco" d="M8 58 Q12 61 16 58"/>'},
-  canino:{w:26,raiz:'<path class="raiz" d="M8 36 C9 18 11 3 13 1 C15 3 17 18 18 36 Z"/>',
-    corona:'<path class="corona" d="M5 36 Q13 32 21 36 L21 55 L13 67 L5 55 Z"/>'},
-  premolar:{w:28,raiz:'<path class="raiz" d="M8 36 C9 20 12 7 14 4 C16 7 19 20 20 36 Z"/>',
-    corona:'<path class="corona" d="M4 36 Q14 31 24 36 Q26 50 23 61 Q14 67 5 61 Q2 50 4 36 Z"/><path class="surco" d="M14 44 L14 58"/>'},
-  molar:{w:36,raiz:'<path class="raiz" d="M5 36 C5 22 7 11 10 6 C12 13 14 24 16 35 Z"/><path class="raiz" d="M20 35 C22 24 24 13 26 6 C29 11 31 22 31 36 Z"/>',
-    corona:'<path class="corona" d="M3 36 Q18 30 33 36 Q35 50 32 62 Q18 68 4 62 Q1 50 3 36 Z"/><path class="surco" d="M10 48 Q18 54 26 48 M18 40 L18 60"/>'}
-};
-const tipoDiente = n => { const u=n%10; return u<=2?"incisivo":u===3?"canino":u<=5?"premolar":"molar"; };
-const seleccion = new Set();
-function crearDiente(n, superior){
-  const f = FORMAS[tipoDiente(n)];
-  const g = superior ? f.raiz+f.corona : `<g transform="translate(0,70) scale(1,-1)">${f.raiz+f.corona}</g>`;
-  const svg = `<svg viewBox="0 0 ${f.w} 70" style="width:${f.w*0.92}px">${g}</svg>`;
-  const b = document.createElement("button");
-  b.type="button"; b.className="diente"; b.dataset.n=n; b.title="Pieza "+n;
-  b.innerHTML = superior ? svg+`<span class="num">${n}</span>` : `<span class="num">${n}</span>`+svg;
-  b.onclick = () => { seleccion.has(n)?seleccion.delete(n):seleccion.add(n); pintarDientes(); };
-  return b;
-}
-function construirOdontograma(){
-  const orden = {q1:[18,17,16,15,14,13,12,11], q2:[21,22,23,24,25,26,27,28], q4:[48,47,46,45,44,43,42,41], q3:[31,32,33,34,35,36,37,38]};
-  for(const q in orden) orden[q].forEach(n => $(q).appendChild(crearDiente(n, q==="q1"||q==="q2")));
-}
-function pintarDientes(){
-  document.querySelectorAll(".diente").forEach(d => d.classList.toggle("sel", seleccion.has(+d.dataset.n)));
-  const lista=[...seleccion].sort((a,b)=>a-b);
-  $("resumenPiezas").innerHTML = lista.length ? `<b>${lista.length}</b> pieza(s): ${lista.join(", ")}` : "Ninguna pieza seleccionada";
-  if(lista.length) $("errPiezas").hidden = true;
-  actualizar();
-}
-document.querySelectorAll("[data-sel]").forEach(b => b.onclick = () => {
-  const t=b.dataset.sel;
-  const sup=[11,12,13,14,15,16,17,18,21,22,23,24,25,26,27,28], inf=[31,32,33,34,35,36,37,38,41,42,43,44,45,46,47,48];
-  if(t==="limpiar") seleccion.clear();
-  if(t==="sup"||t==="todo") sup.forEach(n=>seleccion.add(n));
-  if(t==="inf"||t==="todo") inf.forEach(n=>seleccion.add(n));
-  pintarDientes();
-});
-
-/* ================= Direcciones (existente / nueva) ================= */
-function crearDireccion(contenedor, p){
-  let modo = "existente";
-  $(contenedor).innerHTML = `
-    <div class="segmento"><button type="button" data-m="existente" class="activo">Dirección existente</button><button type="button" data-m="nueva">Nueva dirección</button></div>
-    <div class="campo" id="${p}CampoEx">
-      <select id="${p}Sel"><option value="">Selecciona una dirección</option>${DIRECCIONES.map(d=>`<option value="${d.id}">${d.municipio}, ${d.departamento} · ${d.direccion}</option>`).join("")}</select>
-      <div class="msg-error">Selecciona una dirección.</div>
-    </div>
-    <div class="grid" id="${p}Nueva" hidden>
-      <div class="campo" id="${p}CDep"><label>Departamento <span class="req">*</span></label>
-        <select id="${p}Dep"><option value="">Selecciona</option>${DEPARTAMENTOS.map(d=>`<option>${d}</option>`).join("")}</select><div class="msg-error">Requerido.</div></div>
-      <div class="campo" id="${p}CMun"><label>Municipio <span class="req">*</span></label>
-        <input id="${p}Mun" list="${p}MunList" placeholder="Escribe o elige"><datalist id="${p}MunList"></datalist><div class="msg-error">Requerido.</div></div>
-      <div class="campo span2" id="${p}CDir"><label>Dirección completa <span class="req">*</span></label>
-        <input id="${p}Dir" placeholder="Calle o avenida, número, zona, edificio, referencia"><div class="msg-error">Requerido.</div></div>
-      <label class="check-linea span2"><input type="checkbox" id="${p}Guardar" checked> Guardar en mis direcciones</label>
-    </div>`;
-  $(contenedor).querySelectorAll(".segmento button").forEach(b => b.onclick = () => {
-    modo = b.dataset.m;
-    $(contenedor).querySelectorAll(".segmento button").forEach(x=>x.classList.toggle("activo", x===b));
-    $(p+"CampoEx").hidden = modo!=="existente";
-    $(p+"Nueva").hidden = modo!=="nueva";
-    actualizar();
-  });
-  $(p+"Dep").onchange = () => {
-    $(p+"MunList").innerHTML = (MUNICIPIOS[$(p+"Dep").value]||[]).map(m=>`<option value="${m}">`).join("");
-    $(p+"Mun").value = "";
-  };
-  return {
-    validar(mostrar){
-      const reglas = modo==="existente" ? [[p+"CampoEx", $(p+"Sel").value]]
-        : [[p+"CDep",$(p+"Dep").value],[p+"CMun",$(p+"Mun").value.trim()],[p+"CDir",$(p+"Dir").value.trim()]];
-      let ok = true, primero = null;
-      reglas.forEach(([id,v])=>{ if(!v){ ok=false; if(!primero) primero=$(id); } if(mostrar) $(id).classList.toggle("error",!v); });
-      return mostrar ? {ok, primero} : ok;
-    },
-    valor(){
-      return modo==="existente" ? {tipo:"existente", direccion_id: $(p+"Sel").value ? +$(p+"Sel").value : null}
-        : {tipo:"nueva", departamento:$(p+"Dep").value||null, municipio:$(p+"Mun").value.trim()||null, direccion:$(p+"Dir").value.trim()||null, guardar:$(p+"Guardar").checked};
-    },
-    texto(){
-      if(modo==="existente"){ const d=DIRECCIONES.find(x=>x.id==$(p+"Sel").value); return d?`${d.municipio}, ${d.departamento}`:"—"; }
-      return $(p+"Mun").value.trim() ? `${$(p+"Mun").value.trim()}, ${$(p+"Dep").value} (nueva)` : "Nueva · pendiente";
-    }
-  };
-}
-const dirEntrega = crearDireccion("dirEntrega","ent");
-const dirRecolecta = crearDireccion("dirRecolecta","rec");
-$("recolectaIgual").onchange = () => { $("bloqueRecolecta").hidden = $("recolectaIgual").checked; actualizar(); };
-
-/* ================= Modalidad ================= */
-let modalidad = "digital";
-document.querySelectorAll(".opcion-mod").forEach(op => op.onclick = () => {
-  document.querySelectorAll(".opcion-mod").forEach(o=>o.classList.remove("activa"));
-  op.classList.add("activa"); op.querySelector("input").checked = true;
-  modalidad = op.dataset.mod;
-  $("panelDigital").hidden = modalidad!=="digital";
-  $("panelAnalogo").hidden = modalidad!=="analogo";
-  calcularFechas(); actualizar();
-});
-function recolectaOk(mostrar){
-  if(modalidad!=="analogo" || $("recolectaIgual").checked) return mostrar?{ok:true}:true;
-  return dirRecolecta.validar(mostrar);
-}
-
-/* ================= Archivos ================= */
-const archivos = {stl:[], otros:[]};
-function conectarDrop(zona, input, clave, lista){
-  $(zona).onclick = () => $(input).click();
-  $(zona).ondragover = e => e.preventDefault();
-  $(zona).ondrop = e => { e.preventDefault(); agregar([...e.dataTransfer.files]); };
-  $(input).onchange = e => { agregar([...e.target.files]); e.target.value=""; };
-  function agregar(fs){
-    if(clave==="stl") fs = fs.filter(f=>f.name.toLowerCase().endsWith(".stl"));
-    archivos[clave].push(...fs); render();
-  }
-  function render(){
-    $(lista).innerHTML = archivos[clave].map((f,i)=>{
-      const ext=f.name.split(".").pop().toUpperCase();
-      return `<div class="archivo"><span class="tipo ${ext==="STL"?"stl":""}">${ext}</span>${f.name}<span style="color:var(--texto-3)">${(f.size/1048576).toFixed(1)} MB</span><button type="button" data-i="${i}" title="Quitar">×</button></div>`;
-    }).join("");
-    $(lista).querySelectorAll("button").forEach(b=>b.onclick=()=>{archivos[clave].splice(+b.dataset.i,1);render();});
-    if(clave==="stl" && archivos.stl.length){ $("dropStl").classList.remove("error"); $("errStl").hidden = true; }
-    actualizar();
-  }
-}
-conectarDrop("dropStl","inputStl","stl","listaStl");
-conectarDrop("dropOtros","inputOtros","otros","listaOtros");
-
-/* ================= Catálogos dependientes + fuera de catálogo ================= */
-let colorNoAplica = false;
-function toggleFdc(sel){ const inp=$(sel.id+"Fdc"); const on = sel.value===FDC; inp.hidden=!on; if(!on) inp.value=""; }
-function opciones(sel, items, vacio){
-  sel.innerHTML = `<option value="">${vacio}</option>` + items.map(v=>`<option>${v}</option>`).join("") + `<option value="${FDC}">Fuera de catálogo…</option>`;
-  sel.disabled = false; toggleFdc(sel);
-}
-function deshabilitar(sel, texto){ sel.innerHTML=`<option value="">${texto}</option>`; sel.disabled=true; toggleFdc(sel); }
-function valor(id){
-  const sel=$(id);
-  if(sel.value===FDC){ const t=$(id+"Fdc").value.trim(); return t ? "Fuera de catálogo: "+t : ""; }
-  return sel.value;
-}
-function empaquetar(id){
-  const sel=$(id);
-  if(sel.value===FDC) return {catalogo:null, fuera_catalogo:$(id+"Fdc").value.trim()||null};
-  return {catalogo:sel.value||null, fuera_catalogo:null};
-}
-
-opciones($("tipo"), Object.keys(CATALOGO), "Selecciona el tipo");
-$("tipo").onchange = () => {
-  const t=$("tipo").value; toggleFdc($("tipo"));
-  if(!t) deshabilitar($("material"),"Primero elige el tipo");
-  else opciones($("material"), t===FDC ? TODOS_MATERIALES : Object.keys(CATALOGO[t]), "Selecciona el material");
-  $("material").onchange();
-};
-$("material").onchange = () => {
-  const t=$("tipo").value, m=$("material").value; toggleFdc($("material"));
-  colorNoAplica = false;
-  if(!m){ deshabilitar($("unidad"),"Primero elige el material"); deshabilitar($("guia"),"Primero elige el material"); }
-  else {
-    const info = (t!==FDC && m!==FDC && CATALOGO[t] && CATALOGO[t][m]) || {unidades:TODAS_UNIDADES, guias:AMBAS};
-    opciones($("unidad"), info.unidades, "Selecciona");
-    if(info.guias.length===0){ deshabilitar($("guia"),"No aplica"); colorNoAplica = true; }
-    else opciones($("guia"), info.guias, "Selecciona la guía");
-  }
-  $("guia").onchange();
-};
-$("guia").onchange = () => {
-  const g=$("guia").value; toggleFdc($("guia"));
-  if(colorNoAplica) deshabilitar($("color"),"No aplica");
-  else if(!g) deshabilitar($("color"),"Primero elige la guía");
-  else if(g===FDC){ opciones($("color"), [], "Selecciona"); $("color").value=FDC; toggleFdc($("color")); }
-  else opciones($("color"), COLORES[g], "Selecciona el color");
-  actualizar();
-};
-$("unidad").onchange = () => toggleFdc($("unidad"));
-$("color").onchange = () => toggleFdc($("color"));
-deshabilitar($("material"),"Primero elige el tipo");
-deshabilitar($("unidad"),"Primero elige el material");
-deshabilitar($("guia"),"Primero elige el material");
-deshabilitar($("color"),"Primero elige la guía");
-
-/* ================= Fechas ================= */
-let primeraFecha = null;
-function horaRegistro(){ const v=$("simHora").value; return v?new Date(v):new Date(); }
-function calcularFechas(){
-  const ahora=horaRegistro(), hoy=new Date(ahora.getFullYear(),ahora.getMonth(),ahora.getDate());
-  const w=ahora.getDay(), h=ahora.getHours();
-  let base, nota;
-  if(esHabil(hoy) && h<PARAM.corteSemana){ base=hoy; nota="Registrado antes de 6:00 pm"; }
-  else if(w===6 && h<PARAM.corteSabado && !BLOQUEADOS[ymd(hoy)]){ base=hoy; nota="Sábado antes de 12:00 pm"; }
-  else { base=siguienteHabil(hoy); nota="Fuera de horario: cuenta desde "+fmt(base); }
-  const emerg=$("emergencia").checked;
-  const n = emerg?PARAM.minEmergencia:(modalidad==="digital"?PARAM.minDigital:PARAM.minAnalogo);
-  primeraFecha = sumarHabiles(base,n);
-  $("fecha").min = ymd(primeraFecha);
-  $("fechaInfo").innerHTML =
-    `<span class="chip">${nota}</span>`+
-    `<span class="chip ${emerg?"rojo":""}">Mínimo ${n} día(s) hábil(es)${emerg?" · emergencia":""}</span>`+
-    `<span class="chip azul">Primera fecha: ${fmt(primeraFecha)}</span>`;
-  if($("fecha").value) validarFecha(true);
-}
-function validarFecha(mostrar=true){
-  const v=$("fecha").value, c=$("campoFecha");
-  if(!v){ if(mostrar){ c.classList.add("error"); $("msgFecha").textContent="Selecciona una fecha de entrega."; } return false; }
-  const d=new Date(v+"T12:00:00"); let msg="";
-  if(d.getDay()===0||d.getDay()===6) msg="Los sábados y domingos no son días de entrega.";
-  else if(BLOQUEADOS[v]) msg="Día bloqueado: "+BLOQUEADOS[v]+".";
-  else if(d < new Date(ymd(primeraFecha)+"T00:00:00")) msg="La fecha más cercana disponible es "+fmt(primeraFecha)+".";
-  if(mostrar){ c.classList.toggle("error", !!msg); $("msgFecha").textContent=msg; }
-  return !msg;
-}
-$("fecha").onchange = () => validarFecha();
-$("emergencia").onchange = () => { $("cajaEmergencia").classList.toggle("on",$("emergencia").checked); calcularFechas(); };
-$("simHora").onchange = () => calcularFechas();
-$("simAhora").onclick = () => { $("simHora").value=""; calcularFechas(); actualizar(); };
-
-/* ================= Resumen, checklist y payload ================= */
-const requierePiezas = () => $("tipo").value!=="Modelo completo";
-const guiaColorOk = () => colorNoAplica || (!!valor("guia") && !!valor("color"));
-function estado(){
-  return [
-    ["Modalidad y archivos", modalidad==="digital" ? archivos.stl.length>0 : recolectaOk(false)],
-    ["Paciente", !!$("paciente").value.trim()],
-    ["Tipo, material y unidades", !!(valor("tipo") && valor("material") && valor("unidad"))],
-    ["Guía y color", guiaColorOk()],
-    ["Piezas dentales", !requierePiezas() || seleccion.size>0],
-    ["Fecha de entrega", validarFecha(false)],
-    ["Dirección de entrega", dirEntrega.validar(false)]
-  ];
-}
-function actualizar(){
-  const hayFdc = ["tipo","material","unidad","guia","color"].some(id=>$(id).value===FDC);
-  $("avisoFdc").hidden = !hayFdc;
-  $("rModalidad").textContent = modalidad==="digital"?"Digital (STL)":"Analógico (recolecta)";
-  $("rPaciente").textContent = $("paciente").value.trim()||"—";
-  $("rDoctor").textContent = $("doctorTratante").value.trim()||USUARIO;
-  $("rTipo").textContent = valor("tipo")||"—";
-  $("rMaterial").textContent = valor("material")||"—";
-  $("rUnidad").textContent = valor("unidad")||"—";
-  $("rColor").textContent = colorNoAplica ? "No aplica" : (valor("color") ? `${valor("guia")} · ${valor("color")}` : "—");
-  $("rPiezas").textContent = seleccion.size?[...seleccion].sort((a,b)=>a-b).join(", "):(requierePiezas()?"—":"No aplica");
-  $("rFecha").textContent = $("fecha").value?fmt(new Date($("fecha").value+"T12:00:00")):"—";
-  $("rDireccion").textContent = dirEntrega.texto();
-  $("rPrioridad").innerHTML = $("emergencia").checked?'<span class="badge rojo">EMERGENCIA</span>':'<span class="badge gris-claro">Normal</span>';
-  $("checklist").innerHTML = estado().map(([t,ok])=>`<li class="${ok?"ok":""}">${t}</li>`).join("");
-  $("payload").textContent = JSON.stringify({
-    tipo_caso:"CN",
-    modalidad,
-    paciente:$("paciente").value.trim(),
-    referencia_clinica:$("referencia").value.trim()||null,
-    doctor_tratante:$("doctorTratante").value.trim()||null,
-    tipo_trabajo:empaquetar("tipo"),
-    material:empaquetar("material"),
-    unidad:empaquetar("unidad"),
-    guia_color:colorNoAplica?null:empaquetar("guia"),
-    color:colorNoAplica?null:empaquetar("color"),
-    fuera_de_catalogo:hayFdc,
-    piezas:[...seleccion].sort((a,b)=>a-b),
-    fecha_entrega:$("fecha").value||null,
-    emergencia:$("emergencia").checked,
-    direccion_entrega:dirEntrega.valor(),
-    direccion_recolecta: modalidad!=="analogo" ? null : ($("recolectaIgual").checked ? {tipo:"misma_que_entrega"} : dirRecolecta.valor()),
-    instrucciones:$("instrucciones").value.trim()||null,
-    archivos_stl:archivos.stl.map(f=>f.name),
-    adjuntos:archivos.otros.map(f=>f.name)
-  }, null, 2);
-}
-$("form").addEventListener("input", e => { e.target.closest(".campo")?.classList.remove("error"); actualizar(); });
-$("form").addEventListener("change", actualizar);
-
-/* ================= Envío ================= */
-function toast(txt, rojo){ const t=$("toast"); t.textContent=txt; t.classList.toggle("rojo",!!rojo); t.classList.add("ver"); setTimeout(()=>t.classList.remove("ver"),3200); }
-$("form").onsubmit = e => {
-  e.preventDefault();
-  let primerError = null;
-  const anotar = el => { if(!primerError) primerError = el; };
-  const marcar = (id, cond) => { $(id).classList.toggle("error",!cond); if(!cond) anotar($(id)); };
-  if(modalidad==="digital"){
-    const ok=archivos.stl.length>0; $("dropStl").classList.toggle("error",!ok); $("errStl").hidden=ok; if(!ok) anotar($("dropStl"));
-  } else { const r=recolectaOk(true); if(!r.ok) anotar(r.primero); }
-  marcar("campoPaciente", !!$("paciente").value.trim());
-  marcar("campoTipo", !!valor("tipo"));
-  marcar("campoMaterial", !!valor("material"));
-  marcar("campoUnidad", !!valor("unidad"));
-  if(!colorNoAplica){ marcar("campoGuia", !!valor("guia")); marcar("campoColor", !!valor("color")); }
-  if(requierePiezas() && seleccion.size===0){ $("errPiezas").hidden=false; anotar($("errPiezas")); }
-  if(!validarFecha(true)) anotar($("campoFecha"));
-  const de = dirEntrega.validar(true); if(!de.ok) anotar(de.primero);
-  if(primerError){ primerError.scrollIntoView({behavior:"smooth",block:"center"}); toast("Revisa los campos marcados en rojo",true); return; }
-  toast("Solicitud lista para enviar (simulación) · ver JSON al final");
-  document.querySelector(".payload").open = true;
-};
-$("btnCancelar").onclick = () => location.reload();
-
-/* ================= Inicio ================= */
-marcaAgua();
-construirOdontograma();
-calcularFechas();
-actualizar();
-</script>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/validaciones.js"></script>
+<script src="js/formulario-caso.js"></script>
+<script src="js/nueva-solicitud.js"></script>
 </body>
 </html>

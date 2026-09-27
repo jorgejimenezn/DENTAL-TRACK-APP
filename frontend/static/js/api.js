@@ -32,6 +32,10 @@ const ETIQUETAS = {
   tipo_documento: "Tipo de documento", nivel_prioridad: "Nivel", clinica: "Clínica",
   direcciones: "Direcciones", departamento: "Departamento", municipio: "Municipio",
   direccion: "Dirección", rol: "Rol", area_ids: "Áreas",
+  paciente: "Paciente", piezas: "Piezas", fecha_entrega: "Fecha de entrega", tipo_trabajo: "Tipo de trabajo",
+  material: "Material", unidad: "Unidades", guia_color: "Guía de color", color: "Color", motivo: "Motivo",
+  direccion_entrega: "Dirección de entrega", direccion_recolecta: "Dirección de recolecta", instrucciones: "Instrucciones",
+  doctor_tratante: "Doctor tratante", referencia_clinica: "Referencia", tipo_reapertura: "Tipo de reapertura",
 };
 
 class ErrorApi extends Error {
@@ -67,6 +71,39 @@ async function api(metodo, ruta, cuerpo) {
   if (!respuesta.ok) throw new ErrorApi(respuesta.status, datos.detail);
   return datos;
 }
+
+/** Sube un archivo con barra de progreso (fetch no informa el avance de la subida). */
+function subirArchivo(archivo, alAvanzar = () => {}) {
+  return new Promise((resolver, rechazar) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", API + "/archivos");
+    const token = Sesion.obtener()?.token;
+    if (token) xhr.setRequestHeader("Authorization", "Bearer " + token);
+    xhr.upload.onprogress = e => { if (e.lengthComputable) alAvanzar(Math.round(e.loaded * 100 / e.total)); };
+    xhr.onload = () => {
+      let datos = {};
+      try { datos = JSON.parse(xhr.responseText); } catch { /* respuesta vacía */ }
+      if (xhr.status === 401) Sesion.cerrar();
+      xhr.status >= 200 && xhr.status < 300 ? resolver(datos) : rechazar(new ErrorApi(xhr.status, datos.detail || "No se pudo subir"));
+    };
+    xhr.onerror = () => rechazar(new ErrorApi(0, "Sin conexión con la API"));
+    const datos = new FormData();
+    datos.append("archivo", archivo);
+    xhr.send(datos);
+  });
+}
+
+/** Descarga un archivo protegido (necesita el token, por eso no basta un enlace normal). */
+async function descargarArchivo(ruta, nombre) {
+  const respuesta = await fetch(API + ruta, { headers: { Authorization: "Bearer " + (Sesion.obtener()?.token || "") } });
+  if (!respuesta.ok) throw new ErrorApi(respuesta.status, (await respuesta.json().catch(() => ({}))).detail);
+  const url = URL.createObjectURL(await respuesta.blob());
+  const a = Object.assign(document.createElement("a"), { href: url, download: nombre });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+const ROLES_CAPTURA = ["admin", "supervisor", "ingresos"];
 
 /* ---------- Utilidades de interfaz ---------- */
 const $ = id => document.getElementById(id);
