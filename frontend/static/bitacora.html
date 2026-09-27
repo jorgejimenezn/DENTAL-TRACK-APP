@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bitácora · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
+<style>
+  .detalle{font-size:12px;color:var(--texto-2);max-width:420px}
+  .detalle b{color:var(--texto);font-weight:600}
+</style>
+</head>
+<body>
+<div class="marca" id="marca" aria-hidden="true"></div>
+<div class="app">
+  <aside class="lateral" id="lateral"></aside>
+  <main class="contenido">
+    <div class="encabezado">
+      <div>
+        <h1>Bitácora</h1>
+        <p>Accesos y cambios del sistema, guardados en la base no relacional (MongoDB).</p>
+      </div>
+      <button class="btn" id="btnRecargar">Actualizar</button>
+    </div>
+    <div class="card">
+      <div class="filtros">
+        <div class="campo"><select id="fEntidad">
+          <option value="">Todo</option><option value="sesion">Inicios de sesión</option>
+          <option value="cliente">Clientes</option><option value="empleado">Empleados</option></select></div>
+        <div class="campo"><select id="fLimite"><option>50</option><option selected>100</option><option>300</option></select></div>
+      </div>
+      <div class="tabla-wrap">
+        <table>
+          <thead><tr><th>Fecha</th><th>Acción</th><th>Sobre</th><th>Realizado por</th><th>Detalle</th></tr></thead>
+          <tbody id="tabla"><tr><td colspan="5" class="cargando">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  if (!iniciarPagina(["admin"])) throw new Error("sin acceso");
+
+  const ACCIONES = {
+    login_exitoso: ["Inicio de sesión", "verde"], login_fallido: ["Intento fallido", "rojo"],
+    crear: ["Creación", "azul"], editar: ["Edición", "gris"], activar: ["Activación", "verde"],
+    desactivar: ["Desactivación", "rojo"], cambiar_password: ["Cambio de contraseña", "gris"],
+    agregar_direccion: ["Dirección agregada", "azul"], editar_direccion: ["Dirección editada", "gris"],
+    eliminar_direccion: ["Dirección quitada", "rojo"],
+  };
+  const ENTIDADES = { sesion: "Sesión", cliente: "Cliente", empleado: "Empleado" };
+
+  function textoDetalle(d) {
+    if (!d || !Object.keys(d).length) return "—";
+    if (d.cambios) {
+      return Object.entries(d.cambios).map(([campo, [antes, despues]]) =>
+        `<b>${escapar(ETIQUETAS[campo] || campo)}:</b> ${escapar(Array.isArray(antes) ? antes.join(", ") : antes ?? "—")} → ${escapar(Array.isArray(despues) ? despues.join(", ") : despues ?? "—")}`).join("<br>");
+    }
+    return Object.entries(d).map(([k, v]) => `<b>${escapar(ETIQUETAS[k] || k)}:</b> ${escapar(Array.isArray(v) ? v.join(", ") : v ?? "—")}`).join("<br>");
+  }
+
+  async function cargar() {
+    const params = new URLSearchParams({ limite: $("fLimite").value });
+    if ($("fEntidad").value) params.set("entidad", $("fEntidad").value);
+    try {
+      const eventos = await api("GET", "/auditoria?" + params);
+      $("tabla").innerHTML = eventos.length ? eventos.map(e => {
+        const [nombre, color] = ACCIONES[e.accion] || [e.accion, "gris"];
+        return `<tr>
+          <td>${fechaHora(e.fecha)}</td>
+          <td><span class="badge ${color}">${escapar(nombre)}</span></td>
+          <td>${escapar(ENTIDADES[e.entidad] || e.entidad)}${e.entidad_id ? ` <span class="sub">#${escapar(e.entidad_id)}</span>` : ""}</td>
+          <td>${escapar(e.actor_email || "—")}</td>
+          <td class="detalle">${textoDetalle(e.detalle)}</td></tr>`;
+      }).join("") : '<tr><td colspan="5" class="vacio">Sin eventos registrados.</td></tr>';
+    } catch (error) {
+      $("tabla").innerHTML = `<tr><td colspan="5" class="vacio">${escapar(error.message)}</td></tr>`;
+    }
+  }
+  ETIQUETAS.motivo = "Motivo"; ETIQUETAS.documento = "Documento"; ETIQUETAS.areas = "Áreas"; ETIQUETAS.es_red = "Red";
+  ETIQUETAS.direccion_id = "Dirección #";
+  $("fEntidad").onchange = cargar;
+  $("fLimite").onchange = cargar;
+  $("btnRecargar").onclick = cargar;
+  cargar();
+</script>
+</body>
+</html>

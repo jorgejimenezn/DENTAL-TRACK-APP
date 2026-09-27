@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Empleados · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="marca" id="marca" aria-hidden="true"></div>
+<div class="app">
+  <aside class="lateral" id="lateral"></aside>
+  <main class="contenido">
+    <div class="encabezado">
+      <div>
+        <h1>Empleados</h1>
+        <p>Usuarios del laboratorio, su rol y las áreas donde trabajan.</p>
+      </div>
+      <button class="btn verde" id="btnNuevo">+ Nuevo empleado</button>
+    </div>
+
+    <div class="card">
+      <div class="filtros">
+        <div class="campo ancho"><input id="fTexto" placeholder="Buscar por nombre o correo"></div>
+        <div class="campo"><select id="fRol"><option value="">Todos los roles</option></select></div>
+        <div class="campo"><select id="fEstado"><option value="">Todos los estados</option><option value="true" selected>Activos</option><option value="false">Inactivos</option></select></div>
+      </div>
+      <div class="tabla-wrap">
+        <table>
+          <thead><tr><th>Empleado</th><th>Rol</th><th>Áreas</th><th>Último acceso</th><th>Estado</th><th></th></tr></thead>
+          <tbody id="tabla"><tr><td colspan="6" class="cargando">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<dialog class="modal" id="modalEmpleado">
+  <form id="formEmpleado" novalidate>
+    <div class="modal-cabecera"><h2 id="tituloModal">Nuevo empleado</h2><button type="button" class="cerrar" data-cerrar>&times;</button></div>
+    <div class="modal-cuerpo">
+      <div class="error-form" id="errorEmpleado" hidden></div>
+      <div class="seccion-form">Datos personales</div>
+      <div class="grid">
+        <div class="campo" data-campo="nombre"><label>Nombre <span class="req">*</span></label><input id="eNombre"><div class="msg-error">Requerido.</div></div>
+        <div class="campo" data-campo="apellido"><label>Apellido <span class="req">*</span></label><input id="eApellido"><div class="msg-error">Requerido.</div></div>
+        <div class="campo span2" data-campo="email"><label>Correo electrónico (usuario de acceso) <span class="req">*</span></label><input id="eEmail" type="email"><div class="msg-error">Correo no válido.</div></div>
+      </div>
+
+      <div class="seccion-form">Rol y áreas</div>
+      <div class="grid">
+        <div class="campo"><label>Rol <span class="req">*</span></label><select id="eRol"></select>
+          <div class="ayuda" id="ayudaRol"></div></div>
+      </div>
+      <div class="campo" style="margin-top:14px"><label>Áreas del laboratorio</label>
+        <div class="selector-chips" id="eAreas"></div>
+        <div class="ayuda">Un empleado puede cubrir varias áreas. Los pasos específicos del flujo se asignan en la siguiente fase.</div>
+      </div>
+
+      <div id="bloquePassword">
+        <div class="seccion-form">Acceso</div>
+        <div class="grid">
+          <div class="campo" data-campo="password"><label>Contraseña inicial <span class="req">*</span></label><input id="ePassword" type="text" autocomplete="new-password"><div class="msg-error">Mínimo 8 caracteres.</div></div>
+          <div class="campo"><label>&nbsp;</label><button type="button" class="btn" id="btnGenerar">Generar contraseña</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-pie">
+      <button type="button" class="btn rojo-borde" id="btnResetPass" hidden style="margin-right:auto">Restablecer contraseña</button>
+      <button type="button" class="btn" data-cerrar>Cancelar</button>
+      <button type="submit" class="btn verde" id="btnGuardar">Guardar empleado</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="modal chico" id="modalPassword">
+  <form id="formPassword" novalidate>
+    <div class="modal-cabecera"><h2>Restablecer contraseña</h2><button type="button" class="cerrar" data-cerrar>&times;</button></div>
+    <div class="modal-cuerpo">
+      <div class="error-form" id="errorPassword" hidden></div>
+      <p style="color:var(--texto-2);margin-bottom:12px" id="textoPassword"></p>
+      <div class="campo"><label>Nueva contraseña</label><input id="nuevaPassword" type="text" autocomplete="new-password"><div class="ayuda">Mínimo 8 caracteres.</div></div>
+    </div>
+    <div class="modal-pie"><button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" class="btn verde">Guardar</button></div>
+  </form>
+</dialog>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/validaciones.js"></script>
+<script src="js/empleados.js"></script>
+</body>
+</html>

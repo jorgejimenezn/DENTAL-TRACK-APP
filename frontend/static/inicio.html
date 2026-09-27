@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inicio · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
+<style>
+  .bienvenida{max-width:720px}
+  .bienvenida h1{font-size:26px}
+  .tarjetas{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:22px}
+  .tarjeta{display:block;text-decoration:none;color:var(--texto);background:var(--panel);border:1px solid var(--panel-borde);border-radius:var(--radio);padding:18px;transition:.15s}
+  a.tarjeta:hover{border-color:#777}
+  .tarjeta b{display:block;font-size:15px;margin-bottom:4px}
+  .tarjeta span{color:var(--texto-2);font-size:13px}
+  .tarjeta.pronto{opacity:.6}
+</style>
+</head>
+<body>
+<div class="marca" id="marca" aria-hidden="true"></div>
+<div class="app">
+  <aside class="lateral" id="lateral"></aside>
+  <main class="contenido">
+    <div class="bienvenida">
+      <h1 id="saludo">Bienvenido</h1>
+      <p style="color:var(--texto-2)" id="rolTexto"></p>
+      <div class="tarjetas" id="tarjetas"></div>
+    </div>
+  </main>
+</div>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  const usuario = iniciarPagina();
+  if (usuario) {
+    $("saludo").textContent = `Hola, ${usuario.nombre}`;
+    $("rolTexto").textContent = `Sesión iniciada como ${NOMBRES_ROL[usuario.rol] || usuario.rol}.`;
+    const tarjeta = (href, titulo, texto) => href
+      ? `<a class="tarjeta" href="${href}"><b>${titulo}</b><span>${texto}</span></a>`
+      : `<div class="tarjeta pronto"><b>${titulo}</b><span>${texto}</span></div>`;
+    let html = "";
+    if (usuario.rol === "admin") {
+      html = tarjeta("clientes.html", "Clientes", "Doctores, clínicas, direcciones y prioridad.")
+           + tarjeta("empleados.html", "Empleados", "Usuarios del laboratorio, roles y áreas.")
+           + tarjeta("bitacora.html", "Bitácora", "Accesos y cambios registrados en MongoDB.");
+    } else if (usuario.rol === "doctor") {
+      html = tarjeta("nueva-solicitud.html", "Nueva solicitud", "Prototipo del formulario de ingreso.")
+           + tarjeta(null, "Mi tablero", "Tus casos vigentes en Kanban. Próxima fase.")
+           + tarjeta(null, "Historial", "Casos entregados y reprocesos. Próxima fase.");
+    } else {
+      html = tarjeta(null, "Mi bandeja", "Órdenes asignadas por el flujo de pasos. Próxima fase.");
+    }
+    $("tarjetas").innerHTML = html;
+  }
+</script>
+</body>
+</html>

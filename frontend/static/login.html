@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iniciar sesión · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
+<style>
+  .login{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(360px,1fr);min-height:100vh}
+  .login-imagen{position:relative;overflow:hidden;background:#8f8f8f}
+  .login-imagen img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%}
+  .login-imagen::after{content:"";position:absolute;inset:auto 0 0 0;height:40%;background:linear-gradient(to top,rgba(0,0,0,.55),transparent)}
+  .login-imagen .lema{position:absolute;left:36px;bottom:32px;right:36px;color:#fff;z-index:1}
+  .login-imagen .lema b{display:block;font-size:22px;letter-spacing:.02em}
+  .login-imagen .lema span{font-size:13px;color:#e4e4e4}
+  .login-panel{background:#000;display:flex;align-items:center;justify-content:center;padding:40px 24px}
+  .login-caja{width:100%;max-width:360px}
+  .login-caja .logo{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.14em;font-size:15px;margin-bottom:40px}
+  .login-caja .logo svg{width:28px;height:28px}
+  .login-caja h1{font-size:26px;margin-bottom:6px}
+  .login-caja p.sub{color:var(--texto-2);margin-bottom:28px}
+  .login-caja .campo{margin-bottom:16px}
+  .clave{position:relative}
+  .clave input{padding-right:70px}
+  .clave button{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--texto-2);font:inherit;font-size:12px;font-weight:600;cursor:pointer;padding:4px 8px}
+  .login-caja .btn.primario{width:100%;padding:12px;font-size:14px;margin-top:6px}
+  .pie-login{margin-top:36px;font-size:11px;color:var(--texto-3)}
+  @media (max-width:860px){
+    .login{grid-template-columns:1fr}
+    .login-imagen{height:220px}
+    .login-imagen::after{display:none}
+    .login-imagen .lema{display:none}
+    .login-panel{align-items:flex-start;padding-top:32px}
+    .login-caja .logo{margin-bottom:24px}
+  }
+</style>
+</head>
+<body>
+<div class="login">
+  <section class="login-imagen" aria-hidden="true">
+    <img src="img/diente.png" alt="">
+    <div class="lema"><b>De la solicitud a la entrega.</b><span>Control del laboratorio dental en un solo lugar.</span></div>
+  </section>
+
+  <section class="login-panel">
+    <form class="login-caja" id="formLogin" novalidate>
+      <div class="logo">
+        <svg viewBox="0 0 40 40" fill="none"><path d="M12 5c-5 0-8 4-8 10 0 5 2 8 3 13 1 5 2 8 4 8 3 0 3-8 5-11 1-2 3-2 4 0 2 3 2 11 5 11 2 0 3-3 4-8 1-5 3-8 3-13 0-6-3-10-8-10-3 0-5 2-8 2s-5-2-8-2z" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/></svg>
+        DENTAL TRACK
+      </div>
+      <h1>Iniciar sesión</h1>
+      <p class="sub">Ingresa con el correo y la contraseña de tu cuenta.</p>
+
+      <div class="error-form" id="errorLogin" hidden></div>
+
+      <div class="campo" id="campoEmail">
+        <label for="email">Correo electrónico</label>
+        <input type="email" id="email" autocomplete="username" placeholder="tu@correo.com" autofocus>
+        <div class="msg-error">Ingresa un correo válido.</div>
+      </div>
+      <div class="campo" id="campoPassword">
+        <label for="password">Contraseña</label>
+        <div class="clave">
+          <input type="password" id="password" autocomplete="current-password" placeholder="••••••••">
+          <button type="button" id="verClave">Mostrar</button>
+        </div>
+        <div class="msg-error">Ingresa tu contraseña.</div>
+      </div>
+      <button type="submit" class="btn primario" id="btnEntrar">Entrar</button>
+      <p class="pie-login">¿Olvidaste tu contraseña? Solicita al administrador del laboratorio que la restablezca.</p>
+    </form>
+  </section>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script>
+  if (Sesion.obtener()?.token) location.href = "inicio.html";
+
+  $("verClave").onclick = () => {
+    const oculto = $("password").type === "password";
+    $("password").type = oculto ? "text" : "password";
+    $("verClave").textContent = oculto ? "Ocultar" : "Mostrar";
+  };
+  ["email", "password"].forEach(id => $(id).addEventListener("input", () => {
+    $(id).closest(".campo").classList.remove("error");
+    $("errorLogin").hidden = true;
+  }));
+
+  $("formLogin").onsubmit = async e => {
+    e.preventDefault();
+    const email = $("email").value.trim(), password = $("password").value;
+    const correoOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    $("campoEmail").classList.toggle("error", !correoOk);
+    $("campoPassword").classList.toggle("error", !password);
+    if (!correoOk || !password) return;
+
+    $("btnEntrar").disabled = true;
+    $("btnEntrar").textContent = "Validando…";
+    try {
+      const r = await api("POST", "/auth/login", { email, password });
+      Sesion.guardar({ token: r.access_token, expira: r.expira_en, usuario: r.usuario });
+      location.href = r.usuario.rol === "admin" ? "clientes.html" : "inicio.html";
+    } catch (error) {
+      mostrarErrores($("errorLogin"), error);
+      $("btnEntrar").disabled = false;
+      $("btnEntrar").textContent = "Entrar";
+    }
+  };
+</script>
+</body>
+</html>
