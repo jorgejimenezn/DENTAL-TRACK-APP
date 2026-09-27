@@ -180,6 +180,7 @@ class RecorridoPaso(BaseModel):
     activado_en: datetime | None
     terminado_en: datetime | None
     nota: str | None
+    receptor: str | None = None
     vuelta: int
 
 

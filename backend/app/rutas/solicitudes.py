@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.core.dependencias import Actor, obtener_actor
 from app.db.mongo import obtener_mongo
 from app.db.postgres import obtener_sesion
+from app.esquemas.bandeja import PrioridadIn
 from app.esquemas.solicitud import (ArchivoOut, ClienteBreve, MotivoIn, PerfilSolicitud, ReaperturaIn, SolicitudIn,
                                     SolicitudOut, SolicitudResumen)
 from app.repositorios.archivo_repo import ArchivoRepositorio
@@ -88,3 +89,9 @@ def descargar(solicitud_id: int, archivo_id: str, actor: Actor = Depends(obtener
         media_type=archivo.content_type or "application/octet-stream",
         headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(archivo.filename)}",
                  "Content-Length": str(archivo.length)})
+
+
+@router.post("/solicitudes/{solicitud_id}/prioridad", response_model=SolicitudOut)
+def prioridad(solicitud_id: int, datos: PrioridadIn, actor: Actor = Depends(obtener_actor),
+              s: SolicitudServicio = Depends(_servicio)):
+    return s.cambiar_prioridad(solicitud_id, datos.prioridad, datos.motivo, actor)

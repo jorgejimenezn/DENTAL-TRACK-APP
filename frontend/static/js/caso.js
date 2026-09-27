@@ -6,7 +6,7 @@ const casoId = Number(parametros.get("id"));
 const ESTADOS = {
   pendiente_recolecta: "Pendiente de recolecta", validacion_qa: "Validación de QA", recibida: "Recibida",
   en_produccion: "En producción", control_calidad: "Control de calidad", facturacion: "Facturación y empaque",
-  en_ruta: "En ruta de entrega", entregada: "Entregada", cancelada: "Cancelada",
+  listo_entrega: "Listo para entrega", en_ruta: "En ruta de entrega", entregada: "Entregada", cancelada: "Cancelada",
 };  // referencia de estados (el texto llega desde la API)
 const COLOR_ESTADO = { entregada: "verde", cancelada: "rojo", validacion_qa: "azul", pendiente_recolecta: "azul" };
 const fechaLarga = s => new Date(s + "T12:00:00").toLocaleDateString("es-GT", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -66,6 +66,8 @@ function pintar() {
     ? `<a class="btn verde" style="width:100%" href="reapertura.html?caso=${c.id}">Reabrir caso (RP)</a>
        <p class="nota">Para garantía o modificación. Pasa primero por QA, que define si aplica garantía o cobro.</p>`
     : `<p class="nota" style="margin:0">${escapar(c.motivo_no_reabrir || "Este caso no se puede reabrir")}.</p>`;
+  $("formPrioridad").hidden = !(["admin", "supervisor"].includes(usuario.rol) && !["entregada", "cancelada"].includes(c.estado));
+  $("nuevaPrioridad").value = c.prioridad || 3;
   $("formCancelar").hidden = !(["admin", "supervisor"].includes(usuario.rol) && !["entregada", "cancelada"].includes(c.estado));
   // Recorrido: pasos del flujo de este caso
   const activos = ["en_area", "en_cola", "sin_tecnico", "asignado", "en_proceso"];
@@ -74,7 +76,7 @@ function pintar() {
   $("recorrido").innerHTML = c.recorrido.map((p, i) => `
     <li class="${p.estado === "terminado" ? "hecho" : activos.includes(p.estado) ? "ahora" : ""}"><span class="n">${i + 1}</span>
       <span><b>${escapar(p.area)}</b> <small style="color:var(--texto-3)">${escapar(p.etapa_texto)}${p.vuelta > 1 ? " · retrabajo" : ""}</small></span>
-      <span class="quien">${escapar(TEXTO_PASO[p.estado] || p.estado)}${p.tecnico || p.atendido_por ? ` · ${escapar(p.atendido_por || p.tecnico)}` : ""}</span></li>`).join("");
+      <span class="quien">${escapar(TEXTO_PASO[p.estado] || p.estado)}${p.tecnico || p.atendido_por ? ` · ${escapar(p.atendido_por || p.tecnico)}` : ""}${p.receptor ? ` · recibió ${escapar(p.receptor)}` : ""}</span></li>`).join("");
   $("bloqueReaperturas").hidden = !c.reaperturas.length;
   $("reaperturas").innerHTML = c.reaperturas.map(r => `
     <a class="item" href="caso.html?id=${r.id}" style="text-decoration:none;color:inherit">
@@ -100,6 +102,14 @@ $("archivos").addEventListener("click", async e => {
   catch (error) { toast(error.message, true); }
   a.textContent = "Descargar";
 });
+
+$("formPrioridad").onsubmit = async e => {
+  e.preventDefault();
+  const motivo = $("motivoPrioridad").value.trim();
+  if (motivo.length < 3) return toast("Escribe el motivo del cambio", true);
+  try { caso = await api("POST", `/solicitudes/${casoId}/prioridad`, { prioridad: Number($("nuevaPrioridad").value), motivo }); $("motivoPrioridad").value = ""; toast("Prioridad actualizada"); pintar(); }
+  catch (error) { toast(error.message, true); }
+};
 
 $("formCancelar").onsubmit = async e => {
   e.preventDefault();

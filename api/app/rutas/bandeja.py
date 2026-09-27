@@ -4,13 +4,16 @@
   El técnico trabaja uno a la vez: inicia el que el sistema le entrega por prioridad y lo termina.
 - Ingresos: aprobar (entra a producción), modificar (corrige el trabajo) o cancelar.
 - QA: validar reaperturas (clasificación y motivo) y control de calidad (aprobar o devolver a un paso).
-- Facturación: registrar el número de factura. Logística: recolectado / entregado.
-- Admin y supervisor ven el resumen de todas las áreas y el detalle de una con ?area_id=.
+- Facturación: registrar el número de factura.
+- Logística: asigna cada recolecta o entrega a un mensajero (o la marca hecha directamente).
+- Mensajero: ve sus rutas y marca hecho (al entregar, nombre de quien recibe) o "no se pudo" con motivo.
+- Admin y supervisor ven el resumen de todas las áreas y el detalle de una con ?area_id=; reasignan
+  trabajos de producción a cualquier empleado.
 """
 from fastapi import APIRouter, Depends, Response
 
 from app.backend import llamar
-from app.esquemas import CancelarPasoIn, ModificacionIn, RechazoIn, TerminarIn, ValidacionRpIn
+from app.esquemas import AsignarIn, CancelarPasoIn, ModificacionIn, RechazoIn, TerminarIn, ValidacionRpIn
 from app.seguridad import usuario_actual
 
 router = APIRouter(tags=["Bandeja"])
@@ -55,4 +58,23 @@ async def modificar(paso_id: int, datos: ModificacionIn, u: dict = Depends(usuar
 @router.post("/pasos/{paso_id}/cancelar", status_code=204, summary="Ingresos: cancelar el caso")
 async def cancelar(paso_id: int, datos: CancelarPasoIn, u: dict = Depends(usuario_actual)):
     await llamar("POST", f"/pasos/{paso_id}/cancelar", u, json=datos.model_dump())
+    return Response(status_code=204)
+
+
+@router.get("/pasos/{paso_id}/candidatos", summary="A quién se puede asignar el paso (mensajeros o empleados)")
+async def candidatos(paso_id: int, u: dict = Depends(usuario_actual)):
+    return await llamar("GET", f"/pasos/{paso_id}/candidatos", u)
+
+
+@router.post("/pasos/{paso_id}/asignar", status_code=204,
+             summary="Logística: asignar mensajero · Supervisor: reasignar trabajo de producción")
+async def asignar(paso_id: int, datos: AsignarIn, u: dict = Depends(usuario_actual)):
+    await llamar("POST", f"/pasos/{paso_id}/asignar", u, json=datos.model_dump())
+    return Response(status_code=204)
+
+
+@router.post("/pasos/{paso_id}/no-se-pudo", status_code=204,
+             summary="Mensajero: recolecta o entrega no realizada (regresa a Logística)")
+async def no_se_pudo(paso_id: int, datos: CancelarPasoIn, u: dict = Depends(usuario_actual)):
+    await llamar("POST", f"/pasos/{paso_id}/no-se-pudo", u, json=datos.model_dump())
     return Response(status_code=204)

@@ -53,6 +53,8 @@ class PasoBandeja(BaseModel):
     factura_numero: str | None
     direccion: str
     archivos: int
+    telefono: str | None = None
+    receptor: str | None = None
     acciones: list[str]
     pasos_previos: list[PasoPrevio] = []
 
@@ -84,6 +86,7 @@ class ResumenArea(BaseModel):
 
 class Bandeja(BaseModel):
     produccion: Produccion | None
+    rutas: list[PasoBandeja] | None = None
     areas: list[AreaBandeja]
     supervision: list[ResumenArea] | None
 
@@ -92,8 +95,9 @@ class Bandeja(BaseModel):
 class TerminarIn(BaseModel):
     nota: str | None = Field(default=None, max_length=300)
     factura_numero: str | None = Field(default=None, max_length=40, description="Obligatorio en Facturación")
+    receptor: str | None = Field(default=None, max_length=120, description="Obligatorio al entregar: quién recibe")
 
-    @field_validator("nota", "factura_numero")
+    @field_validator("nota", "factura_numero", "receptor")
     @classmethod
     def limpiar(cls, v: str | None) -> str | None:
         return " ".join((v or "").split()) or None
@@ -131,3 +135,22 @@ class ModificacionIn(BaseModel):
 
 class CancelarIn(BaseModel):
     motivo: str = Field(min_length=3, max_length=250)
+
+
+class Candidato(BaseModel):
+    id: int
+    nombre: str
+    rol: str
+    carga: int
+    max_trabajos: int | None
+    cubre: bool  # tiene el área y el tipo de trabajo (producción) o es mensajero (rutas)
+
+
+class AsignarIn(BaseModel):
+    usuario_id: int
+    nota: str | None = Field(default=None, max_length=200)
+
+
+class PrioridadIn(BaseModel):
+    prioridad: Literal[1, 2, 3] = Field(description="1 emergencia, 2 VIP, 3 normal")
+    motivo: str = Field(min_length=3, max_length=200)

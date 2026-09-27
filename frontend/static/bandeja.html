@@ -20,6 +20,7 @@
     </div>
     <div class="error-form" id="errorBandeja" hidden></div>
     <div id="supervision"></div>
+    <div id="rutas"></div>
     <div id="produccion"></div>
     <div id="areas"><div class="cargando">Cargando…</div></div>
   </main>
@@ -32,6 +33,7 @@
     <div class="modal-cuerpo">
       <div class="error-form" id="errorTerminar" hidden></div>
       <p id="textoTerminar" style="color:var(--texto-2);margin-bottom:12px"></p>
+      <div class="campo" id="campoReceptor" hidden style="margin-bottom:12px"><label>Nombre de quien recibe <span class="req">*</span></label><input id="tReceptor" maxlength="120" placeholder="Ej. Ana López, recepción" autocomplete="off"></div>
       <div class="campo" id="campoFactura" hidden style="margin-bottom:12px"><label>Número de factura <span class="req">*</span></label><input id="tFactura" maxlength="40" placeholder="Ej. FAC-00123"></div>
       <div class="campo"><label>Nota</label><textarea id="tNota" maxlength="300" rows="3" placeholder="Opcional"></textarea></div>
     </div>
@@ -107,7 +109,34 @@
       <div class="error-form" id="errorCancelar" hidden></div>
       <div class="campo"><label>Motivo <span class="req">*</span></label><textarea id="cMotivo" maxlength="250" rows="3" placeholder="Ej. Solicitud duplicada"></textarea></div>
     </div>
-    <div class="modal-pie"><button type="button" class="btn" data-cerrar>Volver</button><button type="submit" class="btn rojo-borde">Cancelar caso</button></div>
+    <div class="modal-pie"><button type="button" class="btn" data-cerrar>Volver</button><button type="submit" class="btn rojo-borde" id="btnMotivo">Cancelar caso</button></div>
+  </form>
+</dialog>
+
+<!-- Asignar mensajero / reasignar técnico -->
+<dialog class="modal chico" id="modalAsignar">
+  <form id="formAsignar" novalidate>
+    <div class="modal-cabecera"><h2 id="tituloAsignar">Asignar</h2><button type="button" class="cerrar" data-cerrar>&times;</button></div>
+    <div class="modal-cuerpo">
+      <div class="error-form" id="errorAsignar" hidden></div>
+      <div class="campo"><label id="etiquetaAsignar">Persona</label><select id="aPersona"></select><div class="ayuda" id="ayudaAsignar"></div></div>
+      <div class="campo" style="margin-top:12px"><label>Nota</label><input id="aNota" maxlength="200" placeholder="Opcional"></div>
+    </div>
+    <div class="modal-pie"><button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" class="btn verde">Asignar</button></div>
+  </form>
+</dialog>
+
+<!-- Prioridad -->
+<dialog class="modal chico" id="modalPrioridad">
+  <form id="formPrioridad" novalidate>
+    <div class="modal-cabecera"><h2 id="tituloPrioridad">Prioridad</h2><button type="button" class="cerrar" data-cerrar>&times;</button></div>
+    <div class="modal-cuerpo">
+      <div class="error-form" id="errorPrioridad" hidden></div>
+      <div class="campo"><label>Prioridad</label><select id="pValor"><option value="1">1 · Emergencia</option><option value="2">2 · VIP</option><option value="3">3 · Normal</option></select>
+        <div class="ayuda">Cambia el orden en que se entrega a los técnicos. El doctor no ve este dato.</div></div>
+      <div class="campo" style="margin-top:12px"><label>Motivo <span class="req">*</span></label><input id="pMotivo" maxlength="200" placeholder="Ej. El paciente viaja el viernes"></div>
+    </div>
+    <div class="modal-pie"><button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" class="btn verde">Guardar</button></div>
   </form>
 </dialog>
 

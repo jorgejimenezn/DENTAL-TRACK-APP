@@ -17,7 +17,13 @@ const ACCION = {
   facturar: { texto: "Registrar factura", clase: "verde", titulo: "Facturar y empacar" },
   recolectado: { texto: "Recolectado", clase: "verde", titulo: "Material recolectado" },
   entregado: { texto: "Entregado", clase: "verde", titulo: "Entregado al cliente" },
+  asignar_mensajero: { texto: "Asignar mensajero", clase: "" },
+  asignar: { texto: "Reasignar", clase: "" },
+  prioridad: { texto: "Prioridad", clase: "" },
+  hecho: { texto: "Hecho", clase: "verde" },
+  no_se_pudo: { texto: "No se pudo", clase: "rojo-borde" },
 };
+const ES_RUTA = p => ["recolecta", "entrega"].includes(p.etapa);
 const hoyTxt = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 
 /* ---------- Tarjeta de un trabajo ---------- */
@@ -36,10 +42,16 @@ function tarjeta(p, { actual = false, mostrarTecnico = false } = {}) {
   if (p.qa_clasificacion && ["facturacion", "produccion"].includes(p.etapa)) extra.push(`<div class="linea">QA: <b>${escapar(p.qa_clasificacion)}</b></div>`);
   if (["recolecta", "entrega"].includes(p.etapa)) extra.push(`<div class="linea">${p.etapa === "recolecta" ? "Recoger en" : "Entregar en"}: <b>${escapar(p.direccion)}</b></div>`);
   if (p.instrucciones) extra.push(`<div class="nota-caso">${escapar(p.instrucciones)}</div>`);
+  if (ES_RUTA(p) && p.estado === "asignado" && !mostrarTecnico && usuario.rol !== "mensajero") extra.push(`<div class="linea">Mensajero: <b>${escapar(p.tecnico)}</b></div>`);
+  if (ES_RUTA(p) && p.telefono) extra.push(`<div class="linea">Teléfono: <a href="tel:${escapar(p.telefono)}">${escapar(p.telefono)}</a></div>`);
+  if (mostrarTecnico) extra.push(`<div class="linea">Prioridad <b>${p.prioridad}</b></div>`);
   if (mostrarTecnico) extra.push(`<div class="linea">Estado: <b>${escapar(({ asignado: "Asignado", en_proceso: "En proceso", en_cola: "En cola (todos al tope)", sin_tecnico: "Sin técnico que cubra el paso", en_area: "En el área" })[p.estado] || p.estado)}</b>${p.tecnico ? ` · ${escapar(p.tecnico)}` : ""}</div>`);
   const botones = p.acciones.map(a => {
     let texto = ACCION[a].texto;
     if (a === "aprobar" && p.modalidad === "analogo") texto = "Material recibido · aprobar";
+    if (a === "hecho") texto = p.etapa === "recolecta" ? "Recolectado" : "Entregado";
+    if (a === "asignar_mensajero" && p.estado === "asignado") texto = "Cambiar mensajero";
+    if (a === "asignar" && ["en_cola", "sin_tecnico"].includes(p.estado)) texto = "Asignar";
     return `<button class="btn ${ACCION[a].clase}" data-accion="${a}" data-paso="${p.paso_id}">${texto}</button>`;
   }).join("");
   return `<article class="trabajo ${p.emergencia ? "urgente" : ""} ${actual ? "actual" : ""}">
@@ -67,9 +79,21 @@ function pintarProduccion(pr) {
     </div></section>${espera}`;
 }
 
+function pintarRutas(rutas) {
+  if (!rutas) { $("rutas").innerHTML = ""; return; }
+  $("titulo").textContent = "Mis rutas";
+  $("descripcion").textContent = "Recolectas y entregas que te asignó Logística, por prioridad.";
+  const grupo = (etapa, titulo) => {
+    const lista = rutas.filter(r => r.etapa === etapa);
+    return `<section class="bandeja-seccion"><h2>${titulo} <span class="sub">${lista.length}</span></h2>
+      ${lista.length ? `<div class="trabajos">${lista.map(p => tarjeta(p)).join("")}</div>` : '<div class="vacio-card">Nada pendiente.</div>'}</section>`;
+  };
+  $("rutas").innerHTML = grupo("recolecta", "Recolectas") + grupo("entrega", "Entregas");
+}
+
 function pintarAreas(areas) {
-  if (!areas.length && !datos.produccion && !esSupervision) {
-    $("areas").innerHTML = `<div class="vacio-card">${usuario.rol === "mensajero" ? "Las rutas de recolecta y entrega llegarán en la siguiente etapa." : "No tienes áreas asignadas. Pide al administrador que te asigne una en Empleados."}</div>`;
+  if (!areas.length && !datos.produccion && !datos.rutas && !esSupervision) {
+    $("areas").innerHTML = '<div class="vacio-card">No tienes áreas asignadas. Pide al administrador que te asigne una en Empleados.</div>';
     return;
   }
   $("areas").innerHTML = areas.map(a => {
@@ -98,6 +122,7 @@ async function cargar() {
     indice.clear();
     pintarSupervision(datos.supervision);
     pintarProduccion(datos.produccion);
+    pintarRutas(datos.rutas);
     pintarAreas(datos.areas);
   } catch (error) { mostrarErrores($("errorBandeja"), error); $("areas").innerHTML = ""; }
 }
@@ -130,13 +155,24 @@ document.addEventListener("click", async e => {
   if (accion === "rechazar") return abrirRechazo();
   if (accion === "validar_rp") return abrirValidacion();
   if (accion === "modificar") return abrirModificacion();
-  if (accion === "cancelar") { $("tituloCancelar").textContent = `Cancelar ${pasoActivo.codigo}`; $("cMotivo").value = ""; $("errorCancelar").hidden = true; return $("modalCancelar").showModal(); }
+  if (accion === "cancelar" || accion === "no_se_pudo") {
+    modoMotivo = accion;
+    $("tituloCancelar").textContent = accion === "cancelar" ? `Cancelar ${pasoActivo.codigo}` : `${pasoActivo.etapa === "recolecta" ? "Recolecta" : "Entrega"} no realizada · ${pasoActivo.codigo}`;
+    $("btnMotivo").textContent = accion === "cancelar" ? "Cancelar caso" : "Regresar a Logística";
+    $("cMotivo").placeholder = accion === "cancelar" ? "Ej. Solicitud duplicada" : "Ej. Clínica cerrada, nadie para recibir";
+    $("cMotivo").value = ""; $("errorCancelar").hidden = true; return $("modalCancelar").showModal();
+  }
+  if (accion === "asignar" || accion === "asignar_mensajero") return abrirAsignacion(accion);
+  if (accion === "prioridad") return abrirPrioridad();
   // terminar / aprobar / aprobar_qa / facturar / recolectado / entregado
   $("tituloTerminar").textContent = `${ACCION[accion].titulo} · ${pasoActivo.codigo}`;
   $("textoTerminar").textContent = accion === "aprobar"
     ? (pasoActivo.modalidad === "analogo" ? "Confirmas que el material llegó y el caso está completo. Entra a producción y se asigna automáticamente." : "El caso entra a producción y se asigna automáticamente al primer paso.")
     : accion === "terminar" ? "El caso pasa al siguiente paso de su flujo." : "";
+  if (accion === "hecho") $("tituloTerminar").textContent = `${pasoActivo.etapa === "recolecta" ? "Recolectado" : "Entregado"} · ${pasoActivo.codigo}`;
   $("campoFactura").hidden = accion !== "facturar";
+  $("campoReceptor").hidden = !(accion === "entregado" || (accion === "hecho" && pasoActivo.etapa === "entrega"));
+  $("tReceptor").value = "";
   $("tFactura").value = pasoActivo.factura_numero || ""; $("tNota").value = ""; $("errorTerminar").hidden = true;
   $("modalTerminar").showModal();
 });
@@ -144,7 +180,9 @@ document.addEventListener("click", async e => {
 $("formTerminar").onsubmit = async e => {
   e.preventDefault();
   if (!$("campoFactura").hidden && !$("tFactura").value.trim()) return mostrarErrores($("errorTerminar"), new Error("Ingresa el número de factura"));
-  const cuerpo = { nota: $("tNota").value.trim() || null, factura_numero: $("campoFactura").hidden ? null : $("tFactura").value.trim() };
+  if (!$("campoReceptor").hidden && $("tReceptor").value.trim().length < 2) return mostrarErrores($("errorTerminar"), new Error("Escribe el nombre de quien recibe"));
+  const cuerpo = { nota: $("tNota").value.trim() || null, factura_numero: $("campoFactura").hidden ? null : $("tFactura").value.trim(),
+                   receptor: $("campoReceptor").hidden ? null : $("tReceptor").value.trim() };
   await ejecutar($("btnTerminar"), () => api("POST", `/pasos/${pasoActivo.paso_id}/terminar`, cuerpo), `${pasoActivo.codigo} avanzó al siguiente paso`)
     .catch(err => mostrarErrores($("errorTerminar"), err));
 };
@@ -181,12 +219,52 @@ $("formValidar").onsubmit = async e => {
     `${pasoActivo.codigo} validado`).catch(err => mostrarErrores($("errorValidar"), err));
 };
 
+let modoMotivo = "cancelar";
 $("formCancelar").onsubmit = async e => {
   e.preventDefault();
   if ($("cMotivo").value.trim().length < 3) return mostrarErrores($("errorCancelar"), new Error("Describe el motivo"));
-  await ejecutar(null, () => api("POST", `/pasos/${pasoActivo.paso_id}/cancelar`, { motivo: $("cMotivo").value.trim() }), `${pasoActivo.codigo} cancelado`)
+  const ruta = modoMotivo === "cancelar" ? "cancelar" : "no-se-pudo";
+  await ejecutar(null, () => api("POST", `/pasos/${pasoActivo.paso_id}/${ruta}`, { motivo: $("cMotivo").value.trim() }),
+    modoMotivo === "cancelar" ? `${pasoActivo.codigo} cancelado` : `${pasoActivo.codigo} regresó a Logística`)
     .catch(err => mostrarErrores($("errorCancelar"), err));
 };
+
+/* ---------- Asignar mensajero (Logística) o reasignar técnico (supervisión) ---------- */
+async function abrirAsignacion(accion) {
+  $("errorAsignar").hidden = true; $("aNota").value = "";
+  const mensajero = accion === "asignar_mensajero";
+  $("tituloAsignar").textContent = `${mensajero ? "Mensajero para" : "Reasignar"} ${pasoActivo.codigo}`;
+  $("etiquetaAsignar").textContent = mensajero ? "Mensajero" : `Técnico para ${pasoActivo.area}`;
+  $("ayudaAsignar").textContent = mensajero
+    ? `${pasoActivo.etapa === "recolecta" ? "Recoger en" : "Entregar en"}: ${pasoActivo.direccion}`
+    : "Primero quienes tienen el área y el tipo de trabajo; después otros técnicos como apoyo. La asignación manual no respeta el máximo de trabajos.";
+  try {
+    const lista = await api("GET", `/pasos/${pasoActivo.paso_id}/candidatos`);
+    if (!lista.length) return toast(mensajero ? "No hay mensajeros activos. Créalos en Empleados con el rol Mensajero." : "No hay técnicos activos", true);
+    $("aPersona").innerHTML = lista.map(c => `<option value="${c.id}">${escapar(c.nombre)} · ${c.carga}${c.max_trabajos ? "/" + c.max_trabajos : ""} ${mensajero ? "pendiente(s)" : "trabajo(s)"}${!mensajero && !c.cubre ? " · apoyo" : ""}</option>`).join("");
+    $("modalAsignar").showModal();
+  } catch (error) { toast(error.message, true); }
+}
+$("formAsignar").onsubmit = async e => {
+  e.preventDefault();
+  await ejecutar(null, () => api("POST", `/pasos/${pasoActivo.paso_id}/asignar`, { usuario_id: Number($("aPersona").value), nota: $("aNota").value.trim() || null }),
+    `${pasoActivo.codigo} asignado`).catch(err => mostrarErrores($("errorAsignar"), err));
+};
+
+/* ---------- Prioridad (supervisión) ---------- */
+function abrirPrioridad() {
+  $("errorPrioridad").hidden = true; $("pMotivo").value = "";
+  $("tituloPrioridad").textContent = `Prioridad de ${pasoActivo.codigo}`;
+  $("pValor").value = pasoActivo.prioridad;
+  $("modalPrioridad").showModal();
+}
+$("formPrioridad").onsubmit = async e => {
+  e.preventDefault();
+  if ($("pMotivo").value.trim().length < 3) return mostrarErrores($("errorPrioridad"), new Error("Escribe el motivo"));
+  await ejecutar(null, () => api("POST", `/solicitudes/${pasoActivo.solicitud_id}/prioridad`, { prioridad: Number($("pValor").value), motivo: $("pMotivo").value.trim() }),
+    "Prioridad actualizada").catch(err => mostrarErrores($("errorPrioridad"), err));
+};
+
 
 /* ---------- Ingresos: modificar (solo catálogo) ---------- */
 let odontoModificar = null;

@@ -72,6 +72,11 @@ def migrar() -> None:
     if solicitudes and "factura_numero" not in solicitudes:
         pasos.append("ALTER TABLE solicitudes ADD COLUMN factura_numero VARCHAR(40)")
 
+    # --- Fase 3C: nombre de quien recibe la entrega ------------------------
+    pasos_solicitud = _columnas(inspector, "solicitud_pasos")
+    if pasos_solicitud and "receptor" not in pasos_solicitud:
+        pasos.append("ALTER TABLE solicitud_pasos ADD COLUMN receptor VARCHAR(120)")
+
     if not pasos:
         return
     with engine.begin() as conexion:

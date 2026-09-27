@@ -204,6 +204,7 @@ class MotivoIn(BaseModel):
 class TerminarIn(BaseModel):
     nota: str | None = Field(default=None, max_length=300)
     factura_numero: str | None = Field(default=None, max_length=40, description="Obligatorio en Facturación")
+    receptor: str | None = Field(default=None, max_length=120, description="Obligatorio al entregar: quién recibe")
 
 
 class RechazoIn(BaseModel):
@@ -230,3 +231,13 @@ class ModificacionIn(BaseModel):
 
 class CancelarPasoIn(BaseModel):
     motivo: str = Field(min_length=3, max_length=250)
+
+
+class AsignarIn(BaseModel):
+    usuario_id: int = Field(description="Mensajero (recolecta/entrega) o empleado (producción). Ver /pasos/{id}/candidatos")
+    nota: str | None = Field(default=None, max_length=200)
+
+
+class PrioridadIn(BaseModel):
+    prioridad: Literal[1, 2, 3] = Field(description="1 emergencia, 2 VIP, 3 normal")
+    motivo: str = Field(min_length=3, max_length=200)

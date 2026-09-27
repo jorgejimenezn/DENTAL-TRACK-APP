@@ -341,6 +341,26 @@ class SolicitudServicio:
                                  {"codigo": solicitud.codigo, "motivo": motivo})
         return self.obtener(solicitud.id, actor)
 
+    def cambiar_prioridad(self, solicitud_id: int, prioridad: int, motivo: str, actor: Actor) -> SolicitudOut:
+        if actor.rol not in ROLES_ESTADO:
+            raise ErrorNegocio("Solo administración o supervisión cambian la prioridad", 403)
+        solicitud = self._visible(solicitud_id, actor)
+        if solicitud.estado in ESTADOS_CERRADOS:
+            raise ErrorNegocio("El caso ya está cerrado")
+        if solicitud.prioridad == prioridad:
+            raise ErrorNegocio("El caso ya tiene esa prioridad")
+        anterior, solicitud.prioridad = solicitud.prioridad, prioridad
+        motivo = " ".join(motivo.split())
+        # visible solo para el laboratorio: el doctor no ve su nivel de prioridad
+        solicitud.historial.append(SolicitudHistorial(estado=solicitud.estado,
+                                                      nota=f"Prioridad ajustada por supervisión: {motivo}"[:300],
+                                                      usuario_id=actor.id))
+        Motor(self.sesion).repartir_colas()
+        self.sesion.commit()
+        self.auditoria.registrar("prioridad", "solicitud", solicitud.id, actor, {
+            "codigo": solicitud.codigo, "cambios": {"prioridad": [anterior, prioridad]}, "motivo": motivo})
+        return self.obtener(solicitud.id, actor)
+
     # ================= Consultas =================
     def _resumen(self, s: Solicitud, actor: Actor) -> dict:
         texto, columna = ESTADOS[s.estado]
@@ -415,6 +435,7 @@ class SolicitudServicio:
             recorrido=[RecorridoPaso(
                 id=p.id, orden=p.orden, area=p.area.nombre, etapa=p.etapa, etapa_texto=NOMBRE_ETAPA[p.etapa],
                 estado=p.estado, activado_en=p.activado_en, terminado_en=p.terminado_en, nota=p.nota, vuelta=p.vuelta,
+                receptor=p.receptor,
                 # los nombres del personal no se muestran al doctor
                 tecnico=None if self._es_doctor(actor) else nombre(p.tecnico),
                 atendido_por=None if self._es_doctor(actor) else nombre(p.atendido_por))

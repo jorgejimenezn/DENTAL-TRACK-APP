@@ -19,6 +19,7 @@ ESTADOS = {
     "en_produccion": ("En producción", "Producción"),
     "control_calidad": ("Control de calidad", "Producción"),
     "facturacion": ("Facturación y empaque", "Despacho"),
+    "listo_entrega": ("Listo para entrega", "Despacho"),
     "en_ruta": ("En ruta de entrega", "Despacho"),
     "entregada": ("Entregada", "Entregado"),
     "cancelada": ("Cancelada", "Cancelado"),
@@ -156,6 +157,7 @@ class SolicitudPaso(Base):
     iniciado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     terminado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     nota: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    receptor: Mapped[str | None] = mapped_column(String(120), nullable=True)  # quien recibió la entrega
     vuelta: Mapped[int] = mapped_column(Integer, default=1)  # sube cuando QA devuelve el caso
 
     solicitud: Mapped[Solicitud] = relationship(back_populates="pasos")

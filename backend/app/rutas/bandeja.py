@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencias import Actor, obtener_actor
 from app.db.postgres import obtener_sesion
-from app.esquemas.bandeja import Bandeja, CancelarIn, ModificacionIn, RechazoIn, TerminarIn, ValidacionRpIn
+from app.esquemas.bandeja import (AsignarIn, Bandeja, CancelarIn, Candidato, ModificacionIn, RechazoIn, TerminarIn,
+                                  ValidacionRpIn)
 from app.rutas.proveedores import servicio_auditoria
 from app.servicios.auditoria_servicio import AuditoriaServicio
 from app.servicios.produccion_servicio import ProduccionServicio
@@ -61,4 +62,23 @@ def modificar(paso_id: int, datos: ModificacionIn, actor: Actor = Depends(obtene
 def cancelar(paso_id: int, datos: CancelarIn, actor: Actor = Depends(obtener_actor),
              s: ProduccionServicio = Depends(_servicio)):
     s.cancelar(paso_id, datos.motivo, actor)
+    return Response(status_code=204)
+
+
+@router.get("/pasos/{paso_id}/candidatos", response_model=list[Candidato])
+def candidatos(paso_id: int, actor: Actor = Depends(obtener_actor), s: ProduccionServicio = Depends(_servicio)):
+    return s.candidatos(paso_id, actor)
+
+
+@router.post("/pasos/{paso_id}/asignar", status_code=204)
+def asignar(paso_id: int, datos: AsignarIn, actor: Actor = Depends(obtener_actor),
+            s: ProduccionServicio = Depends(_servicio)):
+    s.asignar(paso_id, datos, actor)
+    return Response(status_code=204)
+
+
+@router.post("/pasos/{paso_id}/no-se-pudo", status_code=204)
+def no_se_pudo(paso_id: int, datos: CancelarIn, actor: Actor = Depends(obtener_actor),
+               s: ProduccionServicio = Depends(_servicio)):
+    s.no_se_pudo(paso_id, datos.motivo, actor)
     return Response(status_code=204)

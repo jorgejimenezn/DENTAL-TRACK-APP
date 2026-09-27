@@ -61,8 +61,8 @@
            + tarjeta("nueva-solicitud.html", "Nueva solicitud", "Capturar un caso a nombre de un cliente.")
            + tarjeta(null, "Reasignaciones", "Mover trabajos entre técnicos. Próxima fase.");
     } else if (usuario.rol === "mensajero") {
-      html = tarjeta("casos.html", "Solicitudes", "Consulta de casos y direcciones de recolecta y entrega.")
-           + tarjeta(null, "Mis rutas", "Recolectas y entregas asignadas por logística. Próxima fase.");
+      html = tarjeta("bandeja.html", "Mis rutas", "Recolectas y entregas que te asignó Logística.")
+           + tarjeta("casos.html", "Solicitudes", "Consulta de casos.");
     } else {
       html = tarjeta("bandeja.html", "Mi bandeja", usuario.rol === "tecnico" ? "Tu trabajo actual y el siguiente que te entrega el sistema por prioridad." : "Casos que esperan a tu área.")
            + tarjeta("casos.html", "Solicitudes", "Consulta de casos nuevos y reaperturas.")

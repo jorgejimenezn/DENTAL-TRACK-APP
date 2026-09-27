@@ -6,16 +6,17 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core.dependencias import Actor
 from app.core.errores import Conflicto, ErrorNegocio, NoEncontrado
-from app.esquemas.bandeja import (CLASIFICACIONES, AreaBandeja, Bandeja, ModificacionIn, PasoBandeja, PasoPrevio,
-                                  Produccion, RechazoIn, ResumenArea, TerminarIn, ValidacionRpIn)
-from app.modelos import Area, Usuario
+from app.esquemas.bandeja import (CLASIFICACIONES, AreaBandeja, AsignarIn, Bandeja, Candidato, ModificacionIn,
+                                  PasoBandeja, PasoPrevio, Produccion, RechazoIn, ResumenArea, TerminarIn,
+                                  ValidacionRpIn)
+from app.modelos import ROL_CLIENTE, Area, Usuario
 from app.modelos.configuracion import DiaNoLaborable, MotivoRP
 from app.modelos.solicitud import (PASO_ASIGNADO, PASO_EN_AREA, PASO_EN_COLA, PASO_EN_PROCESO, PASO_PENDIENTE,
                                    PASO_SIN_TECNICO, PASOS_ACTIVOS, PASOS_CARGA, Solicitud, SolicitudHistorial,
                                    SolicitudPaso)
 from app.servicios.auditoria_servicio import AuditoriaServicio
 from app.servicios.configuracion_servicio import ZONA
-from app.servicios.recorrido import NOMBRE_ETAPA, Motor, ahora, tipo_area
+from app.servicios.recorrido import ESTADO_POR_ETAPA, NOMBRE_ETAPA, Motor, ahora, tipo_area
 from app.servicios.solicitud_servicio import SolicitudServicio, _fecha_texto
 
 SUPERVISION = {"admin", "supervisor"}
@@ -24,9 +25,11 @@ ACCIONES_AREA = {
     "validacion_rp": ["validar_rp"],
     "qa": ["aprobar_qa", "rechazar"],
     "facturacion": ["facturar"],
-    "recolecta": ["recolectado"],
-    "entrega": ["entregado"],
+    "recolecta": ["asignar_mensajero", "recolectado"],
+    "entrega": ["asignar_mensajero", "entregado"],
 }
+RUTAS = ("recolecta", "entrega")
+ESTADOS_REASIGNABLES = {PASO_ASIGNADO, PASO_EN_COLA, PASO_SIN_TECNICO, PASO_EN_PROCESO}
 NOTA_TERMINAR = {
     "recolecta": "Material recolectado", "qa": "Aprobado por control de calidad",
     "entrega": "Entregado al cliente", "facturacion": "Facturado y empacado",
@@ -88,7 +91,8 @@ class ProduccionServicio:
             qa_clasificacion=CLASIFICACIONES.get(s.qa_clasificacion), factura_numero=s.factura_numero,
             direccion=(f"{s.recolecta_direccion}, {s.recolecta_municipio}" if p.etapa == "recolecta"
                        and s.recolecta_direccion else f"{s.entrega_direccion}, {s.entrega_municipio}"),
-            archivos=len(s.archivos), acciones=acciones, pasos_previos=previos)
+            archivos=len(s.archivos), telefono=s.cliente.telefono_celular or s.cliente.telefono_fijo,
+            receptor=p.receptor, acciones=acciones, pasos_previos=previos)
 
     @staticmethod
     def _orden_prioridad(p: SolicitudPaso):
@@ -113,7 +117,8 @@ class ProduccionServicio:
 
         # --- Producción: lo asignado a mí, uno a la vez ---
         mios = sorted(self.sesion.scalars(select(SolicitudPaso).options(*opciones).where(
-            SolicitudPaso.tecnico_id == actor.id, SolicitudPaso.estado.in_(PASOS_CARGA))), key=self._orden_prioridad)
+            SolicitudPaso.tecnico_id == actor.id, SolicitudPaso.etapa == "produccion",
+            SolicitudPaso.estado.in_(PASOS_CARGA))), key=self._orden_prioridad)
         produccion = None
         if mios or any(tipo_area(a.nombre) == "produccion" for a in areas):
             actual = next((p for p in mios if p.estado == PASO_EN_PROCESO), None)
@@ -126,13 +131,33 @@ class ProduccionServicio:
                 asignados=[self._salida(p, []) for p in en_espera[1:]], total=len(mios),
                 max_trabajos=usuario.max_trabajos if usuario else None)
 
+        # --- Mensajero: sus recolectas y entregas ---
+        rutas = None
+        if actor.rol == "mensajero":
+            propias = sorted(self.sesion.scalars(select(SolicitudPaso).options(*opciones).where(
+                SolicitudPaso.tecnico_id == actor.id, SolicitudPaso.etapa.in_(RUTAS),
+                SolicitudPaso.estado == PASO_ASIGNADO)), key=self._orden_prioridad)
+            rutas = [self._salida(p, ["hecho", "no_se_pudo"]) for p in propias]
+
         # --- Áreas de apoyo: lo que está en el área, lo atiende cualquiera ---
+        supervisa = actor.rol in SUPERVISION
+
+        def acciones_de(p: SolicitudPaso) -> list[str]:
+            if p.estado == PASO_EN_AREA:
+                return ACCIONES_AREA.get(p.etapa, [])
+            if p.etapa in RUTAS and p.estado == PASO_ASIGNADO:
+                return ["asignar_mensajero", "no_se_pudo"]  # reasignar o regresar al área
+            if supervisa and p.etapa == "produccion" and p.estado in ESTADOS_REASIGNABLES:
+                return ["asignar", "prioridad"]
+            return []
+
         def pasos_de(area: Area, todos: bool) -> list[PasoBandeja]:
-            consulta = select(SolicitudPaso).options(*opciones).where(SolicitudPaso.area_id == area.id)
-            consulta = consulta.where(SolicitudPaso.estado.in_(PASOS_ACTIVOS if todos else [PASO_EN_AREA]))
-            pasos = sorted(self.sesion.scalars(consulta), key=self._orden_prioridad)
-            return [self._salida(p, ACCIONES_AREA.get(p.etapa, []) if p.estado == PASO_EN_AREA else [])
-                    for p in pasos]
+            estados = PASOS_ACTIVOS if todos else (
+                [PASO_EN_AREA, PASO_ASIGNADO] if tipo_area(area.nombre) == "logistica" else [PASO_EN_AREA])
+            consulta = select(SolicitudPaso).options(*opciones).where(SolicitudPaso.area_id == area.id,
+                                                                      SolicitudPaso.estado.in_(estados))
+            return [self._salida(p, acciones_de(p)) for p in sorted(self.sesion.scalars(consulta),
+                                                                   key=self._orden_prioridad)]
 
         salida_areas = [AreaBandeja(area_id=a.id, area=a.nombre, tipo=tipo_area(a.nombre), pasos=pasos_de(a, False))
                         for a in areas if tipo_area(a.nombre) != "produccion"]
@@ -156,7 +181,7 @@ class ProduccionServicio:
                 salida_areas = [x for x in salida_areas if x.area_id != elegida.id]
                 salida_areas.insert(0, AreaBandeja(area_id=elegida.id, area=elegida.nombre,
                                                    tipo=tipo_area(elegida.nombre), pasos=pasos_de(elegida, True)))
-        return Bandeja(produccion=produccion, areas=salida_areas, supervision=supervision)
+        return Bandeja(produccion=produccion, rutas=rutas, areas=salida_areas, supervision=supervision)
 
     # ================= Producción =================
     def iniciar(self, paso_id: int, actor: Actor) -> None:
@@ -167,7 +192,8 @@ class ProduccionServicio:
         if paso.estado != PASO_ASIGNADO:
             raise Conflicto("Este trabajo ya se inició")
         mios = sorted(self.sesion.scalars(select(SolicitudPaso).where(
-            SolicitudPaso.tecnico_id == actor.id, SolicitudPaso.estado.in_(PASOS_CARGA))), key=self._orden_prioridad)
+            SolicitudPaso.tecnico_id == actor.id, SolicitudPaso.etapa == "produccion",
+            SolicitudPaso.estado.in_(PASOS_CARGA))), key=self._orden_prioridad)
         if any(p.estado == PASO_EN_PROCESO for p in mios):
             raise Conflicto("Termina el trabajo que tienes en proceso antes de iniciar otro")
         primero = next(p for p in mios if p.estado == PASO_ASIGNADO)
@@ -193,8 +219,15 @@ class ProduccionServicio:
             nota = f"{paso.area.nombre} terminado" + (f" · {datos.nota}" if datos.nota else "")
             return self._finalizar(s, paso, actor, nota, "terminar_paso")
 
-        self._permiso_area(paso, actor)
+        es_su_ruta = paso.etapa in RUTAS and paso.estado == PASO_ASIGNADO and paso.tecnico_id == actor.id
+        if not es_su_ruta:
+            self._permiso_area(paso, actor)
         detalle = {}
+        if paso.etapa == "entrega":
+            if not datos.receptor:
+                raise ErrorNegocio("Escribe el nombre de quien recibe")
+            paso.receptor = datos.receptor
+            detalle["recibio"] = datos.receptor
         if paso.etapa == "ingresos":
             if not s.tipo_trabajo_id:
                 raise ErrorNegocio("El tipo de trabajo está fuera de catálogo: usa Modificar y elige uno del catálogo")
@@ -209,8 +242,12 @@ class ProduccionServicio:
             s.factura_numero = datos.factura_numero
             detalle["factura"] = datos.factura_numero
             nota = f"Factura {datos.factura_numero} · empacado"
+        elif paso.etapa == "entrega":
+            nota = f"Entregado · recibió {datos.receptor}"
         else:
             nota = NOTA_TERMINAR.get(paso.etapa, f"{paso.area.nombre} terminado")
+        if paso.etapa in RUTAS and paso.tecnico:
+            nota += f" (mensajero {_nombre(paso.tecnico)})"
         if datos.nota:
             nota += f" · {datos.nota}"
         self.motor.terminar(paso, actor.id, datos.nota)
@@ -303,3 +340,87 @@ class ProduccionServicio:
         self.motor.repartir_colas()
         self.sesion.commit()
         self.auditoria.registrar("cancelar", "solicitud", s.id, actor, {"codigo": s.codigo, "motivo": motivo})
+
+    # ================= Asignación manual (Logística → mensajero, supervisor → técnico) =================
+    def _control_asignacion(self, paso: SolicitudPaso, actor: Actor) -> None:
+        if paso.etapa in RUTAS:
+            self._permiso_area(paso, actor)  # Logística o supervisión
+            if paso.estado not in (PASO_EN_AREA, PASO_ASIGNADO):
+                raise Conflicto("Este paso ya no se puede asignar")
+        elif paso.etapa == "produccion":
+            if actor.rol not in SUPERVISION:
+                raise ErrorNegocio("Solo el supervisor o el administrador reasignan trabajos", 403)
+            if paso.estado not in ESTADOS_REASIGNABLES:
+                raise Conflicto("Este paso ya no se puede reasignar")
+        else:
+            raise ErrorNegocio(f"Los pasos de {NOMBRE_ETAPA[paso.etapa]} los atiende toda el área, no se asignan")
+
+    def candidatos(self, paso_id: int, actor: Actor) -> list[Candidato]:
+        paso = self._paso(paso_id)
+        s = self._vigente(paso)
+        self._control_asignacion(paso, actor)
+        if paso.etapa in RUTAS:
+            usuarios = self.sesion.scalars(select(Usuario).where(Usuario.rol == "mensajero", Usuario.activo.is_(True))
+                                           .order_by(Usuario.nombre))
+            lista = [Candidato(id=u.id, nombre=_nombre(u), rol=u.rol, carga=self.motor.carga(u.id, RUTAS),
+                               max_trabajos=None, cubre=True) for u in usuarios]
+        else:
+            cubren = {u.id for u in self.motor.candidatos(paso.area_id, s.tipo_trabajo_id)}
+            # técnicos de cualquier área (apoyo) y quien ya cubre el paso aunque tenga otro rol
+            usuarios = self.sesion.scalars(select(Usuario).where(Usuario.activo.is_(True)).order_by(Usuario.nombre))
+            lista = [Candidato(id=u.id, nombre=_nombre(u), rol=u.rol, carga=self.motor.carga(u.id),
+                               max_trabajos=u.max_trabajos, cubre=u.id in cubren)
+                     for u in usuarios if u.id in cubren or u.rol == "tecnico"]
+        return sorted(lista, key=lambda c: (not c.cubre, c.carga, c.nombre))
+
+    def asignar(self, paso_id: int, datos: AsignarIn, actor: Actor) -> None:
+        paso = self._paso(paso_id)
+        s = self._vigente(paso)
+        self._control_asignacion(paso, actor)
+        persona = self.sesion.get(Usuario, datos.usuario_id)
+        if not persona or not persona.activo or persona.rol == ROL_CLIENTE:
+            raise NoEncontrado("Empleado no encontrado o inactivo")
+        if paso.etapa in RUTAS and persona.rol != "mensajero":
+            raise ErrorNegocio("Las recolectas y entregas se asignan a un mensajero")
+        if paso.etapa == "produccion" and persona.rol != "tecnico" and persona.id not in {
+                u.id for u in self.motor.candidatos(paso.area_id, s.tipo_trabajo_id)}:
+            raise ErrorNegocio("Los trabajos de producción se asignan a técnicos")
+        if paso.tecnico_id == persona.id and paso.estado == PASO_ASIGNADO:
+            raise ErrorNegocio(f"Ya está asignado a {_nombre(persona)}")
+        anterior = _nombre(paso.tecnico)
+        estaba = paso.estado
+        paso.tecnico_id, paso.tecnico = persona.id, persona
+        paso.estado, paso.asignado_en, paso.iniciado_en = PASO_ASIGNADO, ahora(), None
+        nota = (datos.nota or "").strip()
+        if paso.etapa == "recolecta":
+            texto = f"Recolecta asignada a {_nombre(persona)}"
+        elif paso.etapa == "entrega":
+            texto, s.estado = f"En ruta de entrega con {_nombre(persona)}", "en_ruta"
+        else:
+            origen = {PASO_EN_COLA: "desde la cola", PASO_SIN_TECNICO: "(no había técnico)"}.get(estaba, f"(antes {anterior})")
+            texto = f"{paso.area.nombre}: asignado manualmente a {_nombre(persona)} {origen}"
+        s.historial.append(SolicitudHistorial(estado=s.estado, nota=(texto + (f" · {nota}" if nota else ""))[:300],
+                                              usuario_id=actor.id))
+        self.motor.repartir_colas()  # quien soltó el trabajo pudo quedar con espacio
+        self.sesion.commit()
+        self.auditoria.registrar("asignar", "solicitud", s.id, actor, {
+            "codigo": s.codigo, "area": paso.area.nombre, "a": _nombre(persona), "antes": anterior})
+
+    def no_se_pudo(self, paso_id: int, motivo: str, actor: Actor) -> None:
+        """Visita fallida del mensajero: el paso regresa a Logística para reprogramarlo."""
+        paso = self._paso(paso_id)
+        s = self._vigente(paso, set(RUTAS))
+        if paso.estado != PASO_ASIGNADO:
+            raise Conflicto("Esta ruta no está asignada a un mensajero")
+        if paso.tecnico_id != actor.id:
+            self._permiso_area(paso, actor)
+        motivo = " ".join(motivo.split())
+        quien = _nombre(paso.tecnico)
+        paso.estado, paso.tecnico_id, paso.tecnico, paso.asignado_en = PASO_EN_AREA, None, None, None
+        s.estado = ESTADO_POR_ETAPA[paso.etapa]
+        tipo = "Recolecta" if paso.etapa == "recolecta" else "Entrega"
+        s.historial.append(SolicitudHistorial(estado=s.estado, nota=f"{tipo} no realizada ({quien}): {motivo}"[:300],
+                                              usuario_id=actor.id))
+        self.sesion.commit()
+        self.auditoria.registrar("visita_fallida", "solicitud", s.id, actor,
+                                 {"codigo": s.codigo, "mensajero": quien, "motivo": motivo})

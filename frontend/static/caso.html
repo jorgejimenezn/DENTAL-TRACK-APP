@@ -45,6 +45,11 @@
         <section class="card paso-card">
           <h2>Acciones</h2>
           <div id="acciones"></div>
+          <form id="formPrioridad" hidden style="margin-top:14px;border-top:1px solid var(--panel-borde);padding-top:14px">
+            <div class="campo"><label>Prioridad (supervisión)</label><select id="nuevaPrioridad"><option value="1">1 · Emergencia</option><option value="2">2 · VIP</option><option value="3">3 · Normal</option></select></div>
+            <div class="campo" style="margin-top:10px"><input id="motivoPrioridad" maxlength="200" placeholder="Motivo del cambio"></div>
+            <button class="btn" style="margin-top:10px;width:100%">Cambiar prioridad</button>
+          </form>
           <form id="formCancelar" hidden style="margin-top:14px;border-top:1px solid var(--panel-borde);padding-top:14px">
             <div class="campo"><label>Cancelar el caso (administración)</label><input id="motivoCancelar" maxlength="250" placeholder="Motivo"></div>
             <button class="btn rojo-borde" style="margin-top:10px;width:100%">Cancelar caso</button>

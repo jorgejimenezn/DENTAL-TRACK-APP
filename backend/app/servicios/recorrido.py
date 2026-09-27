@@ -24,7 +24,7 @@ from app.modelos.solicitud import (PASO_ASIGNADO, PASO_EN_AREA, PASO_EN_COLA, PA
 
 ESTADO_POR_ETAPA = {
     "recolecta": "pendiente_recolecta", "ingresos": "recibida", "validacion_rp": "validacion_qa",
-    "produccion": "en_produccion", "qa": "control_calidad", "facturacion": "facturacion", "entrega": "en_ruta",
+    "produccion": "en_produccion", "qa": "control_calidad", "facturacion": "facturacion", "entrega": "listo_entrega",
 }
 NOMBRE_ETAPA = {
     "recolecta": "Recolecta", "ingresos": "Ingresos", "validacion_rp": "Validación de RP", "produccion": "Producción",
@@ -170,9 +170,9 @@ class Motor:
             restricciones.setdefault(usuario_id, set()).add(tipo)
         return [u for u in usuarios if u.id not in restricciones or (tipo_id in restricciones[u.id])]
 
-    def carga(self, usuario_id: int) -> int:
+    def carga(self, usuario_id: int, etapas: tuple[str, ...] = ("produccion",)) -> int:
         return self.sesion.scalar(select(func.count()).select_from(SolicitudPaso)
-                                  .where(SolicitudPaso.tecnico_id == usuario_id,
+                                  .where(SolicitudPaso.tecnico_id == usuario_id, SolicitudPaso.etapa.in_(etapas),
                                          SolicitudPaso.estado.in_(PASOS_CARGA))) or 0
 
     def asignar(self, s: Solicitud, paso: SolicitudPaso) -> None:

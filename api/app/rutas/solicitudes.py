@@ -8,7 +8,7 @@
 from fastapi import APIRouter, Depends, File, Query, Response, UploadFile
 
 from app.backend import descargar, llamar
-from app.esquemas import MotivoIn, ReaperturaIn, SolicitudIn
+from app.esquemas import MotivoIn, PrioridadIn, ReaperturaIn, SolicitudIn
 from app.seguridad import requiere_rol, usuario_actual
 
 router = APIRouter(tags=["Solicitudes"])
@@ -74,3 +74,8 @@ async def cancelar(solicitud_id: int, datos: MotivoIn, u: dict = Depends(admin_o
 @router.get("/solicitudes/{solicitud_id}/archivos/{archivo_id}", summary="Descargar un archivo de la solicitud")
 async def descargar_archivo(solicitud_id: int, archivo_id: str, u: dict = Depends(usuario_actual)):
     return await descargar(f"/solicitudes/{solicitud_id}/archivos/{archivo_id}", u)
+
+
+@router.post("/solicitudes/{solicitud_id}/prioridad", summary="Cambiar la prioridad de un caso (admin, supervisor)")
+async def prioridad(solicitud_id: int, datos: PrioridadIn, u: dict = Depends(admin_o_supervisor)):
+    return await llamar("POST", f"/solicitudes/{solicitud_id}/prioridad", u, json=datos.model_dump())

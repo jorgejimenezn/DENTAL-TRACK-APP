@@ -95,6 +95,8 @@ Al crear un caso se copia el **flujo** de su tipo de trabajo y modalidad como su
 | Producción | El sistema asigna cada paso a un empleado con esa área y tipo de trabajo, con menos carga y sin pasar su **máximo de trabajos**. Si todos están al tope queda **en cola**; si nadie cubre el paso, **sin técnico**. El técnico ve su total, trabaja **uno a la vez** y el sistema le entrega el siguiente por prioridad (emergencia → VIP → normal, luego fecha de entrega). |
 | QA | **Clasificar RP** (garantía total, parcial sin cobro, parcial con cobro o cobro + motivo) y control de calidad: **Aprobar** o **Devolver** a un paso de producción (por defecto el anterior); el caso repite desde ahí hasta QA. |
 | Facturación | **Registrar factura** (número obligatorio) y empaque. |
+| Logística + mensajero | Logística **asigna cada recolecta y entrega a un mensajero** (o la marca hecha directamente). El mensajero ve **Mis rutas** con dirección y teléfono, y marca **Recolectado / Entregado** (al entregar, nombre de quien recibe, obligatorio) o **No se pudo** con motivo: regresa a Logística para reprogramar. Estados visibles: listo para entrega → en ruta de entrega → entregada. |
+| Admin / supervisor | **Reasignar** cualquier trabajo de producción (en cola, sin técnico, asignado o en proceso) a otro técnico, y **cambiar la prioridad** de un caso (1 emergencia, 2 VIP, 3 normal) con motivo; el doctor no ve la prioridad. |
 | Admin / supervisor | **Bandeja del laboratorio**: carga por área, colas y casos sin técnico; detalle de cada área con el técnico asignado. Pueden cancelar un caso desde su detalle. |
 
 Las colas se reparten solas cada vez que alguien termina un paso o abre su bandeja. Las áreas especiales se reconocen por su nombre: **Ingresos, Logística, QA y Facturación**; no las renombres a otra cosa. Los casos abiertos creados antes de esta versión arrancan su recorrido desde el primer paso al actualizar.
@@ -275,4 +277,7 @@ Sin servidor Mongo se puede probar con `MONGO_URL=mongomock://local` (requiere `
 | POST | `/pasos/{id}/iniciar`, `/pasos/{id}/terminar` | técnico asignado / integrantes del área |
 | POST | `/pasos/{id}/validar-rp`, `/pasos/{id}/rechazar` | QA |
 | PUT/POST | `/pasos/{id}/modificar`, `/pasos/{id}/cancelar` | Ingresos |
+| GET/POST | `/pasos/{id}/candidatos`, `/pasos/{id}/asignar` | Logística (mensajero) · admin y supervisor (técnico) |
+| POST | `/pasos/{id}/no-se-pudo` | mensajero asignado, Logística |
+| POST | `/solicitudes/{id}/prioridad` | admin, supervisor |
 | GET | `/salud` | público |
