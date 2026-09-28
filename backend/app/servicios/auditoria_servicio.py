@@ -25,5 +25,7 @@ class AuditoriaServicio:
         except Exception as error:  # la bitácora no debe tumbar el registro de un cliente
             log.warning("No se pudo registrar en la bitácora: %s", error)
 
-    def listar(self, limite: int, entidad: str | None, accion: str | None) -> list[dict]:
-        return self.repo.listar(limite, entidad, accion)
+    def listar(self, limite: int, entidad: str | None, accion: str | None, actor: Actor | None = None) -> list[dict]:
+        # El perfil de demostración solo ve sus propios movimientos
+        solo_de = (actor.id, actor.email) if actor and actor.rol == "demo" else None
+        return self.repo.listar(limite, entidad, accion, solo_de)

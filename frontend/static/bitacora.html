@@ -42,7 +42,9 @@
 <script src="js/api.js"></script>
 <script src="js/layout.js"></script>
 <script>
-  if (!iniciarPagina(["admin", "demo"])) throw new Error("sin acceso");
+  const usuarioBitacora = iniciarPagina(["admin", "demo"]);
+  if (!usuarioBitacora) throw new Error("sin acceso");
+  if (usuarioBitacora.rol === "demo") document.querySelector(".encabezado p").textContent = "Tus accesos y movimientos en el sistema (solo ves los tuyos).";
 
   const ACCIONES = {
     login_exitoso: ["Inicio de sesión", "verde"], login_fallido: ["Intento fallido", "rojo"],

@@ -6,6 +6,7 @@ from app.core.validaciones import DEPARTAMENTOS
 from app.db.postgres import obtener_sesion
 from app.esquemas.comun import AreaOut
 from app.repositorios.area_repo import AreaRepositorio
+from app.core.dependencias import Actor, obtener_actor
 from app.rutas.proveedores import servicio_auditoria
 from app.servicios.auditoria_servicio import AuditoriaServicio
 
@@ -24,5 +25,6 @@ def listar_departamentos():
 
 @router.get("/auditoria")
 def listar_auditoria(limite: int = Query(100, ge=1, le=500), entidad: str | None = None,
-                     accion: str | None = None, s: AuditoriaServicio = Depends(servicio_auditoria)):
-    return s.listar(limite, entidad, accion)
+                     accion: str | None = None, s: AuditoriaServicio = Depends(servicio_auditoria),
+                     actor: Actor = Depends(obtener_actor)):
+    return s.listar(limite, entidad, accion, actor)

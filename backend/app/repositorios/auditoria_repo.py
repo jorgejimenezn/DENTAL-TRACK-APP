@@ -12,8 +12,12 @@ class AuditoriaRepositorio:
         evento = {**evento, "fecha": datetime.now(timezone.utc)}
         self.coleccion.insert_one(evento)
 
-    def listar(self, limite: int = 100, entidad: str | None = None, accion: str | None = None) -> list[dict]:
+    def listar(self, limite: int = 100, entidad: str | None = None, accion: str | None = None,
+               solo_de: tuple[int | None, str | None] | None = None) -> list[dict]:
         filtro = {}
+        if solo_de:  # solo los eventos de una persona (por id o por correo, p. ej. inicios fallidos)
+            usuario_id, email = solo_de
+            filtro["$or"] = [{"actor_id": usuario_id}, {"actor_email": (email or "").lower()}]
         if entidad:
             filtro["entidad"] = entidad
         if accion:

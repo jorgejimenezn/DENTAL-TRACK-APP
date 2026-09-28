@@ -51,7 +51,7 @@ function pintar() {
   }
   $("tabla").innerHTML = empleados.map(e => `
     <tr>
-      <td class="principal"><b>${escapar(e.nombre)} ${escapar(e.apellido)}</b>${e.id === yo.id ? ' <span class="badge gris">Tú</span>' : ""}<span class="sub">${escapar(e.email)}${e.telefono ? " · " + escapar(e.telefono) : ""}</span></td>
+      <td class="principal"><b>${escapar(e.nombre)} ${escapar(e.apellido)}</b>${e.id === yo.id ? ' <span class="badge gris">Tú</span>' : ""}<span class="sub">${e.email ? escapar(e.email) : "Datos de contacto ocultos"}${e.telefono ? " · " + escapar(e.telefono) : ""}</span></td>
       <td data-label="Máx. trabajos">${e.max_trabajos ? `<span class="badge gris">${e.max_trabajos}</span>` : '<span class="sub" style="display:inline">Sin límite</span>'}</td>
       <td data-label="Rol"><span class="badge ${e.rol === "admin" ? "blanco" : "gris"}">${NOMBRES_ROL[e.rol] || e.rol}</span></td>
       <td data-label="Áreas"><div class="chips">${e.areas.length ? e.areas.map(a => `<span class="badge azul">${escapar(a.nombre)}</span>`).join("") : '<span style="color:var(--texto-3)">—</span>'}</div></td>

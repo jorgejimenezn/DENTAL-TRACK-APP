@@ -17,7 +17,7 @@ async def departamentos(u: dict = Depends(usuario_actual)):
     return await llamar("GET", "/departamentos", u)
 
 
-@router.get("/auditoria", summary="Bitácora de eventos (MongoDB)")
+@router.get("/auditoria", summary="Bitácora de eventos (MongoDB). El perfil demo solo ve los suyos")
 async def auditoria(limite: int = Query(100, ge=1, le=500), entidad: str | None = None,
                     accion: str | None = None, u: dict = Depends(lectura_admin)):
     return await llamar("GET", "/auditoria", u, params={"limite": limite, "entidad": entidad, "accion": accion})
