@@ -5,3 +5,4 @@ venv/
 .env
 .DS_Store
 credenciales_prueba.xlsx
+credenciales_demo.xlsx
