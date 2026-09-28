@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, Query
 
 from app.backend import llamar
-from app.seguridad import solo_admin, usuario_actual
+from app.seguridad import lectura_admin, solo_admin, usuario_actual
 
 router = APIRouter(tags=["Catálogos y bitácora"])
 
@@ -19,5 +19,5 @@ async def departamentos(u: dict = Depends(usuario_actual)):
 
 @router.get("/auditoria", summary="Bitácora de eventos (MongoDB)")
 async def auditoria(limite: int = Query(100, ge=1, le=500), entidad: str | None = None,
-                    accion: str | None = None, u: dict = Depends(solo_admin)):
+                    accion: str | None = None, u: dict = Depends(lectura_admin)):
     return await llamar("GET", "/auditoria", u, params={"limite": limite, "entidad": entidad, "accion": accion})

@@ -200,8 +200,12 @@ def generar_orden(s, generado_por: str) -> bytes:
 
     # ---------- Direcciones ----------
     entrega = f"{s.entrega_direccion}, {s.entrega_municipio}, {s.entrega_departamento}"
-    fila = [_dato("Dirección de entrega", entrega)]
-    if s.recolecta_direccion:
+    salida = "Transporte" + (f" · {s.entrega_transporte}" if s.entrega_transporte else "") + (
+        f" · guía {s.entrega_guia}" if s.entrega_guia else "") if s.entrega_metodo == "transporte" else "Mensajero"
+    fila = [_dato("Dirección de entrega", entrega), _dato("Sale por", salida)]
+    if s.recolecta_metodo == "transporte":
+        fila.append(_dato("Material llegó por", "Transporte" + (f" · guía {s.recolecta_guia}" if s.recolecta_guia else "")))
+    elif s.recolecta_direccion:
         fila.append(_dato("Dirección de recolecta",
                           f"{s.recolecta_direccion}, {s.recolecta_municipio}, {s.recolecta_departamento}"))
     h += [Paragraph("ENTREGA", E["seccion"]), _rejilla([fila], [ancho / len(fila)] * len(fila))]

@@ -1,7 +1,8 @@
 /* ============ Pantalla de clientes ============ */
-const usuario = iniciarPagina(["admin", "supervisor", "ingresos", "facturacion"]);
+const usuario = iniciarPagina(["admin", "supervisor", "ingresos", "facturacion", "demo"]);
 if (!usuario) throw new Error("sin acceso");
 const esAdmin = usuario.rol === "admin";
+const esDemo = usuario.rol === "demo";  // solo consulta
 // Supervisor, Ingresos y Facturación: consultan, administran direcciones y datos comerciales
 if (!esAdmin) {
   $("btnNuevo").hidden = true;
@@ -47,7 +48,7 @@ function pintarTabla() {
       <td data-label="Prioridad"><span class="badge ${c.nivel_prioridad === 2 ? "blanco" : "gris"}">${c.nivel_prioridad === 2 ? "2 · VIP" : "3 · Normal"}</span></td>
       <td data-label="Estado"><span class="badge ${c.activo ? "verde" : "rojo"}">${c.activo ? "Activo" : "Inactivo"}</span></td>
       <td class="acciones">
-        <button class="btn chico" data-editar="${c.id}">${esAdmin ? "Editar" : "Ver y editar datos"}</button>
+        <button class="btn chico" data-editar="${c.id}">${esAdmin ? "Editar" : esDemo ? "Ver" : "Ver datos"}</button>
         ${esAdmin ? `<button class="btn chico ${c.activo ? "rojo-borde" : "verde-borde"}" data-estado="${c.id}">${c.activo ? "Desactivar" : "Activar"}</button>` : ""}
       </td>
     </tr>`).join("");
@@ -117,11 +118,12 @@ async function abrirEditar(id) {
     : "Con crédito, sus casos no pasan a Cobros. Una vez activado, solo el administrador puede quitarlo.";
   // Fuera del admin, los datos principales son de solo lectura
   document.querySelectorAll("#formCliente .grid input, #formCliente .grid select").forEach(el => {
-    if (!["cOdoo", "cCredito"].includes(el.id) && !el.closest("#formDireccion")) el.disabled = !esAdmin;
+    if (esDemo || (!["cOdoo", "cCredito"].includes(el.id) && !el.closest("#formDireccion"))) el.disabled = !esAdmin;
   });
   $("btnResetPass").hidden = !esAdmin;
   $("tituloModal").textContent = esAdmin ? `Editar · ${c.razon_social}` : c.razon_social;
   $("btnGuardar").textContent = esAdmin ? "Guardar cliente" : "Guardar datos comerciales";
+  $("btnGuardar").hidden = esDemo;
   pintarDirecciones();
   $("modalCliente").showModal();
 }

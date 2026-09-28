@@ -15,6 +15,7 @@ const stl = crearAdjuntos({ zona: $("dropStl"), input: $("inputStl"), lista: $("
   alCambiar: () => { if (stl?.hayStl()) { $("dropStl").classList.remove("error"); $("errStl").hidden = true; } actualizar(); } });
 const otros = crearAdjuntos({ zona: $("dropOtros"), input: $("inputOtros"), lista: $("listaOtros"), alCambiar: () => actualizar() });
 const fecha = crearFechaEntrega({ alCambiar: () => actualizar() });
+const logistica = crearLogistica(() => actualizar());
 const modalidad = crearModalidad(() => { fecha.recalcular(modalidad.valor(), $("emergencia").checked); actualizar(); });
 prepararEmergencia(on => fecha.recalcular(modalidad.valor(), on));
 $("recolectaIgual").onchange = () => { $("bloqueRecolecta").hidden = $("recolectaIgual").checked; actualizar(); };
@@ -116,7 +117,7 @@ async function prepararClientes() {
 
 /* ---------- Resumen y validación ---------- */
 function recolectaPendiente(mostrar) {
-  if (modalidad.valor() !== "analogo" || $("recolectaIgual").checked) return null;
+  if (modalidad.valor() !== "analogo" || logistica.recolecta() === "transporte" || $("recolectaIgual").checked) return null;
   return dirRecolecta.validar(mostrar);
 }
 function estado() {
@@ -164,7 +165,7 @@ function actualizar() {
   const hayFdc = ["tipo", "material", "unidad", "guia", "color"].some(id => $(id).value === FDC);
   $("avisoFdc").hidden = !hayFdc;
   if (esPersonal) $("rCliente").textContent = perfil?.razon_social || "—";
-  $("rModalidad").textContent = modalidad.valor() === "digital" ? "Digital (STL)" : "Analógico (recolecta)";
+  $("rModalidad").textContent = modalidad.valor() === "digital" ? "Digital (STL)" : "Analógico";
   $("rPaciente").textContent = $("paciente").value.trim() || "—";
   $("rDoctor").textContent = $("doctorTratante").value.trim() || perfil?.titular || "—";
   $("rTipo").textContent = textoDe("tipo") || "—";
@@ -176,6 +177,7 @@ function actualizar() {
   $("rPiezas").textContent = odontograma.lista().join(", ") || "—";
   $("rFecha").textContent = fecha.valor() ? fechaCorta(fecha.valor()) : "—";
   $("rDireccion").textContent = dirEntrega.texto();
+  $("rLogistica").textContent = logistica.texto(modalidad.valor() === "analogo");
   $("rPrioridad").innerHTML = $("emergencia").checked ? '<span class="badge rojo">EMERGENCIA</span>' : '<span class="badge gris">Según tu cuenta</span>';
   $("checklist").innerHTML = estado().map(([t, ok]) => `<li class="${ok ? "ok" : ""}">${t}</li>`).join("");
 }
@@ -223,7 +225,9 @@ $("form").onsubmit = async e => {
     fecha_entrega: fecha.valor(),
     emergencia: $("emergencia").checked,
     direccion_entrega: dirEntrega.valor(),
-    direccion_recolecta: !analogo ? null : ($("recolectaIgual").checked ? { tipo: "misma_que_entrega" } : dirRecolecta.valor()),
+    direccion_recolecta: !analogo || logistica.recolecta() === "transporte" ? null : ($("recolectaIgual").checked ? { tipo: "misma_que_entrega" } : dirRecolecta.valor()),
+    recolecta_metodo: analogo ? logistica.recolecta() : null,
+    entrega_metodo: logistica.entrega(),
     instrucciones: $("instrucciones").value.trim() || null,
     archivo_ids: [...(analogo ? [] : stl.ids()), ...otros.ids()],
   };

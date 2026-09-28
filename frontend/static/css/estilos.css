@@ -517,3 +517,15 @@ a.btn{text-decoration:none}
 .colores-pieza{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:10px}
 .colores-pieza label{display:flex;align-items:center;gap:8px;background:var(--campo);border:1px solid var(--campo-borde);border-radius:8px;padding:6px 8px;font-size:13px;font-weight:700}
 .colores-pieza select{flex:1;min-width:0;padding:6px;border:1px solid var(--campo-borde);border-radius:6px;background:#111;color:var(--texto);font:inherit;font-weight:400}
+
+/* Métodos de logística (mensajero / transporte) */
+.opciones-radio.dos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opciones-radio.dos small{color:var(--texto-2);font-size:11px;font-weight:400}
+@media (max-width:640px){.opciones-radio.dos{grid-template-columns:1fr}}
+.chip.naranja{background:rgba(245,158,11,.15);color:#f59e0b;border-color:rgba(245,158,11,.35)}
+.plazo{font-size:12px;font-weight:600}
+.plazo.vencido{color:var(--rojo-texto)}
+.plazo.ok{color:var(--verde-texto, #4ade80)}
+
+/* Perfil de demostración: pantallas de administración en solo consulta */
+.aviso-demo{margin:0 0 16px;padding:10px 14px;border-radius:10px;border:1px dashed var(--azul);background:var(--azul-suave);font-size:13px;color:var(--texto)}

@@ -1,5 +1,5 @@
 /* ============ Pantalla de catálogos ============ */
-if (!iniciarPagina(["admin"])) throw new Error("sin acceso");
+if (!iniciarPagina(["admin", "demo"])) throw new Error("sin acceso");
 
 const TABS = {
   tipos: { titulo: "Tipos de trabajo", singular: "tipo de trabajo", clave: "tipos",

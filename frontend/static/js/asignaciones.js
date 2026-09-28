@@ -1,5 +1,5 @@
 /* ============ Pantalla de asignaciones ============ */
-if (!iniciarPagina(["admin"])) throw new Error("sin acceso");
+if (!iniciarPagina(["admin", "demo"])) throw new Error("sin acceso");
 
 let catalogo = null, asignaciones = [], actual = null;
 

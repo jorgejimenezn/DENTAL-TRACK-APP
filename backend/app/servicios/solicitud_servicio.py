@@ -25,7 +25,7 @@ from app.servicios.configuracion_servicio import ZONA, CalendarioServicio
 from app.servicios.recorrido import NOMBRE_ETAPA, Motor
 
 # Personal que puede ingresar solicitudes a nombre de un cliente (pedidos por teléfono, etc.)
-ROLES_CAPTURA = {"admin", "supervisor", "ingresos"}
+ROLES_CAPTURA = {"admin", "supervisor", "ingresos", "demo"}  # demo: captura para demostraciones
 # Quién puede mover estados manualmente mientras no existen las bandejas de cada área
 ROLES_ESTADO = {"admin", "supervisor"}
 
@@ -290,6 +290,7 @@ class SolicitudServicio:
                 recolecta_departamento=recolecta and recolecta.departamento,
                 recolecta_municipio=recolecta and recolecta.municipio,
                 recolecta_direccion=recolecta and recolecta.direccion,
+                recolecta_metodo=datos.recolecta_metodo, entrega_metodo=datos.entrega_metodo,
                 instrucciones=datos.instrucciones),
             "archivos": archivos,
         }
@@ -312,10 +313,12 @@ class SolicitudServicio:
         comun = self._entrega_comun(cliente, datos, actor)
         solicitud = Solicitud(
             codigo=self._codigo("CN"), tipo_caso="CN", cliente_id=cliente.id, creado_por_id=actor.id,
-            estado="pendiente_recolecta" if datos.modalidad == "analogo" else "recibida",
+            estado="recibida",  # el motor lo ajusta al primer paso del recorrido
             paciente=datos.paciente, referencia_clinica=datos.referencia_clinica,
             doctor_tratante=datos.doctor_tratante, **catalogo, **comun["campos"])
-        nota = "Solicitud creada" + (" · se generó recolecta para Logística" if datos.modalidad == "analogo" else "")
+        nota = "Solicitud creada" + ({"mensajero": " · se generó recolecta para Logística",
+                                      "transporte": " · el cliente enviará el material por transporte"}
+                                     .get(datos.recolecta_metodo, ""))
         self._guardar(solicitud, comun["archivos"], nota, actor)
         self.auditoria.registrar("crear", "solicitud", solicitud.id, actor, {
             "codigo": solicitud.codigo, "cliente": cliente.razon_social, "modalidad": solicitud.modalidad,
@@ -472,7 +475,10 @@ class SolicitudServicio:
                               "cobro": "Cobro"}.get(s.qa_clasificacion),
             qa_motivo=s.qa_motivo_id and self.sesion.get(MotivoRP, s.qa_motivo_id).nombre,
             qa_observacion=s.qa_observacion, referencia_clinica=s.referencia_clinica,
-            requiere_recolecta=s.requiere_recolecta,
+            requiere_recolecta=s.requiere_recolecta, recolecta_metodo=s.recolecta_metodo,
+            recolecta_guia=None if self._es_doctor(actor) else s.recolecta_guia,
+            entrega_metodo=s.entrega_metodo or "mensajero", entrega_transporte=s.entrega_transporte,
+            entrega_guia=s.entrega_guia,
             tipo_trabajo=_valor(s.tipo_trabajo_id, s.tipo_trabajo), material=_valor(s.material_id, s.material),
             unidad=_valor(s.unidad_id, s.unidad), guia_color=_valor(s.guia_id, s.guia),
             color=_valor(s.color_id, s.color), fecha_minima=s.fecha_minima,
@@ -492,7 +498,7 @@ class SolicitudServicio:
             recorrido=[RecorridoPaso(
                 id=p.id, orden=p.orden, area=p.area.nombre, etapa=p.etapa, etapa_texto=NOMBRE_ETAPA[p.etapa],
                 estado=p.estado, activado_en=p.activado_en, terminado_en=p.terminado_en, nota=p.nota, vuelta=p.vuelta,
-                receptor=p.receptor,
+                receptor=p.receptor, recolectado_en=p.recolectado_en,
                 # los nombres del personal no se muestran al doctor
                 tecnico=None if self._es_doctor(actor) else nombre(p.tecnico),
                 atendido_por=None if self._es_doctor(actor) else nombre(p.atendido_por))

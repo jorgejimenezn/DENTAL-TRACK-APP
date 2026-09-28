@@ -47,6 +47,8 @@ El **rol** define qué puede hacer una persona en el sistema (pantallas y permis
 | Facturación | Facturación, empaque y cobros. |
 | Logística | Coordina rutas y asigna recolectas y entregas. |
 | Mensajero | Ejecuta las recolectas y entregas asignadas desde su celular. |
+| Operaciones | Gerencia: consulta dashboard, métricas, cobros y solicitudes. No modifica nada. |
+| Demostración | Para demos: ve todo lo del administrador **sin poder modificar** y puede hacer **cualquier paso de la línea de producción** (recolecta, Ingresos, producción, QA, facturación, entrega) y capturar solicitudes. No necesita áreas. |
 | Doctor | Cliente: crea solicitudes y sigue sus casos. |
 
 **Máximo de trabajos activos:** si todos los empleados que pueden atender un paso llegaron a su tope, la orden espera en la cola del área y se asigna cuando alguien libera cupo.
@@ -121,11 +123,33 @@ Al crear un caso se copia el **flujo** de su tipo de trabajo y modalidad como su
 | Producción | El sistema asigna cada paso a un empleado con esa área y tipo de trabajo, con menos carga y sin pasar su **máximo de trabajos**. Si todos están al tope queda **en cola**; si nadie cubre el paso, **sin técnico**. El técnico ve su total, trabaja **uno a la vez** y el sistema le entrega el siguiente por prioridad (emergencia → VIP → normal, luego fecha de entrega). |
 | QA | **Clasificar RP** (garantía total, parcial sin cobro, parcial con cobro o cobro + motivo) y control de calidad: **Aprobar** o **Devolver** a un paso de producción (por defecto el anterior); el caso repite desde ahí hasta QA. |
 | Facturación | **Registrar factura** (número obligatorio) y empaque. |
-| Logística + mensajero | Logística **asigna cada recolecta y entrega a un mensajero** (o la marca hecha directamente). El mensajero ve **Mis rutas** con dirección y teléfono, y marca **Recolectado / Entregado** (al entregar, nombre de quien recibe, obligatorio) o **No se pudo** con motivo: regresa a Logística para reprogramar. Estados visibles: listo para entrega → en ruta de entrega → entregada. |
+| Logística + mensajero | Ver **Logística: recolecta y transporte** abajo. |
 | Admin / supervisor | **Reasignar** cualquier trabajo de producción (en cola, sin técnico, asignado o en proceso) a otro técnico, y **cambiar la prioridad** de un caso (1 emergencia, 2 VIP, 3 normal) con motivo; el doctor no ve la prioridad. |
 | Admin / supervisor | **Bandeja del laboratorio**: carga por área, colas y casos sin técnico; detalle de cada área con el técnico asignado. Pueden cancelar un caso desde su detalle. |
 
 Las colas se reparten solas cada vez que alguien termina un paso o abre su bandeja. Las áreas especiales se reconocen por su nombre: **Ingresos, Logística, QA y Facturación**; no las renombres a otra cosa. Los casos abiertos creados antes de esta versión arrancan su recorrido desde el primer paso al actualizar.
+
+## Logística: recolecta y transporte
+
+Al crear la solicitud (doctor o personal) se indica:
+- **Cómo llega el material** (solo analógico): **recolecta con mensajero** o **el cliente lo envía por transporte**.
+- **Cómo sale el trabajo terminado**: **mensajero** o **transporte**. Ingresos puede cambiarlo al modificar el caso y Logística mientras el paso está en su área (con motivo, queda en el historial).
+
+| Situación | Estados | Quién |
+|---|---|---|
+| Recolecta con mensajero | **Asignado** → **Recolectado** (el mensajero ya tiene el material) → **Entregado en laboratorio** (pasa a Ingresos). Plazo de **2 horas laborales** desde que se crea la solicitud: la tarjeta muestra la hora límite y se marca en rojo si vence; el Dashboard cuenta recolectas pendientes y vencidas y la auditoría de tiempos mide el plazo (meta 2 h). | Logística asigna; mensajero marca |
+| Material por transporte | **Esperando material por transporte** → **Recibido** (guía opcional). Sin plazo de 2 h. | Logística |
+| Entrega con mensajero | **Asignado** (en ruta) → **Entregado** con nombre de quien recibe. | Logística asigna; mensajero marca |
+| Entrega por transporte | **Entregado a transporte** con **número de guía** (obligatorio) y empresa (opcional): el caso queda finalizado. Logística lo registra o se lo asigna a un mensajero para que lo lleve a la agencia. | Logística o mensajero |
+
+"No se pudo" (con motivo) regresa la recolecta o entrega a Logística. La guía de salida aparece en el detalle del caso (también para el doctor) y en la orden PDF.
+
+## Perfil de demostración
+
+Rol `demo` (Empleados → Rol **Demostración**, sin áreas). También puede crearse al arrancar con las variables opcionales del backend `DEMO_EMAIL` y `DEMO_PASSWORD`.
+- Menú de administrador completo en **solo consulta** (aviso "Modo demostración"; el backend rechaza cualquier cambio con 403).
+- **Línea de producción**: todas las áreas con sus casos y botones para hacer cualquier paso, sin reglas de turno. Lo que inicia en producción queda a su nombre para no alterar las métricas de los técnicos.
+- Puede crear solicitudes a nombre de un cliente e imprimir la orden. No cancela, no cambia prioridades ni reasigna.
 
 ## Diseño adaptable
 
@@ -195,6 +219,9 @@ INTERNAL_KEY=<clave-interna>
 ADMIN_EMAIL=<tu correo de administrador>
 ADMIN_PASSWORD=<contraseña inicial del administrador>
 PORT=8000
+# opcional: usuario de demostración
+DEMO_EMAIL=<correo del usuario demo>
+DEMO_PASSWORD=<contraseña del usuario demo>
 ```
 
 **api**
@@ -306,6 +333,8 @@ Sin servidor Mongo se puede probar con `MONGO_URL=mongomock://local` (requiere `
 | PUT/POST | `/pasos/{id}/modificar`, `/pasos/{id}/cancelar` | Ingresos |
 | GET/POST | `/pasos/{id}/candidatos`, `/pasos/{id}/asignar` | Logística (mensajero) · admin y supervisor (técnico) |
 | POST | `/pasos/{id}/no-se-pudo` | mensajero asignado, Logística |
+| POST | `/pasos/{id}/recolectado` | mensajero asignado, Logística |
+| POST | `/pasos/{id}/metodo` | Logística: cambiar entre mensajero y transporte |
 | POST | `/solicitudes/{id}/prioridad` | admin, supervisor |
 | GET/PUT | `/config/areas-operacion` | lectura con sesión · edición admin |
 | GET/POST/DELETE | `/ausencias` | admin, supervisor (operaciones consulta) |

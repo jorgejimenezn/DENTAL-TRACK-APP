@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencias import Actor, obtener_actor
 from app.db.postgres import obtener_sesion
-from app.esquemas.bandeja import (AsignarIn, Bandeja, CancelarIn, Candidato, ModificacionIn, RechazoIn, TerminarIn,
+from app.esquemas.bandeja import (AsignarIn, Bandeja, CancelarIn, Candidato, MetodoIn, ModificacionIn, RechazoIn, TerminarIn,
                                   ValidacionRpIn)
 from app.rutas.proveedores import servicio_auditoria
 from app.servicios.auditoria_servicio import AuditoriaServicio
@@ -81,4 +81,17 @@ def asignar(paso_id: int, datos: AsignarIn, actor: Actor = Depends(obtener_actor
 def no_se_pudo(paso_id: int, datos: CancelarIn, actor: Actor = Depends(obtener_actor),
                s: ProduccionServicio = Depends(_servicio)):
     s.no_se_pudo(paso_id, datos.motivo, actor)
+    return Response(status_code=204)
+
+
+@router.post("/pasos/{paso_id}/recolectado", status_code=204)
+def recolectado(paso_id: int, actor: Actor = Depends(obtener_actor), s: ProduccionServicio = Depends(_servicio)):
+    s.recolectado(paso_id, actor)
+    return Response(status_code=204)
+
+
+@router.post("/pasos/{paso_id}/metodo", status_code=204)
+def cambiar_metodo(paso_id: int, datos: MetodoIn, actor: Actor = Depends(obtener_actor),
+                   s: ProduccionServicio = Depends(_servicio)):
+    s.cambiar_metodo(paso_id, datos, actor)
     return Response(status_code=204)

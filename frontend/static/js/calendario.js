@@ -1,5 +1,5 @@
 /* ============ Pantalla de calendario y reglas ============ */
-if (!iniciarPagina(["admin"])) throw new Error("sin acceso");
+if (!iniciarPagina(["admin", "demo"])) throw new Error("sin acceso");
 
 const hoy = new Date();
 const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;

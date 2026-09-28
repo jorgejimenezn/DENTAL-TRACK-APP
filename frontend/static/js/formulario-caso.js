@@ -289,3 +289,25 @@ function irAlError(elemento) {
   elemento.scrollIntoView({ behavior: "smooth", block: "center" });
   toast("Revisa los campos marcados en rojo", true);
 }
+
+/** Cómo llega el material (analógico) y cómo sale el trabajo terminado: mensajero o transporte. */
+function crearLogistica(alCambiar) {
+  const valor = nombre => (document.querySelector(`input[name="${nombre}"]:checked`) || {}).value || "mensajero";
+  const pintar = (inicial) => {
+    const transporte = valor("recMetodo") === "transporte";
+    $("bloqueRecMensajero").hidden = transporte;
+    $("avisoRecolecta").textContent = transporte
+      ? "Envía el material a nuestra dirección por la empresa de transporte de tu preferencia. Logística registra su llegada con el número de guía y el caso pasa a Ingresos."
+      : "Se crea una recolecta para Logística: un mensajero pasa por el material en un plazo de 2 horas laborales y lo entrega en el laboratorio.";
+    $("avisoEntrega").hidden = valor("entMetodo") !== "transporte";
+    if (!inicial) alCambiar();
+  };
+  document.querySelectorAll('input[name="recMetodo"], input[name="entMetodo"]').forEach(r => r.addEventListener("change", () => pintar(false)));
+  pintar(true);
+  return {
+    recolecta: () => valor("recMetodo"),
+    entrega: () => valor("entMetodo"),
+    texto: modalidadAnalogica => (modalidadAnalogica ? (valor("recMetodo") === "transporte" ? "Llega por transporte" : "Recolecta (2 h)") + " · " : "")
+      + (valor("entMetodo") === "transporte" ? "sale por transporte" : "sale con mensajero"),
+  };
+}

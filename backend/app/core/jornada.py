@@ -59,3 +59,18 @@ class Jornada:
                     total += (fin - inicio).total_seconds()
             dia += timedelta(days=1)
         return round(total / 3600, 2)
+
+    def sumar(self, desde: datetime, horas: float) -> datetime:
+        """Momento en que se cumplen `horas` laborales contadas desde `desde` (para plazos como la recolecta)."""
+        restante = timedelta(hours=horas)
+        actual = desde.astimezone(ZONA)
+        for _ in range(60):  # tope de seguridad: dos meses de calendario
+            v = self.ventana(actual.date())
+            if v and actual < v[1]:
+                inicio = max(actual, v[0])
+                disponible = v[1] - inicio
+                if disponible >= restante:
+                    return inicio + restante
+                restante -= disponible
+            actual = datetime.combine(actual.date() + timedelta(days=1), time(0, 0), ZONA)
+        return actual

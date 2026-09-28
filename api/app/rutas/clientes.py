@@ -11,18 +11,19 @@ from app.esquemas import ClienteActualizar, ClienteCrear, ComercialIn, Direccion
 from app.seguridad import requiere_rol, solo_admin
 
 gestion_clientes = requiere_rol("admin", "supervisor", "ingresos", "facturacion")
+ver_clientes = requiere_rol("admin", "supervisor", "ingresos", "facturacion", "demo")
 
 router = APIRouter(prefix="/clientes", tags=["Clientes"])
 
 
 @router.get("", summary="Listar clientes")
 async def listar(q: str | None = None, activo: bool | None = None, nivel: int | None = Query(None, ge=2, le=3),
-                 u: dict = Depends(gestion_clientes)):
+                 u: dict = Depends(ver_clientes)):
     return await llamar("GET", "/clientes", u, params={"q": q, "activo": activo, "nivel": nivel})
 
 
 @router.get("/{cliente_id}", summary="Detalle de un cliente")
-async def obtener(cliente_id: int, u: dict = Depends(gestion_clientes)):
+async def obtener(cliente_id: int, u: dict = Depends(ver_clientes)):
     return await llamar("GET", f"/clientes/{cliente_id}", u)
 
 
@@ -54,7 +55,7 @@ async def agregar_direccion(cliente_id: int, datos: DireccionIn, u: dict = Depen
 
 @router.put("/{cliente_id}/direcciones/{direccion_id}", summary="Editar dirección de entrega")
 async def actualizar_direccion(cliente_id: int, direccion_id: int, datos: DireccionIn,
-                               u: dict = Depends(gestion_clientes)):
+                               u: dict = Depends(ver_clientes)):
     return await llamar("PUT", f"/clientes/{cliente_id}/direcciones/{direccion_id}", u, json=datos.model_dump())
 
 

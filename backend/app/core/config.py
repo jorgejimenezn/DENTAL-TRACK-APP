@@ -12,6 +12,9 @@ class Config:
     ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "admin@dentaltrack.com")
     ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "Admin123!")
     ADMIN_NOMBRE: str = os.getenv("ADMIN_NOMBRE", "Administrador")
+    # Usuario de demostración (opcional): si ambas variables existen se crea al arrancar si no existe
+    DEMO_EMAIL: str = os.getenv("DEMO_EMAIL", "")
+    DEMO_PASSWORD: str = os.getenv("DEMO_PASSWORD", "")
 
 
 config = Config()

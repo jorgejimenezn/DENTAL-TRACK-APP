@@ -39,3 +39,5 @@ def requiere_rol(*roles: str):
 
 
 solo_admin = requiere_rol("admin")
+# Consultas de administración que el perfil demo también puede ver (sin editar)
+lectura_admin = requiere_rol("admin", "demo")

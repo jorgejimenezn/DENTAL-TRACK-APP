@@ -46,7 +46,7 @@
 <script src="js/api.js"></script>
 <script src="js/layout.js"></script>
 <script>
-const usuario = iniciarPagina(["admin", "supervisor", "operaciones", "facturacion"]);
+const usuario = iniciarPagina(["admin", "supervisor", "operaciones", "facturacion", "demo"]);
 if (!usuario) throw new Error("sin acceso");
 const puedePagar = ["admin", "supervisor", "facturacion"].includes(usuario.rol);
 const fecha = s => new Date(s + "T12:00:00").toLocaleDateString("es-GT", { day: "numeric", month: "short", year: "numeric" });

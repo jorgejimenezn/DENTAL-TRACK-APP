@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.postgres import Base
 
 ROLES_INTERNOS = ["admin", "supervisor", "operaciones", "ingresos", "tecnico", "qa", "facturacion", "logistica",
-                  "mensajero"]
+                  "mensajero", "demo"]  # demo: ve todo sin editar y opera todos los pasos de la línea
 ROL_CLIENTE = "doctor"
 NIVELES_CLIENTE = {2: "VIP", 3: "Normal"}  # la prioridad 1 es exclusiva de emergencias
 

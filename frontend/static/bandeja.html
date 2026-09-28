@@ -38,6 +38,8 @@
         <div class="campo" style="margin-top:10px"><label>Número de caja <span class="req">*</span></label><input id="tCajaNumero" maxlength="20" inputmode="numeric" placeholder="Ej. 12" autocomplete="off"></div>
       </div>
       <div class="campo" id="campoReceptor" hidden style="margin-bottom:12px"><label>Nombre de quien recibe <span class="req">*</span></label><input id="tReceptor" maxlength="120" placeholder="Ej. Ana López, recepción" autocomplete="off"></div>
+      <div class="campo" id="campoGuia" hidden style="margin-bottom:12px"><label>Número de guía <span class="req" id="reqGuia">*</span></label><input id="tGuia" maxlength="60" placeholder="Ej. GT-778812" autocomplete="off"></div>
+      <div class="campo" id="campoTransporte" hidden style="margin-bottom:12px"><label>Empresa de transporte</label><input id="tTransporte" maxlength="80" placeholder="Ej. Cargo Expreso, Guatex" autocomplete="off"></div>
       <div class="campo" id="campoFactura" hidden style="margin-bottom:12px"><label>Número de factura <span class="req">*</span></label><input id="tFactura" maxlength="40" placeholder="Ej. FAC-00123"></div>
       <div class="campo"><label>Nota</label><textarea id="tNota" maxlength="300" rows="3" placeholder="Opcional"></textarea></div>
     </div>
@@ -101,6 +103,7 @@
         <div class="campo"><label>Guía de color</label><select id="mGuia"></select></div>
         <div class="campo"><label>Color</label><select id="mColor"></select></div>
         <div class="campo"><label>Fecha de entrega</label><input type="date" id="mFecha"></div>
+        <div class="campo"><label>Sale por</label><select id="mEntrega"><option value="mensajero">Mensajero</option><option value="transporte">Transporte (guía)</option></select></div>
       </div>
       <div class="seccion-form">Piezas</div>
       <div id="mOdontograma"></div>

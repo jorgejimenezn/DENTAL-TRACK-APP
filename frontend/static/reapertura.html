@@ -75,12 +75,20 @@
           </div>
         </div>
         <div class="panel-mod" id="panelAnalogo" hidden>
+          <div class="campo" style="margin-bottom:12px"><label>¿Cómo llega el material al laboratorio? <span class="req">*</span></label>
+            <div class="opciones-radio dos">
+              <label><input type="radio" name="recMetodo" value="mensajero" checked> <span><b>Recolecta con mensajero</b><br><small>Pasamos por él en un plazo de 2 horas laborales</small></span></label>
+              <label><input type="radio" name="recMetodo" value="transporte"> <span><b>Lo envío por transporte</b><br><small>Encomienda o empresa de transporte</small></span></label>
+            </div>
+          </div>
+          <div id="bloqueRecMensajero">
           <label class="check-linea"><input type="checkbox" id="recolectaIgual" checked> Recoger en la misma dirección de entrega</label>
           <div id="bloqueRecolecta" hidden style="margin-top:12px">
             <div class="campo"><label>Dirección de recolecta <span class="req">*</span></label></div>
             <div id="dirRecolecta"></div>
           </div>
-          <div class="aviso azul">Se generará una recolecta para Logística.</div>
+          </div>
+          <div class="aviso azul" id="avisoRecolecta"></div>
         </div>
       </section>
 
@@ -101,6 +109,12 @@
         </div>
         <h3>Dirección de entrega <span style="color:var(--rojo-texto)">*</span></h3>
         <div id="dirEntrega"></div>
+        <h3>¿Cómo sale el trabajo terminado? <span style="color:var(--rojo-texto)">*</span></h3>
+        <div class="opciones-radio dos">
+          <label><input type="radio" name="entMetodo" value="mensajero" checked> <span><b>Mensajero del laboratorio</b><br><small>Se entrega en la dirección y se registra quién recibe</small></span></label>
+          <label><input type="radio" name="entMetodo" value="transporte"> <span><b>Transporte</b><br><small>Se envía por encomienda al departamento</small></span></label>
+        </div>
+        <div class="aviso azul" id="avisoEntrega" hidden>Logística registra la empresa y el número de guía al despachar; con eso el caso queda entregado.</div>
       </section>
 
       <!-- 5. Instrucciones -->
@@ -130,6 +144,7 @@
           <dt>Llega por</dt><dd id="rModalidad">—</dd>
           <dt>Entrega</dt><dd id="rFecha">—</dd>
           <dt>Dirección</dt><dd id="rDireccion">—</dd>
+          <dt>Logística</dt><dd id="rLogistica">—</dd>
           <dt>Prioridad</dt><dd id="rPrioridad">—</dd>
         </dl>
         <hr>

@@ -33,7 +33,7 @@
 <script src="js/api.js"></script>
 <script src="js/layout.js"></script>
 <script>
-if (!iniciarPagina(["admin"])) throw new Error("sin acceso");
+if (!iniciarPagina(["admin", "demo"])) throw new Error("sin acceso");
 const TIPO = { produccion: "Producción", ingresos: "Ingresos", qa: "QA", facturacion: "Facturación", logistica: "Logística" };
 async function cargar() {
   try {

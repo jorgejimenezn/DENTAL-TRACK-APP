@@ -14,6 +14,8 @@ from app.db.postgres import Base
 # Estado → (texto visible, columna del tablero Kanban del doctor)
 ESTADOS = {
     "pendiente_recolecta": ("Pendiente de recolecta", "Recibido"),
+    "material_en_camino": ("Material recolectado · en camino al laboratorio", "Recibido"),
+    "espera_transporte": ("Esperando material por transporte", "Recibido"),
     "validacion_qa": ("Validación de QA", "Recibido"),
     "recibida": ("En revisión de Ingresos", "Recibido"),
     "en_produccion": ("En producción", "En producción"),
@@ -92,6 +94,13 @@ class Solicitud(Base):
     recolecta_municipio: Mapped[str | None] = mapped_column(String(80), nullable=True)
     recolecta_direccion: Mapped[str | None] = mapped_column(String(250), nullable=True)
 
+    # --- Logística: cómo llega el material y cómo sale el trabajo terminado ---
+    recolecta_metodo: Mapped[str | None] = mapped_column(String(12), nullable=True)  # mensajero | transporte (analógico)
+    recolecta_guia: Mapped[str | None] = mapped_column(String(60), nullable=True)    # guía del transporte que lo trajo
+    entrega_metodo: Mapped[str] = mapped_column(String(12), default="mensajero")      # mensajero | transporte
+    entrega_transporte: Mapped[str | None] = mapped_column(String(80), nullable=True)  # empresa de transporte
+    entrega_guia: Mapped[str | None] = mapped_column(String(60), nullable=True)       # número de guía de salida
+
     instrucciones: Mapped[str | None] = mapped_column(Text, nullable=True)
     factura_numero: Mapped[str | None] = mapped_column(String(40), nullable=True)
     factura_fecha: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -151,10 +160,11 @@ PASO_EN_COLA = "en_cola"          # producción: todos los que pueden hacerlo es
 PASO_SIN_TECNICO = "sin_tecnico"  # producción: nadie tiene asignada esa área y tipo de trabajo
 PASO_ASIGNADO = "asignado"        # producción: en la bandeja de un técnico, esperando turno
 PASO_EN_PROCESO = "en_proceso"    # producción: el técnico lo está trabajando (uno a la vez)
+PASO_RECOLECTADO = "recolectado"  # recolecta: el mensajero ya tiene el material y va hacia el laboratorio
 PASO_TERMINADO = "terminado"
 PASO_OMITIDO = "omitido"          # cancelado o reemplazado al rehacer el recorrido
-PASOS_ACTIVOS = {PASO_EN_AREA, PASO_EN_COLA, PASO_SIN_TECNICO, PASO_ASIGNADO, PASO_EN_PROCESO}
-PASOS_CARGA = {PASO_ASIGNADO, PASO_EN_PROCESO}  # cuentan para el tope de trabajos del técnico
+PASOS_ACTIVOS = {PASO_EN_AREA, PASO_EN_COLA, PASO_SIN_TECNICO, PASO_ASIGNADO, PASO_EN_PROCESO, PASO_RECOLECTADO}
+PASOS_CARGA = {PASO_ASIGNADO, PASO_EN_PROCESO, PASO_RECOLECTADO}  # cuentan para el tope de trabajos del técnico
 
 
 class SolicitudPaso(Base):
@@ -174,6 +184,7 @@ class SolicitudPaso(Base):
     terminado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     nota: Mapped[str | None] = mapped_column(String(300), nullable=True)
     receptor: Mapped[str | None] = mapped_column(String(120), nullable=True)  # quien recibió la entrega
+    recolectado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     vuelta: Mapped[int] = mapped_column(Integer, default=1)  # sube cuando QA devuelve el caso
 
     solicitud: Mapped[Solicitud] = relationship(back_populates="pasos")

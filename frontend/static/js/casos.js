@@ -2,7 +2,7 @@
 const usuario = iniciarPagina();
 if (!usuario) throw new Error("sin acceso");
 const esDoctor = usuario.rol === "doctor";
-const COLOR_ESTADO = { entregada: "verde", cancelada: "rojo", validacion_qa: "azul", pendiente_recolecta: "azul" };
+const COLOR_ESTADO = { entregada: "verde", cancelada: "rojo", validacion_qa: "azul", pendiente_recolecta: "azul", material_en_camino: "azul", espera_transporte: "azul" };
 const fechaCorta = s => new Date(s + "T12:00:00").toLocaleDateString("es-GT", { day: "numeric", month: "short", year: "numeric" });
 let vista = "true";
 

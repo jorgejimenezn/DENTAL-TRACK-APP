@@ -42,7 +42,7 @@
 <script src="js/api.js"></script>
 <script src="js/layout.js"></script>
 <script>
-  if (!iniciarPagina(["admin"])) throw new Error("sin acceso");
+  if (!iniciarPagina(["admin", "demo"])) throw new Error("sin acceso");
 
   const ACCIONES = {
     login_exitoso: ["Inicio de sesión", "verde"], login_fallido: ["Intento fallido", "rojo"],

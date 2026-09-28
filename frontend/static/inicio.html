@@ -68,7 +68,17 @@
            + tarjeta("ausencias.html", "Ausencias", "Quién no labora: el sistema no le asigna y reparte lo suyo.")
            + tarjeta("casos.html", "Solicitudes", "Casos nuevos y reaperturas de todos los clientes.")
            + tarjeta("nueva-solicitud.html", "Nueva solicitud", "Capturar un caso a nombre de un cliente.")
-           + tarjeta(null, "Reasignaciones", "Mover trabajos entre técnicos. Próxima fase.");
+           + tarjeta("clientes.html", "Clientes", "Direcciones, cliente Odoo y crédito.");
+    } else if (usuario.rol === "demo") {
+      html = tarjeta("bandeja.html", "Línea de producción", "Haz cualquier paso: recolecta, Ingresos, producción, QA, facturación y entrega.")
+           + tarjeta("nueva-solicitud.html", "Nueva solicitud", "Capturar un caso a nombre de un cliente para la demostración.")
+           + tarjeta("tablero.html", "Tablero por cliente", "La vista Kanban que ve el doctor.")
+           + tarjeta("dashboard.html", "Dashboard", "Operación en vivo y desempeño (consulta).")
+           + tarjeta("casos.html", "Solicitudes", "Todos los casos con su recorrido.")
+           + tarjeta("clientes.html", "Clientes", "Consulta de clientes y datos comerciales.")
+           + tarjeta("empleados.html", "Empleados", "Consulta de usuarios, roles y áreas.")
+           + tarjeta("flujos.html", "Flujos de trabajo", "Consulta de los pasos por tipo de trabajo.")
+           + tarjeta("cobros.html", "Cobros", "Consulta de facturas pendientes.");
     } else if (usuario.rol === "mensajero") {
       html = tarjeta("bandeja.html", "Mis rutas", "Recolectas y entregas que te asignó Logística.")
            + tarjeta("casos.html", "Solicitudes", "Consulta de casos.");

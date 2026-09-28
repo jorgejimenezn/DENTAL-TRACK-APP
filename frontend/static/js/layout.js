@@ -20,32 +20,36 @@ const ICONOS = {
 
 const MENU = [
   { href: "inicio.html", texto: "Inicio", icono: "inicio", roles: null },
-  { grupo: "Administración", roles: ["admin"] },
-  { href: "clientes.html", texto: "Clientes", icono: "clientes", roles: ["admin"] },
-  { href: "empleados.html", texto: "Empleados", icono: "empleados", roles: ["admin"] },
-  { href: "bitacora.html", texto: "Bitácora", icono: "bitacora", roles: ["admin"] },
-  { grupo: "Configuración", roles: ["admin"] },
-  { href: "catalogos.html", texto: "Catálogos", icono: "catalogos", roles: ["admin"] },
-  { href: "flujos.html", texto: "Flujos de trabajo", icono: "flujos", roles: ["admin"] },
-  { href: "asignaciones.html", texto: "Asignaciones", icono: "asignaciones", roles: ["admin"] },
-  { href: "calendario.html", texto: "Calendario y reglas", icono: "calendario", roles: ["admin"] },
-  { href: "areas.html", texto: "Áreas y metas", icono: "metas", roles: ["admin"] },
-  { grupo: "Operación", roles: ["admin", "supervisor", "operaciones", "facturacion"] },
-  { href: "dashboard.html", texto: "Dashboard", icono: "dashboard", roles: ["admin", "supervisor", "operaciones"] },
-  { href: "ausencias.html", texto: "Ausencias", icono: "ausencias", roles: ["admin", "supervisor"] },
-  { href: "cobros.html", texto: "Cobros", icono: "cobros", roles: ["admin", "supervisor", "operaciones", "facturacion"] },
+  { grupo: "Administración", roles: ["admin", "demo"] },
+  { href: "clientes.html", texto: "Clientes", icono: "clientes", roles: ["admin", "demo"] },
+  { href: "empleados.html", texto: "Empleados", icono: "empleados", roles: ["admin", "demo"] },
+  { href: "bitacora.html", texto: "Bitácora", icono: "bitacora", roles: ["admin", "demo"] },
+  { grupo: "Configuración", roles: ["admin", "demo"] },
+  { href: "catalogos.html", texto: "Catálogos", icono: "catalogos", roles: ["admin", "demo"] },
+  { href: "flujos.html", texto: "Flujos de trabajo", icono: "flujos", roles: ["admin", "demo"] },
+  { href: "asignaciones.html", texto: "Asignaciones", icono: "asignaciones", roles: ["admin", "demo"] },
+  { href: "calendario.html", texto: "Calendario y reglas", icono: "calendario", roles: ["admin", "demo"] },
+  { href: "areas.html", texto: "Áreas y metas", icono: "metas", roles: ["admin", "demo"] },
+  { grupo: "Operación", roles: ["admin", "supervisor", "operaciones", "facturacion", "demo"] },
+  { href: "dashboard.html", texto: "Dashboard", icono: "dashboard", roles: ["admin", "supervisor", "operaciones", "demo"] },
+  { href: "ausencias.html", texto: "Ausencias", icono: "ausencias", roles: ["admin", "supervisor", "demo"] },
+  { href: "cobros.html", texto: "Cobros", icono: "cobros", roles: ["admin", "supervisor", "operaciones", "facturacion", "demo"] },
   { grupo: "Solicitudes", roles: null },
-  { href: "nueva-solicitud.html", texto: "Nueva solicitud", icono: "solicitud", roles: ["doctor", "admin", "supervisor", "ingresos"] },
+  { href: "nueva-solicitud.html", texto: "Nueva solicitud", icono: "solicitud", roles: ["doctor", "admin", "supervisor", "ingresos", "demo"] },
   { href: "bandeja.html", texto: "Mi bandeja", icono: "bandeja", roles: ["ingresos", "tecnico", "qa", "facturacion", "logistica"] },
   { href: "bandeja.html", texto: "Mis rutas", icono: "bandeja", roles: ["mensajero"] },
   { href: "bandeja.html", texto: "Bandeja del laboratorio", icono: "bandeja", roles: ["admin", "supervisor"] },
+  { href: "bandeja.html", texto: "Línea de producción", icono: "bandeja", roles: ["demo"] },
   { href: "tablero.html", texto: "Mi tablero", icono: "tablero", roles: ["doctor"] },
   { href: "casos.html", texto: "Mis casos", icono: "casos", roles: ["doctor"] },
   { href: "clientes.html", texto: "Clientes", icono: "clientes", roles: ["supervisor", "ingresos", "facturacion"] },
-  { href: "tablero.html", texto: "Tablero por cliente", icono: "tablero", roles: ["admin", "supervisor", "ingresos"] },
-  { href: "casos.html", texto: "Solicitudes", icono: "casos", roles: ["admin", "supervisor", "operaciones", "ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"] },
+  { href: "tablero.html", texto: "Tablero por cliente", icono: "tablero", roles: ["admin", "supervisor", "ingresos", "demo"] },
+  { href: "casos.html", texto: "Solicitudes", icono: "casos", roles: ["admin", "demo", "supervisor", "operaciones", "ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"] },
   { href: "mis-metricas.html", texto: "Mis métricas", icono: "dashboard", roles: ["ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"] },
 ];
+// Pantallas que el perfil demo solo consulta (el backend rechaza cualquier cambio)
+const SOLO_LECTURA_DEMO = ["clientes.html", "empleados.html", "bitacora.html", "catalogos.html", "flujos.html", "asignaciones.html",
+                           "calendario.html", "areas.html", "ausencias.html", "cobros.html"];
 // Pantallas que no están en el menú: se marca la opción de la que dependen
 const PADRES = { "caso.html": "casos.html", "reapertura.html": "casos.html" };
 
@@ -79,6 +83,13 @@ function iniciarPagina(rolesPermitidos = null) {
     </div>`;
   $("btnSalir").onclick = () => Sesion.cerrar();
   prepararMenuMovil(visibles.find(m => m.href === pagina)?.texto || document.title.split("·")[0].trim());
+  if (usuario.rol === "demo" && SOLO_LECTURA_DEMO.includes(pagina)) {
+    document.body.classList.add("solo-lectura");
+    const aviso = document.createElement("div");
+    aviso.className = "aviso-demo";
+    aviso.innerHTML = "<b>Modo demostración:</b> puedes consultar esta pantalla, pero los cambios no se guardan.";
+    document.querySelector(".contenido")?.prepend(aviso);
+  }
   dibujarMarcaAgua();
   return usuario;
 }

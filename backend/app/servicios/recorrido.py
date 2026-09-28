@@ -27,6 +27,16 @@ ESTADO_POR_ETAPA = {
     "recolecta": "pendiente_recolecta", "ingresos": "recibida", "validacion_rp": "validacion_qa",
     "produccion": "en_produccion", "qa": "control_calidad", "facturacion": "facturacion", "entrega": "listo_entrega",
 }
+PLAZO_RECOLECTA_HORAS = 2  # horas laborales para recoger en la clínica (no aplica a transporte)
+
+
+def estado_etapa(s: Solicitud, etapa: str) -> str:
+    """Estado visible del caso cuando su paso actual está en `etapa` (esperando que lo atiendan)."""
+    if etapa == "recolecta" and s.recolecta_metodo == "transporte":
+        return "espera_transporte"
+    return ESTADO_POR_ETAPA[etapa]
+
+
 NOMBRE_ETAPA = {
     "recolecta": "Recolecta", "ingresos": "Ingresos", "validacion_rp": "Validación de RP", "produccion": "Producción",
     "qa": "Control de calidad", "facturacion": "Facturación", "entrega": "Entrega",
@@ -139,6 +149,10 @@ class Motor:
         produccion = paso.etapa == "produccion"
         total = j.horas(paso.activado_en, paso.terminado_en)
         meta = float(paso.area.meta_horas or 4)
+        if paso.etapa == "recolecta" and s.recolecta_metodo != "transporte":
+            # lo que se mide es cuánto tardó en recogerse en la clínica: plazo fijo de 2 horas laborales
+            total = j.horas(paso.activado_en, paso.recolectado_en or paso.terminado_en)
+            meta = float(PLAZO_RECOLECTA_HORAS)
         self.sesion.add(TiempoPaso(
             paso_id=paso.id, solicitud_id=s.id, codigo=s.codigo, area_id=paso.area_id, area=paso.area.nombre,
             etapa=paso.etapa, tipo_trabajo=s.tipo_trabajo, responsable_id=paso.tecnico_id if produccion else usuario_id,
@@ -154,7 +168,7 @@ class Motor:
         siguiente = next((p for p in sorted(s.pasos, key=lambda x: x.orden) if p.estado == PASO_PENDIENTE), None)
         if siguiente:
             self.activar(s, siguiente)
-            s.estado = ESTADO_POR_ETAPA[siguiente.etapa]
+            s.estado = estado_etapa(s, siguiente.etapa)
         else:
             s.estado = "entregada"
         if s.estado != anterior or nota:
@@ -209,7 +223,7 @@ class Motor:
                 p.estado = PASO_EN_COLA
             else:  # recolecta o entrega de un mensajero ausente
                 p.estado = PASO_EN_AREA
-                p.solicitud.estado = ESTADO_POR_ETAPA[p.etapa]
+                p.solicitud.estado = estado_etapa(p.solicitud, p.etapa)
             p.solicitud.historial.append(SolicitudHistorial(
                 estado=p.solicitud.estado, nota=f"{p.area.nombre}: se liberó porque {quien} no labora hoy"[:300]))
         self.sesion.flush()

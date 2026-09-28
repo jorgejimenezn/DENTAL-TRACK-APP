@@ -1,6 +1,7 @@
 /* ============ Mi bandeja: producción, áreas de apoyo y supervisión ============ */
-const usuario = iniciarPagina(["admin", "supervisor", "ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"]);
+const usuario = iniciarPagina(["admin", "supervisor", "ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero", "demo"]);
 if (!usuario) throw new Error("sin acceso");
+const esDemo = usuario.rol === "demo";
 const esSupervision = ["admin", "supervisor"].includes(usuario.rol);
 let datos = null, areaElegida = null, arbol = null, pasoActivo = null;
 const indice = new Map();  // paso_id → datos del paso (para los modales)
@@ -15,8 +16,12 @@ const ACCION = {
   aprobar_qa: { texto: "Aprobar", clase: "verde", titulo: "Aprobar control de calidad" },
   rechazar: { texto: "Devolver", clase: "rojo-borde" },
   facturar: { texto: "Registrar factura", clase: "verde", titulo: "Facturar y empacar" },
-  recolectado: { texto: "Recolectado", clase: "verde", titulo: "Material recolectado" },
+  recolectado: { texto: "Recolectado", clase: "verde" },
+  entregado_lab: { texto: "Entregado en laboratorio", clase: "verde", titulo: "Material entregado en el laboratorio" },
+  recibido_transporte: { texto: "Recibido", clase: "verde", titulo: "Material recibido por transporte" },
   entregado: { texto: "Entregado", clase: "verde", titulo: "Entregado al cliente" },
+  entregado_transporte: { texto: "Entregado a transporte", clase: "verde", titulo: "Entregado a transporte" },
+  cambiar_metodo: { texto: "Cambiar método", clase: "" },
   asignar_mensajero: { texto: "Asignar mensajero", clase: "" },
   asignar: { texto: "Reasignar", clase: "" },
   prioridad: { texto: "Prioridad", clase: "" },
@@ -40,11 +45,19 @@ function tarjeta(p, { actual = false, mostrarTecnico = false } = {}) {
   const extra = [];
   if (p.etapa === "validacion_rp") extra.push(`<div class="nota-caso"><b>${p.reapertura_tipo === "garantia" ? "Garantía" : "Modificación"}:</b> ${escapar(p.reapertura_motivo)}</div>`);
   if (p.qa_clasificacion && ["facturacion", "produccion"].includes(p.etapa)) extra.push(`<div class="linea">QA: <b>${escapar(p.qa_clasificacion)}</b></div>`);
-  if (["recolecta", "entrega"].includes(p.etapa)) extra.push(`<div class="linea">${p.etapa === "recolecta" ? "Recoger en" : "Entregar en"}: <b>${escapar(p.direccion)}</b></div>`);
+  if (ES_RUTA(p)) {
+    const transporte = p.metodo === "transporte";
+    const chip = transporte ? '<span class="badge azul">Transporte</span>' : '<span class="badge gris">Mensajero</span>';
+    const lugar = p.etapa === "recolecta" ? (transporte ? "Llega" : "Recoger en") : (transporte ? "Destino" : "Entregar en");
+    extra.push(`<div class="linea">${chip} ${lugar}: <b>${escapar(p.direccion)}</b></div>`);
+    if (p.limite && p.estado !== "recolectado") extra.push(`<div class="linea plazo ${p.vencida ? "vencido" : "ok"}">${p.vencida ? "Plazo de recolecta vencido" : "Recoger antes de"} · ${escapar(fechaHora(p.limite))}</div>`);
+    if (p.estado === "recolectado") extra.push(`<div class="linea">Recolectado ${escapar(fechaHora(p.recolectado_en))}${p.vencida ? ' · <span class="plazo vencido">fuera de plazo</span>' : ""} · <b>llevar al laboratorio</b></div>`);
+    if (p.guia) extra.push(`<div class="linea">Guía: <b>${escapar(p.guia)}</b></div>`);
+  }
   if (p.etapa === "facturacion") extra.push(`<div class="linea">Cliente Odoo: <b>${escapar(p.cliente_odoo || "sin registrar")}</b> · ${p.credito ? '<span class="badge verde">Crédito: no pasa a Cobros</span>' : '<span class="badge gris">Contado</span>'}</div>`);
   if (p.devolucion) extra.push(`<div class="aviso rojo" style="margin:0"><div><b>Retrabajo:</b> ${escapar(p.devolucion.replace("Devuelto por QA: ", ""))}</div></div>`);
   if (p.instrucciones) extra.push(`<div class="nota-caso">${escapar(p.instrucciones)}</div>`);
-  if (ES_RUTA(p) && p.estado === "asignado" && !mostrarTecnico && usuario.rol !== "mensajero") extra.push(`<div class="linea">Mensajero: <b>${escapar(p.tecnico)}</b></div>`);
+  if (ES_RUTA(p) && ["asignado", "recolectado"].includes(p.estado) && !mostrarTecnico && usuario.rol !== "mensajero") extra.push(`<div class="linea">Mensajero: <b>${escapar(p.tecnico)}</b></div>`);
   if (ES_RUTA(p) && p.telefono) extra.push(`<div class="linea">Teléfono: <a href="tel:${escapar(p.telefono)}">${escapar(p.telefono)}</a></div>`);
   if (mostrarTecnico) extra.push(`<div class="linea">Prioridad <b>${p.prioridad}</b></div>`);
   if (mostrarTecnico) extra.push(`<div class="linea">Estado: <b>${escapar(({ asignado: "Asignado", en_proceso: "En proceso", en_cola: "En cola (todos al tope)", sin_tecnico: "Sin técnico que cubra el paso", en_area: "En el área" })[p.estado] || p.estado)}</b>${p.tecnico ? ` · ${escapar(p.tecnico)}` : ""}</div>`);
@@ -54,6 +67,8 @@ function tarjeta(p, { actual = false, mostrarTecnico = false } = {}) {
     if (a === "hecho") texto = p.etapa === "recolecta" ? "Recolectado" : "Entregado";
     if (a === "asignar_mensajero" && p.estado === "asignado") texto = "Cambiar mensajero";
     if (a === "asignar" && ["en_cola", "sin_tecnico"].includes(p.estado)) texto = "Asignar";
+    if (a === "cambiar_metodo") texto = p.metodo === "transporte" ? "Cambiar a mensajero" : "Cambiar a transporte";
+    if (a === "iniciar" && esDemo) texto = "Iniciar";
     return `<button class="btn ${ACCION[a].clase}" data-accion="${a}" data-paso="${p.paso_id}">${texto}</button>`;
   }).join("");
   return `<article class="trabajo ${p.emergencia ? "urgente" : ""} ${actual ? "actual" : ""}">
@@ -108,8 +123,8 @@ function pintarAreas(areas) {
     return;
   }
   $("areas").innerHTML = areas.map(a => {
-    const detalleSupervision = esSupervision && a.area_id === areaElegida;
-    return `<section class="bandeja-seccion"><h2>${escapar(a.area)} <span class="sub">${a.pasos.length} caso(s)${detalleSupervision ? " · vista de supervisión" : ""}</span></h2>
+    const detalleSupervision = (esSupervision && a.area_id === areaElegida) || (esDemo && a.tipo === "produccion");
+    return `<section class="bandeja-seccion" id="area-${a.area_id}"><h2>${escapar(a.area)} <span class="sub">${a.pasos.length} caso(s)${detalleSupervision ? " · vista de supervisión" : ""}</span></h2>
       ${a.pasos.length ? `<div class="trabajos">${a.pasos.map(p => tarjeta(p, { mostrarTecnico: detalleSupervision })).join("")}</div>` : '<div class="vacio-card">Sin casos pendientes en esta área.</div>'}
     </section>`;
   }).join("");
@@ -117,8 +132,10 @@ function pintarAreas(areas) {
 
 function pintarSupervision(resumen) {
   if (!resumen) return;
-  $("titulo").textContent = "Bandeja del laboratorio";
-  $("descripcion").textContent = "Carga de cada área. Toca un área para ver sus casos, técnicos asignados y colas.";
+  $("titulo").textContent = esDemo ? "Línea de producción · demostración" : "Bandeja del laboratorio";
+  $("descripcion").textContent = esDemo
+    ? "Perfil de demostración: puedes hacer cualquier paso de cualquier área. Toca un área para ir a sus casos."
+    : "Carga de cada área. Toca un área para ver sus casos, técnicos asignados y colas.";
   $("supervision").innerHTML = `<section class="bandeja-seccion"><div class="areas-resumen">${resumen.map(a => `
     <button class="area-tile ${a.area_id === areaElegida ? "activa" : ""}" data-area="${a.area_id}">
       <span>${escapar(a.area)}</span><b>${a.activos}</b>
@@ -141,6 +158,7 @@ async function cargar() {
 $("supervision").addEventListener("click", e => {
   const b = e.target.closest("[data-area]");
   if (!b) return;
+  if (esDemo) return document.getElementById(`area-${b.dataset.area}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   areaElegida = Number(b.dataset.area) === areaElegida ? null : Number(b.dataset.area);
   cargar();
 });
@@ -162,15 +180,21 @@ document.addEventListener("click", async e => {
   pasoActivo = indice.get(Number(b.dataset.paso));
   if (!pasoActivo) return;
   const id = pasoActivo.paso_id;
+  if (accion === "recolectado") return ejecutar(b, () => api("POST", `/pasos/${id}/recolectado`), `${pasoActivo.codigo}: material recolectado, llévalo al laboratorio`).catch(() => {});
   if (accion === "iniciar") return ejecutar(b, () => api("POST", `/pasos/${id}/iniciar`), `${pasoActivo.codigo} iniciado`).catch(() => {});
   if (accion === "rechazar") return abrirRechazo();
   if (accion === "validar_rp") return abrirValidacion();
   if (accion === "modificar") return abrirModificacion();
-  if (accion === "cancelar" || accion === "no_se_pudo") {
+  if (accion === "cancelar" || accion === "no_se_pudo" || accion === "cambiar_metodo") {
     modoMotivo = accion;
-    $("tituloCancelar").textContent = accion === "cancelar" ? `Cancelar ${pasoActivo.codigo}` : `${pasoActivo.etapa === "recolecta" ? "Recolecta" : "Entrega"} no realizada · ${pasoActivo.codigo}`;
-    $("btnMotivo").textContent = accion === "cancelar" ? "Cancelar caso" : "Regresar a Logística";
-    $("cMotivo").placeholder = accion === "cancelar" ? "Ej. Solicitud duplicada" : "Ej. Clínica cerrada, nadie para recibir";
+    const nuevo = pasoActivo.metodo === "transporte" ? "mensajero" : "transporte";
+    $("tituloCancelar").textContent = accion === "cancelar" ? `Cancelar ${pasoActivo.codigo}`
+      : accion === "cambiar_metodo" ? `${pasoActivo.etapa === "recolecta" ? "Recolecta" : "Entrega"} por ${nuevo} · ${pasoActivo.codigo}`
+      : `${pasoActivo.etapa === "recolecta" ? "Recolecta" : "Entrega"} no realizada · ${pasoActivo.codigo}`;
+    $("btnMotivo").textContent = { cancelar: "Cancelar caso", no_se_pudo: "Regresar a Logística", cambiar_metodo: `Cambiar a ${nuevo}` }[accion];
+    $("btnMotivo").className = accion === "cambiar_metodo" ? "btn verde" : "btn rojo-borde";
+    $("cMotivo").placeholder = { cancelar: "Ej. Solicitud duplicada", no_se_pudo: "Ej. Clínica cerrada, nadie para recibir",
+                                 cambiar_metodo: nuevo === "transporte" ? "Ej. El cliente lo enviará por Guatex" : "Ej. El cliente pidió que lo recojamos" }[accion];
     $("cMotivo").value = ""; $("errorCancelar").hidden = true; return $("modalCancelar").showModal();
   }
   if (accion === "asignar" || accion === "asignar_mensajero") return abrirAsignacion(accion);
@@ -186,6 +210,14 @@ document.addEventListener("click", async e => {
   if (accion === "aprobar") prepararCaja();
   $("campoReceptor").hidden = !(accion === "entregado" || (accion === "hecho" && pasoActivo.etapa === "entrega"));
   $("tReceptor").value = "";
+  const conGuia = ["entregado_transporte", "recibido_transporte"].includes(accion);
+  $("campoGuia").hidden = !conGuia;
+  $("campoTransporte").hidden = accion !== "entregado_transporte";
+  $("reqGuia").hidden = accion !== "entregado_transporte";
+  $("tGuia").value = ""; $("tTransporte").value = "";
+  if (accion === "entregado_transporte") $("textoTerminar").textContent = "Registra la guía del envío. Con esto el caso queda entregado y finalizado.";
+  if (accion === "recibido_transporte") $("textoTerminar").textContent = "Confirma que el material llegó por transporte. El caso pasa a Ingresos.";
+  if (accion === "entregado_lab") $("textoTerminar").textContent = "El material ya está en el laboratorio. El caso pasa a Ingresos.";
   $("tFactura").value = pasoActivo.factura_numero || ""; $("tNota").value = ""; $("errorTerminar").hidden = true;
   $("modalTerminar").showModal();
 });
@@ -196,10 +228,13 @@ $("formTerminar").onsubmit = async e => {
   const cajaColor = document.querySelector("[name=cajaColor]:checked")?.value;
   if (!$("campoCaja").hidden && (!cajaColor || !$("tCajaNumero").value.trim())) return mostrarErrores($("errorTerminar"), new Error("Elige el color y escribe el número de caja"));
   if (!$("campoReceptor").hidden && $("tReceptor").value.trim().length < 2) return mostrarErrores($("errorTerminar"), new Error("Escribe el nombre de quien recibe"));
+  if (!$("reqGuia").hidden && !$("tGuia").value.trim()) return mostrarErrores($("errorTerminar"), new Error("Ingresa el número de guía para finalizar el caso"));
   const cuerpo = { nota: $("tNota").value.trim() || null, factura_numero: $("campoFactura").hidden ? null : $("tFactura").value.trim(),
                    receptor: $("campoReceptor").hidden ? null : $("tReceptor").value.trim(),
                    caja_color_id: $("campoCaja").hidden ? null : Number(cajaColor),
-                   caja_numero: $("campoCaja").hidden ? null : $("tCajaNumero").value.trim() };
+                   caja_numero: $("campoCaja").hidden ? null : $("tCajaNumero").value.trim(),
+                   guia: $("campoGuia").hidden ? null : ($("tGuia").value.trim() || null),
+                   transporte: $("campoTransporte").hidden ? null : ($("tTransporte").value.trim() || null) };
   const aprobado = !$("campoCaja").hidden ? { ...pasoActivo } : null;
   await ejecutar($("btnTerminar"), () => api("POST", `/pasos/${pasoActivo.paso_id}/terminar`, cuerpo), `${pasoActivo.codigo} avanzó al siguiente paso`)
     .then(() => { if (aprobado) ofrecerImpresion(aprobado); })
@@ -246,9 +281,12 @@ let modoMotivo = "cancelar";
 $("formCancelar").onsubmit = async e => {
   e.preventDefault();
   if ($("cMotivo").value.trim().length < 3) return mostrarErrores($("errorCancelar"), new Error("Describe el motivo"));
-  const ruta = modoMotivo === "cancelar" ? "cancelar" : "no-se-pudo";
-  await ejecutar(null, () => api("POST", `/pasos/${pasoActivo.paso_id}/${ruta}`, { motivo: $("cMotivo").value.trim() }),
-    modoMotivo === "cancelar" ? `${pasoActivo.codigo} cancelado` : `${pasoActivo.codigo} regresó a Logística`)
+  const motivo = $("cMotivo").value.trim();
+  const llamada = modoMotivo === "cambiar_metodo"
+    ? () => api("POST", `/pasos/${pasoActivo.paso_id}/metodo`, { metodo: pasoActivo.metodo === "transporte" ? "mensajero" : "transporte", motivo })
+    : () => api("POST", `/pasos/${pasoActivo.paso_id}/${modoMotivo === "cancelar" ? "cancelar" : "no-se-pudo"}`, { motivo });
+  await ejecutar(null, llamada, { cancelar: `${pasoActivo.codigo} cancelado`, no_se_pudo: `${pasoActivo.codigo} regresó a Logística`,
+                                  cambiar_metodo: `${pasoActivo.codigo}: método actualizado` }[modoMotivo])
     .catch(err => mostrarErrores($("errorCancelar"), err));
 };
 
@@ -326,6 +364,7 @@ async function abrirModificacion() {
     $("mFdc").hidden = !fdc.length;
     $("mFdc").innerHTML = `<div>El doctor escribió fuera de catálogo → ${fdc.join(" · ")}. Elige la opción del catálogo que corresponde.</div>`;
     $("mFecha").value = caso.fecha_entrega;
+    $("mEntrega").value = caso.entrega_metodo || "mensajero";
     odontoModificar = crearOdontograma($("mOdontograma"));
     odontoModificar.poner(caso.piezas);
     $("modalModificar").showModal();
@@ -342,7 +381,7 @@ $("formModificar").onsubmit = async e => {
   const cuerpo = {
     tipo_trabajo: id($("mTipo").value), material: id($("mMaterial").value), unidad: id($("mUnidad").value),
     guia_color: sinColor ? null : id($("mGuia").value), color: sinColor ? null : id($("mColor").value),
-    piezas: odontoModificar.lista(), fecha_entrega: $("mFecha").value, nota: $("mNota").value.trim(),
+    piezas: odontoModificar.lista(), fecha_entrega: $("mFecha").value, entrega_metodo: $("mEntrega").value, nota: $("mNota").value.trim(),
   };
   await ejecutar(null, () => api("PUT", `/pasos/${pasoActivo.paso_id}/modificar`, cuerpo), `${pasoActivo.codigo} modificado. Ahora puedes aprobarlo`)
     .catch(err => mostrarErrores($("errorModificar"), err));

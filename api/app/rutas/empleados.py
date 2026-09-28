@@ -3,19 +3,19 @@ from fastapi import APIRouter, Depends, Response
 
 from app.backend import llamar
 from app.esquemas import EmpleadoActualizar, EmpleadoCrear, EstadoIn, PasswordIn
-from app.seguridad import requiere_rol, solo_admin
+from app.seguridad import lectura_admin, requiere_rol, solo_admin
 
 router = APIRouter(prefix="/empleados", tags=["Empleados"])
 
 
 @router.get("", summary="Listar empleados")
 async def listar(q: str | None = None, rol: str | None = None, activo: bool | None = None,
-                 u: dict = Depends(requiere_rol("admin", "supervisor"))):
+                 u: dict = Depends(requiere_rol("admin", "supervisor", "demo"))):
     return await llamar("GET", "/empleados", u, params={"q": q, "rol": rol, "activo": activo})
 
 
 @router.get("/{empleado_id}", summary="Detalle de un empleado")
-async def obtener(empleado_id: int, u: dict = Depends(solo_admin)):
+async def obtener(empleado_id: int, u: dict = Depends(lectura_admin)):
     return await llamar("GET", f"/empleados/{empleado_id}", u)
 
 

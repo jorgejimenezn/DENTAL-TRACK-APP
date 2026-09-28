@@ -114,6 +114,19 @@ def migrar() -> None:
             "UPDATE solicitudes SET pago_estado = 'pendiente', factura_fecha = creado_en WHERE factura_numero IS NOT NULL",
         ]
 
+    # --- Logística: recolecta/transporte, guía de salida y momento de recolecta ------
+    if solicitudes and "entrega_metodo" not in solicitudes:
+        pasos += [
+            "ALTER TABLE solicitudes ADD COLUMN recolecta_metodo VARCHAR(12)",
+            "ALTER TABLE solicitudes ADD COLUMN recolecta_guia VARCHAR(60)",
+            "ALTER TABLE solicitudes ADD COLUMN entrega_metodo VARCHAR(12) NOT NULL DEFAULT 'mensajero'",
+            "ALTER TABLE solicitudes ADD COLUMN entrega_transporte VARCHAR(80)",
+            "ALTER TABLE solicitudes ADD COLUMN entrega_guia VARCHAR(60)",
+            "UPDATE solicitudes SET recolecta_metodo = 'mensajero' WHERE modalidad = 'analogo'",
+        ]
+    if pasos_solicitud and "recolectado_en" not in pasos_solicitud:
+        pasos.append("ALTER TABLE solicitud_pasos ADD COLUMN recolectado_en TIMESTAMPTZ")
+
     if not pasos:
         return
     with engine.begin() as conexion:

@@ -8,7 +8,8 @@ from app.core.validaciones import limpiar_numero, telefono_valido
 
 from app.esquemas.comun import AreaOut
 
-RolInterno = Literal["admin", "supervisor", "operaciones", "ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"]
+RolInterno = Literal["admin", "supervisor", "operaciones", "ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero",
+                     "demo"]
 
 
 class _EmpleadoBase(BaseModel):

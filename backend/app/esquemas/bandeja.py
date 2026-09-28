@@ -59,6 +59,12 @@ class PasoBandeja(BaseModel):
     cliente_odoo: str | None = None
     credito: bool = False
     devolucion: str | None = None  # motivo de QA cuando es un retrabajo
+    metodo: str | None = None          # recolecta/entrega: mensajero | transporte
+    limite: datetime | None = None     # recolecta con mensajero: plazo de 2 horas laborales
+    vencida: bool = False              # pasó el plazo sin recolectar
+    recolectado_en: datetime | None = None
+    guia: str | None = None            # número de guía de transporte (entrada o salida)
+    transporte: str | None = None      # empresa de transporte de salida
     acciones: list[str]
     pasos_previos: list[PasoPrevio] = []
 
@@ -113,8 +119,10 @@ class TerminarIn(BaseModel):
     receptor: str | None = Field(default=None, max_length=120, description="Obligatorio al entregar: quién recibe")
     caja_color_id: int | None = Field(default=None, description="Obligatorio al aprobar en Ingresos")
     caja_numero: str | None = Field(default=None, max_length=20, description="Obligatorio al aprobar en Ingresos")
+    guia: str | None = Field(default=None, max_length=60, description="Número de guía: obligatorio al entregar por transporte")
+    transporte: str | None = Field(default=None, max_length=80, description="Empresa de transporte (opcional)")
 
-    @field_validator("nota", "factura_numero", "receptor", "caja_numero")
+    @field_validator("nota", "factura_numero", "receptor", "caja_numero", "guia", "transporte")
     @classmethod
     def limpiar(cls, v: str | None) -> str | None:
         return " ".join((v or "").split()) or None
@@ -142,6 +150,7 @@ class ModificacionIn(BaseModel):
     color: Seleccion | None = None
     piezas: list[int] = Field(min_length=1)
     fecha_entrega: date
+    entrega_metodo: Literal["mensajero", "transporte"] | None = Field(default=None, description="Salida del trabajo")
     nota: str = Field(min_length=3, max_length=250, description="Qué se corrigió y por qué")
 
     @field_validator("piezas")
@@ -150,6 +159,12 @@ class ModificacionIn(BaseModel):
         if any(p not in PIEZAS_FDI for p in v):
             raise ValueError("Piezas no válidas (FDI)")
         return sorted(set(v))
+
+
+class MetodoIn(BaseModel):
+    """Logística cambia cómo llega el material o cómo sale el trabajo (mensajero o transporte)."""
+    metodo: Literal["mensajero", "transporte"]
+    motivo: str = Field(min_length=3, max_length=200)
 
 
 class CancelarIn(BaseModel):

@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from app.core.validaciones import DEPARTAMENTOS
 
 Modalidad = Literal["digital", "analogo"]
+Metodo = Literal["mensajero", "transporte"]
 PIEZAS_FDI = {c * 10 + n for c in (1, 2, 3, 4) for n in range(1, 9)}
 
 
@@ -76,6 +77,8 @@ class _EntregaIn(BaseModel):
     emergencia: bool = False
     direccion_entrega: DireccionSel
     direccion_recolecta: DireccionSel | None = None
+    recolecta_metodo: Metodo | None = Field(default=None, description="Analógico: mensajero del laboratorio o el cliente lo envía por transporte")
+    entrega_metodo: Metodo = Field(default="mensajero", description="Salida del trabajo: mensajero o transporte (pide número de guía)")
     instrucciones: str | None = Field(default=None, max_length=2000)
     archivo_ids: list[str] = Field(default=[], max_length=12, description="IDs devueltos por POST /archivos")
 
@@ -97,8 +100,12 @@ class _EntregaIn(BaseModel):
         if self.direccion_entrega.tipo == "misma_que_entrega":
             raise ValueError("La dirección de entrega debe ser existente o nueva")
         if self.modalidad == "digital":
+            self.direccion_recolecta, self.recolecta_metodo = None, None
+        else:
+            self.recolecta_metodo = self.recolecta_metodo or "mensajero"
+        if self.recolecta_metodo == "transporte":  # el cliente lo envía: no hay dirección de recolecta
             self.direccion_recolecta = None
-        elif self.direccion_recolecta is None:
+        elif self.modalidad == "analogo" and self.direccion_recolecta is None:
             self.direccion_recolecta = DireccionSel(tipo="misma_que_entrega")
         return self
 
@@ -193,6 +200,7 @@ class RecorridoPaso(BaseModel):
     terminado_en: datetime | None
     nota: str | None
     receptor: str | None = None
+    recolectado_en: datetime | None = None
     vuelta: int
 
 
@@ -235,6 +243,11 @@ class SolicitudOut(SolicitudResumen):
     qa_observacion: str | None
     referencia_clinica: str | None
     requiere_recolecta: bool
+    recolecta_metodo: str | None = None
+    recolecta_guia: str | None = None
+    entrega_metodo: str = "mensajero"
+    entrega_transporte: str | None = None
+    entrega_guia: str | None = None
     tipo_trabajo: ValorOut
     material: ValorOut
     unidad: ValorOut

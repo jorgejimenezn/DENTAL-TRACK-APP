@@ -1,5 +1,5 @@
 /* ============ Pantalla de flujos de trabajo ============ */
-if (!iniciarPagina(["admin"])) throw new Error("sin acceso");
+if (!iniciarPagina(["admin", "demo"])) throw new Error("sin acceso");
 
 const MODALIDADES = { digital: "Digital", analogo: "Analógico" };
 let catalogo = null, flujos = [], edicion = null; // edicion: { tipo, modalidad, pasos: [area_id] }

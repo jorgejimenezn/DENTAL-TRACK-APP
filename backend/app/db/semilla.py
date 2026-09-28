@@ -30,6 +30,10 @@ def inicializar_base():
                 email=config.ADMIN_EMAIL.lower(), password_hash=cifrar_password(config.ADMIN_PASSWORD),
                 rol="admin", activo=True,
             ))
+        if config.DEMO_EMAIL and config.DEMO_PASSWORD and not sesion.scalar(
+                select(Usuario.id).where(Usuario.email == config.DEMO_EMAIL.lower())):
+            sesion.add(Usuario(nombre="Usuario", apellido="Demostración", email=config.DEMO_EMAIL.lower(),
+                               password_hash=cifrar_password(config.DEMO_PASSWORD), rol="demo", activo=True))
         sesion.flush()
         sembrar_configuracion(sesion)
         sesion.commit()

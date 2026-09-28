@@ -4,11 +4,11 @@ if (!usuario) throw new Error("sin acceso");
 const parametros = new URLSearchParams(location.search);
 const casoId = Number(parametros.get("id"));
 const ESTADOS = {
-  pendiente_recolecta: "Pendiente de recolecta", validacion_qa: "Validación de QA", recibida: "Recibida",
+  pendiente_recolecta: "Pendiente de recolecta", material_en_camino: "Material en camino", espera_transporte: "Esperando transporte", validacion_qa: "Validación de QA", recibida: "Recibida",
   en_produccion: "En producción", control_calidad: "Control de calidad", facturacion: "Facturación y empaque",
   listo_entrega: "Listo para entrega", en_ruta: "En ruta de entrega", entregada: "Entregada", cancelada: "Cancelada",
 };  // referencia de estados (el texto llega desde la API)
-const COLOR_ESTADO = { entregada: "verde", cancelada: "rojo", validacion_qa: "azul", pendiente_recolecta: "azul" };
+const COLOR_ESTADO = { entregada: "verde", cancelada: "rojo", validacion_qa: "azul", pendiente_recolecta: "azul", material_en_camino: "azul", espera_transporte: "azul" };
 const fechaLarga = s => new Date(s + "T12:00:00").toLocaleDateString("es-GT", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 const dato = (etiqueta, valor, clase = "") => `<div class="${clase}"><span>${etiqueta}</span><b>${valor}</b></div>`;
 const valorCat = v => !v ? "No aplica" : escapar(v.nombre) + (v.fuera_catalogo ? ' <span class="badge azul">fuera de catálogo</span>' : "");
@@ -44,7 +44,7 @@ function pintar() {
     + dato("Paciente", escapar(c.paciente))
     + dato("Doctor tratante", escapar(c.doctor_tratante || "Titular de la cuenta"))
     + dato("Referencia de la clínica", escapar(c.referencia_clinica || "—"))
-    + dato("Modalidad", c.modalidad === "digital" ? "Digital (STL)" : "Analógico (recolecta)")
+    + dato("Modalidad", c.modalidad === "digital" ? "Digital (STL)" : (c.recolecta_metodo === "transporte" ? "Analógico · llega por transporte" : "Analógico · recolecta con mensajero"))
     + dato("Tipo de trabajo", valorCat(c.tipo_trabajo))
     + dato("Material", valorCat(c.material))
     + dato("Unidades", valorCat(c.unidad))
@@ -56,7 +56,11 @@ function pintar() {
   const dir = d => `${escapar(d.direccion)}<br><small style="color:var(--texto-3)">${escapar(d.municipio)}, ${escapar(d.departamento)}</small>`;
   $("entrega").innerHTML = dato("Fecha de entrega", escapar(fechaLarga(c.fecha_entrega)))
     + dato("Dirección de entrega", dir(c.entrega))
-    + (c.recolecta ? dato("Dirección de recolecta", dir(c.recolecta)) : "");
+    + (c.recolecta ? dato("Dirección de recolecta", dir(c.recolecta)) : "")
+    + dato("Sale por", c.entrega_metodo === "transporte"
+      ? "Transporte" + (c.entrega_transporte ? ` · ${escapar(c.entrega_transporte)}` : "") + (c.entrega_guia ? ` · guía <b>${escapar(c.entrega_guia)}</b>` : "")
+      : "Mensajero del laboratorio")
+    + (c.recolecta_guia ? dato("Guía de llegada", escapar(c.recolecta_guia)) : "");
   $("archivos").innerHTML = c.archivos.length ? c.archivos.map(a => `
     <div class="archivo"><span class="tipo ${a.tipo === "stl" ? "stl" : ""}">${escapar(a.nombre.split(".").pop().toUpperCase())}</span>
       <span class="nombre-archivo">${escapar(a.nombre)}</span><span class="peso">${tamano(a.tamano)}</span>
@@ -73,8 +77,8 @@ function pintar() {
   $("nuevaPrioridad").value = c.prioridad || 3;
   $("formCancelar").hidden = !(["admin", "supervisor"].includes(usuario.rol) && !["entregada", "cancelada"].includes(c.estado));
   // Recorrido: pasos del flujo de este caso
-  const activos = ["en_area", "en_cola", "sin_tecnico", "asignado", "en_proceso"];
-  const TEXTO_PASO = { en_area: "En el área", en_cola: "En cola", sin_tecnico: "Sin técnico", asignado: "Asignado", en_proceso: "En proceso", terminado: "Hecho", pendiente: "Pendiente" };
+  const activos = ["en_area", "en_cola", "sin_tecnico", "asignado", "en_proceso", "recolectado"];
+  const TEXTO_PASO = { en_area: "En el área", en_cola: "En cola", sin_tecnico: "Sin técnico", asignado: "Asignado", en_proceso: "En proceso", recolectado: "Recolectado · en camino", terminado: "Hecho", pendiente: "Pendiente" };
   $("bloqueRecorrido").hidden = !c.recorrido.length;
   $("recorrido").innerHTML = c.recorrido.map((p, i) => `
     <li class="${p.estado === "terminado" ? "hecho" : activos.includes(p.estado) ? "ahora" : ""}"><span class="n">${i + 1}</span>
@@ -131,7 +135,7 @@ if (parametros.get("nuevo")) {
     $("avisoNuevo").hidden = false;
     $("avisoNuevo").innerHTML = "<div>" + (caso.tipo_caso === "RP"
       ? `Reapertura <b>${escapar(caso.codigo)}</b> enviada. QA la revisará para definir si aplica garantía o cobro.`
-      : `Solicitud <b>${escapar(caso.codigo)}</b> enviada. ${caso.modalidad === "analogo" ? "Logística programará la recolecta del material." : "El laboratorio ya recibió tus archivos."}`) + "</div>";
+      : `Solicitud <b>${escapar(caso.codigo)}</b> enviada. ${caso.modalidad === "analogo" ? (caso.recolecta_metodo === "transporte" ? "Envía el material por transporte: Logística registrará su llegada." : "Un mensajero pasará por el material en las próximas 2 horas laborales.") : "El laboratorio ya recibió tus archivos."}`) + "</div>";
     history.replaceState(null, "", `caso.html?id=${casoId}`);
   });
 } else cargar();

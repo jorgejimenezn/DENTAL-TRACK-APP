@@ -10,14 +10,14 @@ from fastapi import APIRouter, Depends, Query, Response
 from app.backend import llamar
 from app.esquemas import (AsignacionIn, CatalogoSimple, DiaIn, FlujoIn, IdsIn, ItemActualizar, Modalidad, NombreIn,
                           ParametrosIn, RelacionesMaterialIn)
-from app.seguridad import solo_admin, usuario_actual
+from app.seguridad import lectura_admin, solo_admin, usuario_actual
 
 router = APIRouter(prefix="/config", tags=["Configuración"])
 
 
 # ---------- Catálogos ----------
 @router.get("/catalogos", summary="Todos los catálogos con sus relaciones (incluye inactivos)")
-async def catalogos(u: dict = Depends(solo_admin)):
+async def catalogos(u: dict = Depends(lectura_admin)):
     return await llamar("GET", "/config/catalogos", u)
 
 
@@ -58,7 +58,7 @@ async def actualizar_color(color_id: int, datos: ItemActualizar, u: dict = Depen
 
 # ---------- Flujos ----------
 @router.get("/flujos", summary="Flujos de pasos con cobertura de técnicos")
-async def flujos(u: dict = Depends(solo_admin)):
+async def flujos(u: dict = Depends(lectura_admin)):
     return await llamar("GET", "/config/flujos", u)
 
 
@@ -69,7 +69,7 @@ async def guardar_flujo(datos: FlujoIn, u: dict = Depends(solo_admin)):
 
 # ---------- Asignaciones ----------
 @router.get("/asignaciones", summary="Áreas y tipos de trabajo que atiende cada empleado")
-async def asignaciones(u: dict = Depends(solo_admin)):
+async def asignaciones(u: dict = Depends(lectura_admin)):
     return await llamar("GET", "/config/asignaciones", u)
 
 

@@ -81,7 +81,8 @@ class ClienteActualizar(_ClienteBase):
     pass
 
 
-RolInterno = Literal["admin", "supervisor", "operaciones", "ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"]
+RolInterno = Literal["admin", "supervisor", "operaciones", "ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero",
+                     "demo"]
 
 
 class _EmpleadoBase(BaseModel):
@@ -187,7 +188,11 @@ class _EntregaIn(BaseModel):
     fecha_entrega: date
     emergencia: bool = Field(default=False, description="Prioridad 1: permite la fecha mínima de emergencia")
     direccion_entrega: DireccionSelIn
-    direccion_recolecta: DireccionSelIn | None = Field(default=None, description="Solo analógico. Vacío = misma de entrega")
+    direccion_recolecta: DireccionSelIn | None = Field(default=None, description="Solo analógico con mensajero. Vacío = misma de entrega")
+    recolecta_metodo: Literal["mensajero", "transporte"] | None = Field(
+        default=None, description="Analógico: mensajero del laboratorio (plazo 2 h) o el cliente lo envía por transporte")
+    entrega_metodo: Literal["mensajero", "transporte"] = Field(
+        default="mensajero", description="Salida del trabajo terminado. Transporte pide número de guía al finalizar")
     instrucciones: str | None = Field(default=None, max_length=2000)
     archivo_ids: list[str] = Field(default=[], description="IDs devueltos por POST /archivos (STL obligatorio en digital)")
 
@@ -221,6 +226,8 @@ class TerminarIn(BaseModel):
     receptor: str | None = Field(default=None, max_length=120, description="Obligatorio al entregar: quién recibe")
     caja_color_id: int | None = Field(default=None, description="Ingresos: color de caja (GET /config/arbol → colores_caja)")
     caja_numero: str | None = Field(default=None, max_length=20, description="Ingresos: número de caja")
+    guia: str | None = Field(default=None, max_length=60, description="Entrega por transporte: número de guía (obligatorio)")
+    transporte: str | None = Field(default=None, max_length=80, description="Entrega por transporte: empresa (opcional)")
 
 
 class RechazoIn(BaseModel):
@@ -244,7 +251,13 @@ class ModificacionIn(BaseModel):
     color: SeleccionIn | None = None
     piezas: list[int] = Field(min_length=1)
     fecha_entrega: date
+    entrega_metodo: Literal["mensajero", "transporte"] | None = Field(default=None, description="Salida del trabajo")
     nota: str = Field(min_length=3, max_length=250, description="Qué se corrigió y por qué")
+
+
+class MetodoIn(BaseModel):
+    metodo: Literal["mensajero", "transporte"]
+    motivo: str = Field(min_length=3, max_length=200)
 
 
 class CancelarPasoIn(BaseModel):

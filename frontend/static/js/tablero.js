@@ -1,5 +1,5 @@
 /* ============ Tablero Kanban del doctor (el personal puede verlo por cliente) ============ */
-const usuario = iniciarPagina(["doctor", "admin", "supervisor", "ingresos"]);
+const usuario = iniciarPagina(["doctor", "admin", "supervisor", "ingresos", "demo"]);
 if (!usuario) throw new Error("sin acceso");
 const esDoctor = usuario.rol === "doctor";
 const fecha = s => new Date(s + "T12:00:00").toLocaleDateString("es-GT", { day: "numeric", month: "short" });

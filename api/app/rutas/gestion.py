@@ -15,8 +15,8 @@ from app.seguridad import requiere_rol, solo_admin, usuario_actual
 
 router = APIRouter(tags=["Gestión"])
 supervision = requiere_rol("admin", "supervisor")
-metricas = requiere_rol("admin", "supervisor", "operaciones")
-cobranza = requiere_rol("admin", "supervisor", "facturacion", "operaciones")
+metricas = requiere_rol("admin", "supervisor", "operaciones", "demo")
+cobranza = requiere_rol("admin", "supervisor", "facturacion", "operaciones", "demo")
 
 
 @router.get("/config/areas-operacion", summary="Áreas con su modo lote, simultáneos y meta de horas")
@@ -30,7 +30,7 @@ async def guardar_area(area_id: int, datos: AreaOperacionIn, u: dict = Depends(s
 
 
 @router.get("/ausencias", summary="Ausencias registradas (últimos 30 días y futuras)")
-async def ausencias(todas: bool = False, u: dict = Depends(requiere_rol("admin", "supervisor", "operaciones"))):
+async def ausencias(todas: bool = False, u: dict = Depends(requiere_rol("admin", "supervisor", "operaciones", "demo"))):
     return await llamar("GET", "/ausencias", u, params={"todas": str(todas).lower()})
 
 

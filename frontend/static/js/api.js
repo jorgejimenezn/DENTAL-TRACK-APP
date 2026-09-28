@@ -50,6 +50,8 @@ class ErrorApi extends Error {
 /** Llamada a la API con el token de la sesión. */
 async function api(metodo, ruta, cuerpo) {
   const sesion = Sesion.obtener();
+  if (metodo !== "GET" && sesion?.usuario?.rol === "demo" && document.body.classList.contains("solo-lectura"))
+    throw new Error("Modo demostración: esta pantalla es solo de consulta");
   const opciones = { method: metodo, headers: {} };
   if (sesion?.token) opciones.headers.Authorization = "Bearer " + sesion.token;
   if (cuerpo !== undefined) {
@@ -103,7 +105,7 @@ async function descargarArchivo(ruta, nombre) {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
-const ROLES_CAPTURA = ["admin", "supervisor", "ingresos"];
+const ROLES_CAPTURA = ["admin", "supervisor", "ingresos", "demo"];
 
 /** Abre un PDF protegido en otra pestaña (se abre antes de pedirlo para que el navegador no la bloquee). */
 async function abrirPdf(ruta, nombre) {
@@ -161,7 +163,7 @@ function fechaHora(valor) {
 
 const NOMBRES_ROL = {
   admin: "Administrador", supervisor: "Supervisor", operaciones: "Operaciones", mensajero: "Mensajero", ingresos: "Ingresos", tecnico: "Técnico", qa: "Control de calidad",
-  facturacion: "Facturación", logistica: "Logística", doctor: "Doctor",
+  facturacion: "Facturación", logistica: "Logística", doctor: "Doctor", demo: "Demostración",
 };
 
 function debounce(fn, ms = 300) {

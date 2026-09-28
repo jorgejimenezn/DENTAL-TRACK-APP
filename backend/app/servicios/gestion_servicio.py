@@ -16,7 +16,7 @@ from app.servicios.auditoria_servicio import AuditoriaServicio
 from app.servicios.recorrido import Motor, tipo_area
 
 SUPERVISION = {"admin", "supervisor"}
-LECTURA_METRICAS = {"admin", "supervisor", "operaciones"}
+LECTURA_METRICAS = {"admin", "supervisor", "operaciones", "demo"}
 COBROS = {"admin", "supervisor", "facturacion", "operaciones"}
 RANGOS = [("hoy", "Hoy", 0, 0), ("1-5", "1 a 5 días", 1, 5), ("6-10", "6 a 10 días", 6, 10),
           ("11-15", "11 a 15 días", 11, 15), ("15+", "Más de 15 días", 16, 10_000)]
@@ -76,7 +76,7 @@ class GestionServicio:
                 "vigente": a.desde <= hoy <= a.hasta, "pasada": a.hasta < hoy}
 
     def ausencias(self, actor: Actor, incluir_pasadas: bool = False) -> list[dict]:
-        self._exigir(actor, SUPERVISION | {"operaciones"})
+        self._exigir(actor, SUPERVISION | {"operaciones", "demo"})
         consulta = select(Ausencia).options(selectinload(Ausencia.usuario)).order_by(Ausencia.desde.desc())
         if not incluir_pasadas:
             consulta = consulta.where(Ausencia.hasta >= _hoy() - timedelta(days=30))
@@ -118,7 +118,7 @@ class GestionServicio:
 
     # ================= Cobros =================
     def cobros(self, actor: Actor) -> dict:
-        self._exigir(actor, COBROS)
+        self._exigir(actor, COBROS | {"demo"})
         hoy = _hoy()
         filas = self.sesion.scalars(select(Solicitud).options(selectinload(Solicitud.cliente))
                                     .where(Solicitud.pago_estado == "pendiente")
@@ -200,7 +200,23 @@ class GestionServicio:
                                                                      SolicitudPaso.tecnico_id.in_(ausentes_ids or [0])))]
         devoluciones_hoy = self.sesion.scalar(select(func.count()).select_from(SolicitudHistorial).where(
             SolicitudHistorial.fecha >= _inicio(hoy), SolicitudHistorial.nota.like("QA devolvió%"))) or 0
+        # Recolectas con mensajero que aún no se recogen: plazo de 2 horas laborales
+        from app.core.jornada import Jornada
+        from app.servicios.recorrido import PLAZO_RECOLECTA_HORAS, ahora
+        jornada, momento = Jornada(self.sesion), ahora()
+        recolectas = []
+        for p in self.sesion.scalars(select(SolicitudPaso).where(SolicitudPaso.etapa == "recolecta",
+                                                                 SolicitudPaso.estado.in_(["en_area", "asignado"]))):
+            if p.solicitud.recolecta_metodo == "transporte" or not p.activado_en:
+                continue
+            limite = jornada.sumar(p.activado_en, PLAZO_RECOLECTA_HORAS)
+            recolectas.append({"id": p.solicitud_id, "codigo": p.solicitud.codigo, "cliente": p.solicitud.cliente.razon_social,
+                               "mensajero": _nombre(p.tecnico), "limite": limite, "vencida": momento > limite})
+        recolectas.sort(key=lambda r: r["limite"])
         vivo = {
+            "recolectas_pendientes": len(recolectas),
+            "recolectas_vencidas": sum(1 for r in recolectas if r["vencida"]),
+            "recolectas_lista": recolectas[:30],
             "vigentes": len(vigentes),
             "vencidos": sum(1 for s in vigentes if s.fecha_entrega < hoy),
             "vencen_hoy": sum(1 for s in vigentes if s.fecha_entrega == hoy),

@@ -44,7 +44,7 @@
 <script src="js/api.js"></script>
 <script src="js/layout.js"></script>
 <script>
-if (!iniciarPagina(["admin", "supervisor"])) throw new Error("sin acceso");
+if (!iniciarPagina(["admin", "supervisor", "demo"])) throw new Error("sin acceso");
 const hoy = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })();
 const fecha = s => new Date(s + "T12:00:00").toLocaleDateString("es-GT", { weekday: "short", day: "numeric", month: "short" });
 $("aDesde").value = $("aHasta").value = hoy;
