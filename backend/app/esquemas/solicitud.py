@@ -81,6 +81,8 @@ class _EntregaIn(BaseModel):
     entrega_metodo: Metodo = Field(default="mensajero", description="Salida del trabajo: mensajero o transporte (pide número de guía)")
     instrucciones: str | None = Field(default=None, max_length=2000)
     archivo_ids: list[str] = Field(default=[], max_length=12, description="IDs devueltos por POST /archivos")
+    motivo_manual: str | None = Field(default=None, max_length=200,
+                                      description="Personal del laboratorio: por qué se captura la orden (opcional)")
 
     @field_validator("piezas")
     @classmethod
@@ -89,6 +91,11 @@ class _EntregaIn(BaseModel):
         if invalidas:
             raise ValueError(f"Piezas no válidas (FDI): {', '.join(map(str, invalidas))}")
         return sorted(set(v))
+
+    @field_validator("motivo_manual")
+    @classmethod
+    def limpiar_motivo_manual(cls, v: str | None) -> str | None:
+        return _texto(v)
 
     @field_validator("instrucciones")
     @classmethod
@@ -224,6 +231,7 @@ class SolicitudResumen(BaseModel):
     creado_en: datetime
     caso_origen: str | None
     fuera_catalogo: bool
+    manual: bool = False  # orden capturada por el laboratorio (el doctor la ve como "Creada por el laboratorio")
     area_actual: str | None = None
     caja: str | None = None
     pasos_total: int = 0
@@ -233,6 +241,7 @@ class SolicitudResumen(BaseModel):
 
 class SolicitudOut(SolicitudResumen):
     clinica: str | None
+    manual_motivo: str | None = None
     colores_pieza: list[ColorPiezaOut] = []
     creado_por: str | None
     caso_origen_id: int | None

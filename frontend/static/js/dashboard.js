@@ -38,6 +38,7 @@ function pintarPeriodo(p) {
   $("kpisVolumen").innerHTML = kpi("Casos recibidos", num(p.creados), `${num(p.cn)} CN · ${num(p.rp)} RP`)
     + kpi("Digital / analógico", `${num(p.digital)} / ${num(p.analogo)}`)
     + kpi("Emergencias", num(p.emergencias))
+    + kpi("Órdenes manuales", num(p.manuales), p.creados ? `${pct(100 * p.manuales / p.creados)} de lo recibido` : "capturadas por el laboratorio")
     + kpi("Tasa de reapertura", p.creados ? pct(100 * p.rp / p.creados) : "—", "RP sobre casos recibidos");
   $("tablaAreas").innerHTML = p.por_area.map(a => `<tr>
       <td class="principal"><b>${escapar(a.area)}</b></td>

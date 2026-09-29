@@ -137,7 +137,7 @@ class ProduccionServicio:
             color=(f"{s.guia} · {s.color}" + (" · por pieza: " + ", ".join(f"{c['pieza']} {c['color']}" for c in s.colores_pieza)
                                                if s.colores_pieza else "")) if s.color else None, piezas=s.piezas or [], modalidad=s.modalidad,
             emergencia=s.emergencia, prioridad=s.prioridad, fecha_entrega=s.fecha_entrega,
-            instrucciones=s.instrucciones, fuera_catalogo=s.fuera_catalogo, area_id=p.area_id, area=p.area.nombre,
+            instrucciones=s.instrucciones, fuera_catalogo=s.fuera_catalogo, manual=bool(s.manual), area_id=p.area_id, area=p.area.nombre,
             etapa=p.etapa, etapa_texto=NOMBRE_ETAPA[p.etapa], estado=p.estado, tecnico=_nombre(p.tecnico),
             activado_en=p.activado_en, asignado_en=p.asignado_en, iniciado_en=p.iniciado_en, vuelta=p.vuelta,
             reapertura_tipo=s.reapertura_tipo, reapertura_motivo=s.reapertura_motivo,

@@ -144,6 +144,14 @@ Al crear la solicitud (doctor o personal) se indica:
 
 "No se pudo" (con motivo) regresa la recolecta o entrega a Logística. La guía de salida aparece en el detalle del caso (también para el doctor) y en la orden PDF.
 
+## Órdenes manuales
+
+Administración, Supervisión, Ingresos y Facturación (y el perfil demo) pueden crear una orden desde **Nueva solicitud** eligiendo el cliente, con un **motivo** opcional (ej. "pedido por teléfono").
+- Quedan marcadas como **Orden manual** en Solicitudes (con filtro "Solo órdenes manuales"), tablero, bandejas, detalle (quién la capturó y el motivo) y en la orden PDF.
+- El doctor las ve en su historial como **"Creada por el laboratorio"**, sin nombres del personal ni el motivo interno.
+- El Dashboard (Volumen) cuenta cuántas órdenes del periodo fueron manuales.
+- Al actualizar, los casos existentes capturados por el personal se marcan como manuales automáticamente.
+
 ## Perfil de demostración
 
 Rol `demo` (Empleados → Rol **Demostración**, sin áreas). También puede crearse al arrancar con las variables opcionales del backend `DEMO_EMAIL` y `DEMO_PASSWORD`.

@@ -50,9 +50,11 @@ async def tablero(dias: int = Query(15, ge=1, le=90), q: str | None = None, clie
 @router.get("/solicitudes", summary="Listar solicitudes (vigentes=true para el tablero, false para el historial)")
 async def listar(vigentes: bool | None = None, estado: str | None = None, tipo_caso: str | None = None,
                  q: str | None = None, cliente_id: int | None = None, limite: int = Query(200, ge=1, le=500),
+                 manual: bool | None = Query(None, description="true: solo órdenes manuales (capturadas por el laboratorio)"),
                  u: dict = Depends(usuario_actual)):
     params = {"vigentes": None if vigentes is None else str(vigentes).lower(), "estado": estado,
-              "tipo_caso": tipo_caso, "q": q, "cliente_id": cliente_id, "limite": limite}
+              "tipo_caso": tipo_caso, "q": q, "cliente_id": cliente_id, "limite": limite,
+              "manual": None if manual is None else str(manual).lower()}
     return await llamar("GET", "/solicitudes", u, params=params)
 
 

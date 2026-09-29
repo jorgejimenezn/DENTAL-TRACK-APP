@@ -1,5 +1,6 @@
 /* ============ Formulario de reapertura (RP) de un caso entregado ============ */
 const usuario = iniciarPagina(["doctor", ...ROLES_CAPTURA]);
+if (usuario && usuario.rol !== "doctor") $("campoManual").hidden = false;
 if (!usuario) throw new Error("sin acceso");
 const origenId = Number(new URLSearchParams(location.search).get("caso"));
 const AYUDA_TIPO = {
@@ -78,6 +79,7 @@ $("form").onsubmit = async e => {
   const analogo = modalidad.valor() === "analogo";
   const datos = {
     tipo_reapertura: tipoReapertura, motivo: $("motivo").value.trim(),
+    motivo_manual: usuario.rol === "doctor" ? null : ($("motivoManual").value.trim() || null),
     modalidad: modalidad.valor(), piezas: odontograma.lista(), fecha_entrega: fecha.valor(),
     emergencia: $("emergencia").checked, direccion_entrega: dirEntrega.valor(),
     direccion_recolecta: !analogo || logistica.recolecta() === "transporte" ? null : ($("recolectaIgual").checked ? { tipo: "misma_que_entrega" } : dirRecolecta.valor()),

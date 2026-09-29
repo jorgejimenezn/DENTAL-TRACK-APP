@@ -529,3 +529,6 @@ a.btn{text-decoration:none}
 
 /* Perfil de demostración: pantallas de administración en solo consulta */
 .aviso-demo{margin:0 0 16px;padding:10px 14px;border-radius:10px;border:1px dashed var(--azul);background:var(--azul-suave);font-size:13px;color:var(--texto)}
+
+/* Orden manual (capturada por el laboratorio) */
+.badge.morado{background:rgba(168,85,247,.15);color:#c084fc;border:1px solid rgba(168,85,247,.35)}

@@ -105,7 +105,12 @@ async function descargarArchivo(ruta, nombre) {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
-const ROLES_CAPTURA = ["admin", "supervisor", "ingresos", "demo"];
+const ROLES_CAPTURA = ["admin", "supervisor", "ingresos", "facturacion", "demo"];
+/** Marca de orden manual: el personal la ve como "Orden manual"; el doctor, como "Creada por el laboratorio". */
+function etiquetaManual(caso, rol) {
+  if (!caso.manual) return "";
+  return rol === "doctor" ? '<span class="badge morado">Creada por el laboratorio</span>' : '<span class="badge morado">Orden manual</span>';
+}
 
 /** Abre un PDF protegido en otra pestaña (se abre antes de pedirlo para que el navegador no la bloquee). */
 async function abrirPdf(ruta, nombre) {

@@ -10,6 +10,8 @@ FROM (VALUES
   ('Marcela', 'Molina', 'marcela.molina@demo.gt', '$2b$12$YuoPfSs1Dd7HYMuWB4Gz8OgIhcMa1ebtFnQ5lbNTj1v55TAzcru7u'),
   ('Luis', 'Chacon', 'luis.chacon@demo.gt', '$2b$12$rVAjuegsY3O3tjsfhFE89epUPkRBUMeoZTcSytgrCE/kqZoQGVZjK'),
   ('Stefan', 'Bruns', 'stefan.bruns@demo.gt', '$2b$12$i7RloRuSbuWS795mxLbo5e1hAiLlom0zQCwR7uDTUdm3DjyqKyyS6'),
-  ('Enrique', 'Meza', 'enrique.meza@demo.gt', '$2b$12$X5BMOf.Ay.6lmWomOzSyyeoUCoKssQybwvCrgrxVuDxTVbBjDJjpi')
+  ('Enrique', 'Meza', 'enrique.meza@demo.gt', '$2b$12$X5BMOf.Ay.6lmWomOzSyyeoUCoKssQybwvCrgrxVuDxTVbBjDJjpi'),
+  ('Axel', 'Aguilar', 'axel.aguilar@demo.gt', '$2b$12$PwKWODAicwpJK7E75gYTy..o5CrvutLMQ2kvR90USr.EBLyfsuU9a'),
+  ('Leslie', 'Perez', 'leslie.perez@demo.gt', '$2b$12$r6epjp7rHUcGF78dNJqCk.IblkATEXzpQYlTZT7Sf8ogHlyZ42XMW')
 ) AS v(nombre, apellido, email, hash)
 WHERE NOT EXISTS (SELECT 1 FROM usuarios u WHERE lower(u.email) = lower(v.email));

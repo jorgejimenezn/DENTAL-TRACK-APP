@@ -35,7 +35,7 @@ const MENU = [
   { href: "ausencias.html", texto: "Ausencias", icono: "ausencias", roles: ["admin", "supervisor", "demo"] },
   { href: "cobros.html", texto: "Cobros", icono: "cobros", roles: ["admin", "supervisor", "operaciones", "facturacion", "demo"] },
   { grupo: "Solicitudes", roles: null },
-  { href: "nueva-solicitud.html", texto: "Nueva solicitud", icono: "solicitud", roles: ["doctor", "admin", "supervisor", "ingresos", "demo"] },
+  { href: "nueva-solicitud.html", texto: "Nueva solicitud", icono: "solicitud", roles: ["doctor", "admin", "supervisor", "ingresos", "facturacion", "demo"] },
   { href: "bandeja.html", texto: "Mi bandeja", icono: "bandeja", roles: ["ingresos", "tecnico", "qa", "facturacion", "logistica"] },
   { href: "bandeja.html", texto: "Mis rutas", icono: "bandeja", roles: ["mensajero"] },
   { href: "bandeja.html", texto: "Bandeja del laboratorio", icono: "bandeja", roles: ["admin", "supervisor"] },

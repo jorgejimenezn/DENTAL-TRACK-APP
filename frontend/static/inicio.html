@@ -87,7 +87,7 @@
            + tarjeta("mis-metricas.html", "Mis métricas", "Tu avance: terminados, tiempos frente a la meta y próximos vencimientos.")
            + (usuario.rol === "facturacion" ? tarjeta("cobros.html", "Cobros", "Facturas pendientes de pago por antigüedad.") : "")
            + tarjeta("casos.html", "Solicitudes", "Consulta de casos nuevos y reaperturas.")
-           + (usuario.rol === "ingresos" ? tarjeta("nueva-solicitud.html", "Nueva solicitud", "Capturar un caso a nombre de un cliente.") : "");
+           + (["ingresos", "facturacion"].includes(usuario.rol) ? tarjeta("nueva-solicitud.html", "Nueva solicitud", "Orden manual a nombre de un cliente.") : "");
     }
     $("tarjetas").innerHTML = html;
   }

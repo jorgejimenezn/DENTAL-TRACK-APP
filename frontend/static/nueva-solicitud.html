@@ -22,12 +22,17 @@
     <form id="form" novalidate>
       <!-- 0. Cliente (solo personal del laboratorio) -->
       <section class="card paso-card" id="bloqueCliente" hidden>
-        <h2><span class="n">0</span>Cliente<span class="sub">Captura a nombre de un cliente</span></h2>
+        <h2><span class="n">0</span>Cliente<span class="sub">Orden manual a nombre de un cliente</span></h2>
         <div class="campo" id="campoCliente">
           <label>Cliente <span class="req">*</span></label>
           <input id="buscarCliente" list="listaClientes" placeholder="Escribe la razón social o la clínica" autocomplete="off">
           <datalist id="listaClientes"></datalist>
           <div class="msg-error">Elige un cliente de la lista.</div>
+        </div>
+        <div class="campo" style="margin-top:12px">
+          <label>Motivo de la orden manual</label>
+          <input id="motivoManual" maxlength="200" placeholder="Opcional, ej. pedido por teléfono, llegó el modelo sin solicitud" autocomplete="off">
+          <div class="ayuda" style="font-size:11px;color:var(--texto-3);margin-top:4px">Queda marcada como <b>Orden manual</b>. El doctor la verá en su historial como "Creada por el laboratorio".</div>
         </div>
       </section>
 

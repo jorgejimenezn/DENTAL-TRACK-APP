@@ -214,6 +214,7 @@ $("form").onsubmit = async e => {
   const analogo = modalidad.valor() === "analogo";
   const datos = {
     cliente_id: esPersonal ? clienteId : null,
+    motivo_manual: esPersonal ? ($("motivoManual").value.trim() || null) : null,
     modalidad: modalidad.valor(),
     paciente: $("paciente").value.trim(),
     referencia_clinica: $("referencia").value.trim() || null,

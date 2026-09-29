@@ -25,7 +25,7 @@ from app.servicios.configuracion_servicio import ZONA, CalendarioServicio
 from app.servicios.recorrido import NOMBRE_ETAPA, Motor
 
 # Personal que puede ingresar solicitudes a nombre de un cliente (pedidos por teléfono, etc.)
-ROLES_CAPTURA = {"admin", "supervisor", "ingresos", "demo"}  # demo: captura para demostraciones
+ROLES_CAPTURA = {"admin", "supervisor", "ingresos", "facturacion", "demo"}  # demo: captura para demostraciones
 # Quién puede mover estados manualmente mientras no existen las bandejas de cada área
 ROLES_ESTADO = {"admin", "supervisor"}
 
@@ -291,7 +291,10 @@ class SolicitudServicio:
                 recolecta_municipio=recolecta and recolecta.municipio,
                 recolecta_direccion=recolecta and recolecta.direccion,
                 recolecta_metodo=datos.recolecta_metodo, entrega_metodo=datos.entrega_metodo,
-                instrucciones=datos.instrucciones),
+                instrucciones=datos.instrucciones,
+                # capturada por el personal = orden manual
+                manual=not self._es_doctor(actor),
+                manual_motivo=None if self._es_doctor(actor) else datos.motivo_manual),
             "archivos": archivos,
         }
 
@@ -316,7 +319,7 @@ class SolicitudServicio:
             estado="recibida",  # el motor lo ajusta al primer paso del recorrido
             paciente=datos.paciente, referencia_clinica=datos.referencia_clinica,
             doctor_tratante=datos.doctor_tratante, **catalogo, **comun["campos"])
-        nota = "Solicitud creada" + ({"mensajero": " · se generó recolecta para Logística",
+        nota = ("Orden manual creada por el laboratorio" if solicitud.manual else "Solicitud creada") + ({"mensajero": " · se generó recolecta para Logística",
                                       "transporte": " · el cliente enviará el material por transporte"}
                                      .get(datos.recolecta_metodo, ""))
         self._guardar(solicitud, comun["archivos"], nota, actor)
@@ -347,7 +350,8 @@ class SolicitudServicio:
             estado="validacion_qa", caso_origen_id=origen.id, reapertura_tipo=datos.tipo_reapertura,
             reapertura_motivo=datos.motivo, **copia, **comun["campos"])
         tipo = "garantía" if datos.tipo_reapertura == "garantia" else "modificación"
-        self._guardar(solicitud, comun["archivos"], f"Reapertura de {origen.codigo} por {tipo} · pendiente de QA", actor)
+        self._guardar(solicitud, comun["archivos"], f"Reapertura de {origen.codigo} por {tipo} · pendiente de QA"
+                      + (" · orden manual creada por el laboratorio" if solicitud.manual else ""), actor)
         self.auditoria.registrar("reabrir", "solicitud", solicitud.id, actor, {
             "codigo": solicitud.codigo, "origen": origen.codigo, "tipo": datos.tipo_reapertura,
             "cliente": cliente.razon_social})
@@ -410,6 +414,7 @@ class SolicitudServicio:
             prioridad=None if self._es_doctor(actor) else s.prioridad,  # el nivel del cliente no se muestra al doctor
             fecha_entrega=s.fecha_entrega, creado_en=s.creado_en,
             caso_origen=s.caso_origen.codigo if s.caso_origen else None, fuera_catalogo=s.fuera_catalogo,
+            manual=bool(s.manual),
             area_actual=(lambda p: p.area.nombre if p else None)(Motor.paso_actual(s)),
             caja=None if self._es_doctor(actor) or not s.caja_numero else f"{s.caja_color} {s.caja_numero}",
             pasos_total=len([p for p in s.pasos if p.estado != "omitido"]),
@@ -433,7 +438,7 @@ class SolicitudServicio:
 
     def listar(self, actor: Actor, vigentes: bool | None = None, estado: str | None = None,
                tipo_caso: str | None = None, q: str | None = None, cliente_id: int | None = None,
-               limite: int = 200) -> list[SolicitudResumen]:
+               limite: int = 200, manual: bool | None = None) -> list[SolicitudResumen]:
         consulta = select(Solicitud).options(selectinload(Solicitud.cliente), selectinload(Solicitud.caso_origen),
                                              selectinload(Solicitud.pasos), selectinload(Solicitud.historial))
         if self._es_doctor(actor):
@@ -448,6 +453,8 @@ class SolicitudServicio:
             consulta = consulta.where(Solicitud.estado == estado)
         if tipo_caso:
             consulta = consulta.where(Solicitud.tipo_caso == tipo_caso.upper())
+        if manual is not None:
+            consulta = consulta.where(Solicitud.manual.is_(manual))
         if q:
             patron = f"%{q.strip()}%"
             condiciones = [Solicitud.codigo.ilike(patron), Solicitud.paciente.ilike(patron),
@@ -467,7 +474,10 @@ class SolicitudServicio:
                                           .order_by(Solicitud.id))
         nombre = lambda u: f"{u.nombre} {u.apellido}".strip() if u else None  # noqa: E731
         return SolicitudOut(
-            **self._resumen(s, actor), clinica=s.cliente.clinica, creado_por=nombre(s.creado_por),
+            **self._resumen(s, actor), clinica=s.cliente.clinica,
+            # el doctor no ve nombres del personal: una orden manual aparece como "Creada por el laboratorio"
+            creado_por=("Laboratorio" if s.manual else nombre(s.creado_por)) if self._es_doctor(actor) else nombre(s.creado_por),
+            manual_motivo=None if self._es_doctor(actor) else s.manual_motivo,
             caso_origen_id=s.caso_origen_id, reapertura_tipo=s.reapertura_tipo,
             reapertura_motivo=s.reapertura_motivo,
             qa_clasificacion={"garantia_total": "Garantía total", "garantia_parcial_sin_cobro": "Garantía parcial sin cobro",
@@ -491,7 +501,10 @@ class SolicitudServicio:
             archivos=[ArchivoOut(id=a.mongo_id, nombre=a.nombre, tipo=a.tipo, tamano=a.tamano, subido_en=a.subido_en)
                       for a in s.archivos],
             historial=[HistorialOut(estado=h.estado, estado_texto=ESTADOS[h.estado][0], nota=h.nota,
-                                    usuario=nombre(h.usuario), fecha=h.fecha) for h in s.historial],
+                                    # el doctor solo ve su propio nombre; el personal aparece como "Laboratorio"
+                                    usuario=(nombre(h.usuario) if h.usuario and h.usuario.rol == ROL_CLIENTE else
+                                             "Laboratorio" if h.usuario else None) if self._es_doctor(actor)
+                                    else nombre(h.usuario), fecha=h.fecha) for h in s.historial],
             reaperturas=[CasoRef(id=r.id, codigo=r.codigo, estado=r.estado, estado_texto=ESTADOS[r.estado][0],
                                  creado_en=r.creado_en) for r in reaperturas],
             puede_reabrir=puede, motivo_no_reabrir=motivo, factura_numero=s.factura_numero,

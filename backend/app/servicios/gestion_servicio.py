@@ -291,6 +291,7 @@ class GestionServicio:
             "digital": sum(1 for s in creados if s.modalidad == "digital"),
             "analogo": sum(1 for s in creados if s.modalidad == "analogo"),
             "emergencias": sum(1 for s in creados if s.emergencia),
+            "manuales": sum(1 for s in creados if s.manual),
             "por_tipo": sorted(({"nombre": k, "total": v} for k, v in por_tipo.items()), key=lambda x: -x["total"]),
             "rp_clasificacion": sorted(({"nombre": k, "total": v} for k, v in por_clasificacion.items()), key=lambda x: -x["total"]),
             "rp_motivos": sorted(({"nombre": k, "total": v} for k, v in por_motivo.items()), key=lambda x: -x["total"]),

@@ -37,6 +37,7 @@ class PasoBandeja(BaseModel):
     fecha_entrega: date
     instrucciones: str | None
     fuera_catalogo: bool
+    manual: bool = False
     area_id: int
     area: str
     etapa: str

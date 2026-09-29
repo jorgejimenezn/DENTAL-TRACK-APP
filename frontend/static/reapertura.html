@@ -41,6 +41,11 @@
           <textarea id="motivo" rows="4" maxlength="1000" placeholder="Ej. La corona quedó alta en oclusión y el contacto con la 12 está abierto."></textarea>
           <div class="msg-error">Describe el motivo (mínimo 5 caracteres).</div>
         </div>
+        <div class="campo" id="campoManual" hidden style="margin-top:12px">
+          <label>Motivo de la orden manual</label>
+          <input id="motivoManual" maxlength="200" placeholder="Opcional, ej. el doctor la pidió por teléfono" autocomplete="off">
+          <div class="ayuda" style="font-size:11px;color:var(--texto-3);margin-top:4px">La capturas a nombre del cliente: queda marcada como <b>Orden manual</b>.</div>
+        </div>
         <div class="aviso azul">QA revisará la solicitud y la clasificará como garantía total, garantía parcial sin cobro, garantía parcial con cobro o cobro, con su motivo. Después entra a producción.</div>
       </section>
 

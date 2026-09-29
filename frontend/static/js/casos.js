@@ -17,13 +17,14 @@ async function cargar() {
   if (vista) params.set("vigentes", vista);
   if ($("fTexto").value.trim()) params.set("q", $("fTexto").value.trim());
   if ($("fTipo").value) params.set("tipo_caso", $("fTipo").value);
+  if ($("fOrigen").value) params.set("manual", $("fOrigen").value);
   const columnas = esDoctor ? 5 : 6;
   try {
     const casos = await api("GET", "/solicitudes?" + params);
     $("tabla").innerHTML = casos.length ? casos.map(c => `
       <tr>
         <td class="principal"><a href="caso.html?id=${c.id}" class="codigo-caso">${escapar(c.codigo)}</a>
-          ${c.emergencia ? ' <span class="badge rojo">EMERGENCIA</span>' : ""}
+          ${c.emergencia ? ' <span class="badge rojo">EMERGENCIA</span>' : ""} ${etiquetaManual(c, usuario.rol)}
           <span class="sub">${escapar(c.paciente)}${c.caso_origen ? ` · reapertura de ${escapar(c.caso_origen)}` : ""}</span></td>
         ${esDoctor ? "" : `<td data-label="Cliente">${escapar(c.cliente)}${c.prioridad ? `<span class="sub">Prioridad ${c.prioridad}</span>` : ""}</td>`}
         <td data-label="Trabajo">${escapar(c.trabajo)}<span class="sub">Piezas ${escapar(c.piezas.join(", "))}</span></td>
@@ -47,4 +48,6 @@ $("pestanas").addEventListener("click", e => {
 });
 $("fTexto").addEventListener("input", debounce(cargar, 300));
 $("fTipo").onchange = cargar;
+$("fOrigen").onchange = cargar;
+if (esDoctor) $("fOrigen").closest(".campo").remove();
 cargar();

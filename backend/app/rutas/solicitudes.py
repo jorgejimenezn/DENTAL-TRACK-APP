@@ -60,8 +60,9 @@ def tablero(dias: int = Query(15, ge=1, le=90), q: str | None = None, cliente_id
 @router.get("/solicitudes", response_model=list[SolicitudResumen])
 def listar(vigentes: bool | None = None, estado: str | None = None, tipo_caso: str | None = None,
            q: str | None = None, cliente_id: int | None = None, limite: int = Query(200, ge=1, le=500),
+           manual: bool | None = None,
            actor: Actor = Depends(obtener_actor), s: SolicitudServicio = Depends(_servicio)):
-    return s.listar(actor, vigentes, estado, tipo_caso, q, cliente_id, limite)
+    return s.listar(actor, vigentes, estado, tipo_caso, q, cliente_id, limite, manual)
 
 
 @router.post("/solicitudes", response_model=SolicitudOut, status_code=201)

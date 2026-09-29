@@ -39,6 +39,7 @@ function tarjeta(p, { actual = false, mostrarTecnico = false } = {}) {
     p.emergencia ? '<span class="badge rojo">EMERGENCIA</span>' : "",
     p.tipo_caso === "RP" ? '<span class="badge azul">Reapertura</span>' : "",
     p.fuera_catalogo ? '<span class="badge azul">Fuera de catálogo</span>' : "",
+    p.manual ? '<span class="badge morado">Orden manual</span>' : "",
     p.vuelta > 1 ? `<span class="badge rojo">Retrabajo ${p.vuelta - 1}</span>` : "",
     p.modalidad === "analogo" ? '<span class="badge gris">Analógico</span>' : '<span class="badge gris">Digital</span>',
   ].join("");

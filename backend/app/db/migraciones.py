@@ -124,6 +124,12 @@ def migrar() -> None:
             "ALTER TABLE solicitudes ADD COLUMN entrega_guia VARCHAR(60)",
             "UPDATE solicitudes SET recolecta_metodo = 'mensajero' WHERE modalidad = 'analogo'",
         ]
+    if solicitudes and "manual" not in solicitudes:  # órdenes manuales: las capturadas por el personal
+        pasos += [
+            "ALTER TABLE solicitudes ADD COLUMN manual BOOLEAN NOT NULL DEFAULT FALSE",
+            "ALTER TABLE solicitudes ADD COLUMN manual_motivo VARCHAR(200)",
+            "UPDATE solicitudes s SET manual = TRUE FROM usuarios u WHERE u.id = s.creado_por_id AND u.rol <> 'doctor'",
+        ]
     if pasos_solicitud and "recolectado_en" not in pasos_solicitud:
         pasos.append("ALTER TABLE solicitud_pasos ADD COLUMN recolectado_en TIMESTAMPTZ")
 

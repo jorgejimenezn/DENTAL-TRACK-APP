@@ -193,6 +193,8 @@ class _EntregaIn(BaseModel):
         default=None, description="Analógico: mensajero del laboratorio (plazo 2 h) o el cliente lo envía por transporte")
     entrega_metodo: Literal["mensajero", "transporte"] = Field(
         default="mensajero", description="Salida del trabajo terminado. Transporte pide número de guía al finalizar")
+    motivo_manual: str | None = Field(default=None, max_length=200,
+                                      description="Personal del laboratorio: por qué se captura la orden manual (opcional)")
     instrucciones: str | None = Field(default=None, max_length=2000)
     archivo_ids: list[str] = Field(default=[], description="IDs devueltos por POST /archivos (STL obligatorio en digital)")
 

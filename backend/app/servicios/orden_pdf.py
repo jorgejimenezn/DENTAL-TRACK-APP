@@ -115,7 +115,7 @@ def generar_orden(s, generado_por: str) -> bytes:
 
     # ---------- Encabezado: logo + marca | código ----------
     logo = Image(str(LOGO), width=15 * mm, height=21.4 * mm) if LOGO.exists() else Spacer(15 * mm, 21 * mm)
-    tipo = "REAPERTURA (RP)" if s.tipo_caso == "RP" else "CASO NUEVO (CN)"
+    tipo = ("REAPERTURA (RP)" if s.tipo_caso == "RP" else "CASO NUEVO (CN)") + (" · ORDEN MANUAL" if s.manual else "")
     barras = code128.Code128(s.codigo, barHeight=9 * mm, barWidth=0.9)
     derecha = Table([[Paragraph(f'<font color="{"#1f6feb" if s.tipo_caso == "RP" else "#111111"}"><b>{tipo}</b></font>', E["der"])],
                      [Paragraph(_esc(s.codigo), E["codigo"])], [barras]], colWidths=[62 * mm])
@@ -173,7 +173,10 @@ def generar_orden(s, generado_por: str) -> bytes:
                     [_dato("Paciente", s.paciente), _dato("Doctor tratante", s.doctor_tratante or "Titular de la cuenta"),
                      _dato("Referencia de la clínica", s.referencia_clinica or "—")],
                     [_dato("Cliente Odoo", cli.cliente_odoo or "—"), _dato("Condición", "Crédito" if cli.credito else "Contado"),
-                     _dato("NIT / DPI", cli.numero_documento)]], [ancho / 3] * 3)]
+                     _dato("NIT / DPI", cli.numero_documento)]]
+                   + ([[_dato("Orden manual · capturada por", _nombre(s.creado_por) or "—"),
+                        _dato("Motivo", s.manual_motivo or "—"), _dato("Fecha de captura", s.creado_en.astimezone(ZONA).strftime("%d/%m/%Y %H:%M"))]]
+                      if s.manual else []), [ancho / 3] * 3)]
 
     # ---------- Trabajo ----------
     color_txt = f"{s.guia} · {s.color}" if s.color else "No aplica"

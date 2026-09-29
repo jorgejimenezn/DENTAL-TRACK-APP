@@ -25,6 +25,7 @@ function pintar() {
     `<span class="badge ${COLOR_ESTADO[c.estado] || "gris"}">${escapar(c.estado_texto)}</span>`,
     c.emergencia ? '<span class="badge rojo">EMERGENCIA</span>' : "",
     c.fuera_catalogo ? '<span class="badge azul">Fuera de catálogo</span>' : "",
+    etiquetaManual(c, usuario.rol),
     c.prioridad ? `<span class="badge gris">Prioridad ${c.prioridad}</span>` : "",
   ].join("");
 
@@ -52,7 +53,8 @@ function pintar() {
     + (c.colores_pieza.length ? dato("Color por pieza", c.colores_pieza.map(x => `${x.pieza}: ${escapar(x.color)}`).join(" · "), "ancho") : "")
     + dato("Piezas", `<span class="piezas-lista">${c.piezas.map(p => `<span>${p}</span>`).join("")}</span>`, "ancho")
     + dato("Instrucciones", escapar(c.instrucciones || "Sin instrucciones"), "ancho")
-    + dato("Registrado", `${escapar(fechaHora(c.creado_en))}${c.creado_por ? ` por ${escapar(c.creado_por)}` : ""}`, "ancho");
+    + dato("Registrado", `${escapar(fechaHora(c.creado_en))}${c.creado_por ? ` por ${escapar(c.creado_por)}` : ""}`, "ancho")
+    + (c.manual && c.manual_motivo ? dato("Motivo de la orden manual", escapar(c.manual_motivo), "ancho") : "");
   const dir = d => `${escapar(d.direccion)}<br><small style="color:var(--texto-3)">${escapar(d.municipio)}, ${escapar(d.departamento)}</small>`;
   $("entrega").innerHTML = dato("Fecha de entrega", escapar(fechaLarga(c.fecha_entrega)))
     + dato("Dirección de entrega", dir(c.entrega))

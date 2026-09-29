@@ -46,6 +46,9 @@ class Solicitud(Base):
     cliente_id: Mapped[int] = mapped_column(ForeignKey("clientes.id"), index=True)
     creado_por_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Orden manual: la capturó el personal del laboratorio a nombre del cliente (no el doctor desde su cuenta)
+    manual: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    manual_motivo: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     # --- Reapertura (solo RP) ---
     caso_origen_id: Mapped[int | None] = mapped_column(ForeignKey("solicitudes.id"), nullable=True, index=True)
