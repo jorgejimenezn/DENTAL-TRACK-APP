@@ -6,7 +6,7 @@ también se puede usar directamente desde Swagger.
 from datetime import date, datetime, timedelta
 from pathlib import PurePath
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session, selectinload
 
@@ -18,7 +18,7 @@ from app.esquemas.solicitud import (ArchivoOut, CasoRef, ClienteBreve, Direccion
 from app.modelos import ROL_CLIENTE, Cliente, Direccion, Usuario
 from app.modelos.configuracion import Color, DiaNoLaborable, Flujo, GuiaColor, Material, MotivoRP, TipoTrabajo, Unidad
 from app.modelos.solicitud import (COLUMNAS_TABLERO, ESTADOS, ESTADOS_CERRADOS, Correlativo, PausaCaso, Solicitud,
-                                   SolicitudArchivo, SolicitudHistorial)
+                                   SolicitudArchivo, SolicitudHistorial, SolicitudPaso)
 from app.repositorios.archivo_repo import ArchivoRepositorio
 from app.servicios.auditoria_servicio import AuditoriaServicio
 from app.servicios.configuracion_servicio import ZONA, CalendarioServicio
@@ -28,6 +28,10 @@ from app.servicios.recorrido import NOMBRE_ETAPA, Motor, ahora
 ROLES_CAPTURA = {"admin", "supervisor", "ingresos", "facturacion", "demo"}  # demo: captura para demostraciones
 # Quién puede mover estados manualmente mientras no existen las bandejas de cada área
 ROLES_ESTADO = {"admin", "supervisor"}
+# Ven todas las solicitudes. El resto del personal solo ve los casos en los que participó:
+# técnico y mensajero, los pasos que tuvo asignados o atendió; Logística y QA, además, lo que llegó a su área.
+ROLES_VEN_TODO = {"admin", "supervisor", "operaciones", "demo", "ingresos", "facturacion"}
+ROLES_POR_AREA = {"logistica", "qa"}
 
 EXTENSIONES = {".stl": "stl", ".jpg": "imagen", ".jpeg": "imagen", ".png": "imagen", ".pdf": "pdf"}
 LIMITE_MB = {"stl": 80, "imagen": 15, "pdf": 15}
@@ -76,12 +80,29 @@ class SolicitudServicio:
             raise NoEncontrado("Cliente no encontrado o inactivo")
         return cliente
 
+    def _filtro_personal(self, actor: Actor):
+        """Condición SQL de los casos que puede ver un empleado con acceso restringido (None = ve todos)."""
+        if actor.rol in ROLES_VEN_TODO:
+            return None
+        propio = or_(SolicitudPaso.tecnico_id == actor.id, SolicitudPaso.atendido_por_id == actor.id)
+        if actor.rol in ROLES_POR_AREA:
+            usuario = self.sesion.get(Usuario, actor.id) if actor.id else None
+            areas = [a.id for a in (usuario.areas if usuario else [])]
+            if areas:  # lo que ya llegó a su área (activado), aunque lo haya atendido otro compañero
+                propio = or_(propio, and_(SolicitudPaso.area_id.in_(areas), SolicitudPaso.activado_en.is_not(None)))
+        return Solicitud.pasos.any(propio)
+
     def _visible(self, solicitud_id: int, actor: Actor) -> Solicitud:
         solicitud = self.sesion.get(Solicitud, solicitud_id)
         if not solicitud:
             raise NoEncontrado("Solicitud no encontrada")
-        if self._es_doctor(actor) and solicitud.cliente_id != self._cliente_del_doctor(actor).id:
-            raise NoEncontrado("Solicitud no encontrada")  # no se revela que existe
+        if self._es_doctor(actor):
+            if solicitud.cliente_id != self._cliente_del_doctor(actor).id:
+                raise NoEncontrado("Solicitud no encontrada")  # no se revela que existe
+        else:
+            filtro = self._filtro_personal(actor)
+            if filtro is not None and not self.sesion.scalar(select(Solicitud.id).where(Solicitud.id == solicitud_id, filtro)):
+                raise NoEncontrado("Solicitud no encontrada")
         return solicitud
 
     # ================= Datos para el formulario =================
@@ -543,8 +564,12 @@ class SolicitudServicio:
                                              selectinload(Solicitud.pasos), selectinload(Solicitud.historial))
         if self._es_doctor(actor):
             consulta = consulta.where(Solicitud.cliente_id == self._cliente_del_doctor(actor).id)
-        elif cliente_id:
-            consulta = consulta.where(Solicitud.cliente_id == cliente_id)
+        else:
+            filtro = self._filtro_personal(actor)
+            if filtro is not None:
+                consulta = consulta.where(filtro)
+            if cliente_id:
+                consulta = consulta.where(Solicitud.cliente_id == cliente_id)
         if vigentes is True:
             consulta = consulta.where(Solicitud.estado.not_in(ESTADOS_CERRADOS))
         elif vigentes is False:

@@ -8,7 +8,9 @@ let vista = "true";
 
 if (!esDoctor) {
   $("titulo").textContent = "Solicitudes";
-  $("descripcion").textContent = "Todas las solicitudes del laboratorio. Las vigentes se ordenan por prioridad y fecha de entrega.";
+  $("descripcion").textContent = ["admin", "supervisor", "operaciones", "demo", "ingresos", "facturacion"].includes(usuario.rol)
+    ? "Todas las solicitudes del laboratorio. Las vigentes se ordenan por prioridad y fecha de entrega."
+    : "Los casos en los que participas o que llegaron a tu área. Las vigentes se ordenan por prioridad y fecha de entrega.";
 } else document.querySelectorAll(".col-cliente").forEach(x => x.remove());
 $("btnNueva").hidden = !(esDoctor || ROLES_CAPTURA.includes(usuario.rol));
 

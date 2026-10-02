@@ -144,6 +144,17 @@ Al crear la solicitud (doctor o personal) se indica:
 
 "No se pudo" (con motivo) regresa la recolecta o entrega a Logística. La guía de salida aparece en el detalle del caso (también para el doctor) y en la orden PDF.
 
+## Quién ve qué solicitudes
+
+| Rol | Ve en Solicitudes, detalle, archivos y orden PDF |
+|---|---|
+| Administrador, Supervisor, Operaciones, Ingresos, Facturación, Demostración | Todas |
+| Técnico, Mensajero | Solo los casos con un paso que tuvieron asignado o atendieron |
+| Logística, QA | Esos y los que ya llegaron a su área |
+| Doctor | Solo los de su cuenta |
+
+Un caso fuera de su alcance responde "no encontrado" (no se revela que existe). El filtro se aplica en el servidor.
+
 ## Pausas
 
 Administración y supervisión pausan un caso desde su detalle, con **motivo obligatorio** (ej. "falta registro de mordida").
