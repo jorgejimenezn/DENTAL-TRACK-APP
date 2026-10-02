@@ -202,6 +202,15 @@ class AsignacionServicio(_Base):
                 permitidos = restricciones.get((empleado.id, area.id)) or tipos
                 for tipo_id in permitidos:
                     conteo[(area.id, tipo_id)] = conteo.get((area.id, tipo_id), 0) + 1
+        # Validación de diseño la atiende supervisión aunque no tenga el área asignada
+        from app.servicios.recorrido import tipo_area
+        validacion = [a.id for a in self.sesion.scalars(select(Area)) if tipo_area(a.nombre) == "validacion_diseno"]
+        if validacion:
+            supervisores = [e for e in self._empleados() if e.rol == "supervisor"]
+            for area_id in validacion:
+                extra = sum(1 for e in supervisores if area_id not in {a.id for a in e.areas})
+                for tipo_id in tipos:
+                    conteo[(area_id, tipo_id)] = conteo.get((area_id, tipo_id), 0) + extra
         return conteo
 
     def listar(self) -> list[AsignacionEmpleado]:
