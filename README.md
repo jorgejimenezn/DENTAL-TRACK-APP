@@ -169,6 +169,7 @@ Administración y supervisión pausan un caso desde su detalle, con **motivo obl
 - El supervisor envía el diseño al cliente fuera de la plataforma y registra **Enviado al cliente**; luego **Cliente aprobó** (sigue a CAM) o **Pidió cambios** (motivo; regresa al paso de diseño elegido y vuelve a validarse).
 - Pantalla **Validación de diseño**: "Por enviar" y enviados sin respuesta por antigüedad (Hoy, 1 día, 2–3 días, 4 días o más).
 - El doctor ve "Diseño enviado: pendiente de tu aprobación".
+- Al desplegar, los casos abiertos que aún no llegan a CAM (su siguiente paso de impresión o fresado está pendiente y justo antes va Diseño/CAD) reciben la validación en su recorrido. Se hace una sola vez.
 
 ## Pasos en paralelo
 

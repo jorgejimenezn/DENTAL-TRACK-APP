@@ -47,6 +47,41 @@ def preparar_recorridos():
     with SesionLocal() as sesion:
         if Motor(sesion).preparar_existentes():
             sesion.commit()
+        if validacion_en_casos_abiertos(sesion):
+            sesion.commit()
+
+
+def validacion_en_casos_abiertos(sesion) -> int:
+    """Una sola vez: los casos abiertos creados antes de la validación de diseño la reciben si todavía no llegan
+    a impresión o fresado (su siguiente paso de CAM está pendiente y justo antes va Diseño/CAD)."""
+    from app.modelos.configuracion import Parametro
+    from app.modelos.solicitud import ESTADOS_CERRADOS, Solicitud, SolicitudPaso
+    from app.servicios.recorrido import _normal
+    if sesion.get(Parametro, "casos_validacion_diseno"):
+        return 0
+    validacion = next((a for a in sesion.scalars(select(Area)) if _normal(a.nombre).startswith("validacion de diseno")), None)
+    if not validacion:
+        return 0
+    actualizados = 0
+    for s in sesion.scalars(select(Solicitud).where(Solicitud.estado.not_in(ESTADOS_CERRADOS))):
+        pasos = [p for p in sorted(s.pasos, key=lambda x: x.orden) if p.estado != "omitido"]
+        if any(p.etapa == "validacion_diseno" for p in pasos):
+            continue
+        j = next((i for i, p in enumerate(pasos) if p.etapa == "produccion" and _normal(p.area.nombre).startswith("cam")), None)
+        if not j or pasos[j].estado != "pendiente" or not _normal(pasos[j - 1].area.nombre).startswith(("diseno", "cad")):
+            continue
+        orden = pasos[j].orden
+        for p in s.pasos:
+            if p.orden >= orden:
+                p.orden += 1
+        sesion.flush()
+        s.pasos.append(SolicitudPaso(orden=orden, area_id=validacion.id, area=validacion, etapa="validacion_diseno",
+                                     estado="pendiente", grupo=max((p.grupo or 0) for p in s.pasos) + 1,
+                                     vuelta=pasos[j - 1].vuelta))
+        actualizados += 1
+    sesion.add(Parametro(clave="casos_validacion_diseno", valor=str(actualizados)))
+    sesion.flush()
+    return actualizados
 
 
 def agregar_validacion_diseno(sesion) -> None:
