@@ -13,6 +13,8 @@ function pintarVivo(v) {
     + kpi("En cola", num(v.en_cola), "técnicos al tope", v.en_cola > 0)
     + kpi("Sin técnico", num(v.sin_tecnico), "nadie cubre el paso", v.sin_tecnico > 0)
     + kpi("Devoluciones de QA hoy", num(v.devoluciones_hoy))
+    + kpi("Casos en pausa", num(v.pausados), "", v.pausados > 0)
+    + kpi("Diseños con el cliente", num(v.validaciones_enviadas), `${num(v.validaciones_por_enviar)} por enviar`)
     + kpi("Recolectas pendientes", num(v.recolectas_pendientes), `${num(v.recolectas_vencidas)} fuera del plazo de 2 h`, v.recolectas_vencidas > 0);
   $("cargaAreas").innerHTML = barras(v.areas.map(a => ({ nombre: a.area, valor: a.activos,
     detalle: [a.en_proceso && `${a.en_proceso} en proceso`, a.en_cola && `${a.en_cola} en cola`, a.sin_tecnico && `${a.sin_tecnico} sin técnico`].filter(Boolean).join(", ") })),
@@ -21,6 +23,7 @@ function pintarVivo(v) {
   const bloques = [];
   if (v.en_proceso_ausentes.length) bloques.push(`<div class="aviso rojo" style="margin:0 0 10px"><div><b>En proceso con personal ausente:</b> ${v.en_proceso_ausentes.map(p => `<a href="caso.html?id=${p.solicitud_id}">${escapar(p.codigo)}</a> (${escapar(p.area)}, ${escapar(p.tecnico)})`).join(", ")}. Reasígnalos desde la bandeja.</div></div>`);
   bloques.push(`<div class="etiqueta-seccion">Ausentes hoy</div>` + (v.ausentes.length ? `<div class="chips" style="margin-bottom:12px">${v.ausentes.map(a => `<span class="badge gris">${escapar(a.nombre)}</span>`).join("")}</div>` : '<p class="nota" style="margin:0 0 12px">Todo el personal disponible.</p>'));
+  if (v.pausados_lista.length) bloques.push(`<div class="etiqueta-seccion">En pausa · <a href="pausas.html">ver auditoría</a></div><div class="espera" style="margin-bottom:12px">${v.pausados_lista.map(p => `<a href="caso.html?id=${p.id}"><b class="codigo-caso">${escapar(p.codigo)}</b><span>${escapar(p.cliente)} · ${escapar(p.motivo || "")}</span><span class="fecha">desde ${escapar(fechaHora(p.desde))}</span></a>`).join("")}</div>`);
   if (v.recolectas_lista.length) bloques.push(`<div class="etiqueta-seccion">Recolectas por hacer (plazo 2 h laborales)</div><div class="espera" style="margin-bottom:12px">${v.recolectas_lista.map(r => `<a href="caso.html?id=${r.id}"><b class="codigo-caso">${escapar(r.codigo)}</b><span>${escapar(r.cliente)}${r.mensajero ? ` · ${escapar(r.mensajero)}` : " · sin mensajero"}</span><span class="fecha" style="${r.vencida ? "color:var(--rojo-texto)" : ""}">${r.vencida ? "vencida " : "antes de "}${escapar(fechaHora(r.limite))}</span></a>`).join("")}</div>`);
   bloques.push(`<div class="etiqueta-seccion">Vencidos y por vencer hoy</div>` + (v.vencidos_lista.length
     ? `<div class="espera">${v.vencidos_lista.map(s => `<a href="caso.html?id=${s.id}"><b class="codigo-caso">${escapar(s.codigo)}</b>${s.prioridad === 1 ? '<span class="badge rojo">EMERGENCIA</span>' : ""}<span>${escapar(s.paciente)}</span><span class="fecha" style="${s.fecha_entrega < ymdL(hoyD) ? "color:var(--rojo-texto)" : ""}">${escapar(fechaCortaM(s.fecha_entrega))}</span></a>`).join("")}</div>`

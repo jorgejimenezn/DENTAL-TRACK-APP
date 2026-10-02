@@ -144,6 +144,25 @@ Al crear la solicitud (doctor o personal) se indica:
 
 "No se pudo" (con motivo) regresa la recolecta o entrega a Logística. La guía de salida aparece en el detalle del caso (también para el doctor) y en la orden PDF.
 
+## Pausas
+
+Administración y supervisión pausan un caso desde su detalle, con **motivo obligatorio** (ej. "falta registro de mordida").
+- Mientras está en pausa nadie lo puede trabajar: las bandejas lo muestran "En pausa" sin botones y no ocupa el tope de los técnicos.
+- El doctor ve **"En pausa"** con el motivo.
+- Al **reanudar** se registra qué se recibió y, si hace falta, una nueva fecha de entrega. Las **horas laborales en pausa se descuentan** de la meta del paso (espera o trabajo) y del plazo de recolecta.
+- Cada pausa queda en la tabla de auditoría `pausas` (quién pausó, motivo, dónde estaba el caso, quién reanudó, horas, cambio de fecha) y en la bitácora. Pantalla **Pausas** (admin, supervisor, operaciones) y conteo en el Dashboard.
+
+## Validación de diseño con el cliente
+
+Área **Validación de diseño** (no renombrar) entre el diseño (Diseño/CAD) y la impresión o fresado. Al actualizar se agrega una sola vez a los flujos donde Diseño/CAD va seguido de CAM; el administrador puede quitarla o moverla.
+- El supervisor envía el diseño al cliente fuera de la plataforma y registra **Enviado al cliente**; luego **Cliente aprobó** (sigue a CAM) o **Pidió cambios** (motivo; regresa al paso de diseño elegido y vuelve a validarse).
+- Pantalla **Validación de diseño**: "Por enviar" y enviados sin respuesta por antigüedad (Hoy, 1 día, 2–3 días, 4 días o más).
+- El doctor ve "Diseño enviado: pendiente de tu aprobación".
+
+## Pasos en paralelo
+
+En **Flujos**, un paso de producción puede marcarse **"en paralelo con el anterior"** (ej. CAM_IMP y CAM_FRES con el mismo diseño). Ambos se asignan e inician a la vez y el caso pasa al siguiente paso cuando **todos** terminan. Si QA devuelve desde uno de ellos, los pasos paralelos se repiten juntos.
+
 ## Órdenes manuales
 
 Administración, Supervisión, Ingresos y Facturación (y el perfil demo) pueden crear una orden desde **Nueva solicitud** eligiendo el cliente, con un **motivo** opcional (ej. "pedido por teléfono").
@@ -343,6 +362,10 @@ Sin servidor Mongo se puede probar con `MONGO_URL=mongomock://local` (requiere `
 | POST | `/pasos/{id}/no-se-pudo` | mensajero asignado, Logística |
 | POST | `/pasos/{id}/recolectado` | mensajero asignado, Logística |
 | POST | `/pasos/{id}/metodo` | Logística: cambiar entre mensajero y transporte |
+| POST | `/solicitudes/{id}/pausar`, `/solicitudes/{id}/reanudar` | admin, supervisor |
+| GET | `/pausas` | admin, supervisor, operaciones (auditoría) |
+| POST | `/pasos/{id}/enviar-cliente`, `/pasos/{id}/cambios-diseno` | supervisión (validación de diseño) |
+| GET | `/validaciones-diseno` | admin, supervisor |
 | POST | `/solicitudes/{id}/prioridad` | admin, supervisor |
 | GET/PUT | `/config/areas-operacion` | lectura con sesión · edición admin |
 | GET/POST/DELETE | `/ausencias` | admin, supervisor (operaciones consulta) |

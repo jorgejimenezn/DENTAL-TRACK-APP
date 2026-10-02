@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Validación de diseño · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="marca" id="marca" aria-hidden="true"></div>
+<div class="app">
+  <aside class="lateral" id="lateral"></aside>
+  <main class="contenido">
+    <div class="encabezado">
+      <div>
+        <h1>Validación de diseño</h1>
+        <p>Diseños por enviar al cliente y enviados que esperan su respuesta, por antigüedad. Registra si aprobó o pidió cambios.</p>
+      </div>
+      <button class="btn" id="btnActualizar">Actualizar</button>
+    </div>
+    <div class="error-form" id="errorBandeja" hidden></div>
+    <div id="supervision"></div>
+    <div id="rutas"></div>
+    <div id="produccion"></div>
+    <div id="areas"><div class="cargando">Cargando…</div></div>
+  </main>
+</div>
+
+<!-- Terminar / aprobar / facturar / recolectado / entregado -->
+<dialog class="modal chico" id="modalTerminar">
+  <form id="formTerminar" novalidate>
+    <div class="modal-cabecera"><h2 id="tituloTerminar">Terminar</h2><button type="button" class="cerrar" data-cerrar>&times;</button></div>
+    <div class="modal-cuerpo">
+      <div class="error-form" id="errorTerminar" hidden></div>
+      <p id="textoTerminar" style="color:var(--texto-2);margin-bottom:12px"></p>
+      <div id="campoCaja" hidden style="margin-bottom:12px">
+        <div class="campo"><label>Color de caja <span class="req">*</span></label><div class="muestras-caja" id="tCajaColor"></div></div>
+        <div class="campo" style="margin-top:10px"><label>Número de caja <span class="req">*</span></label><input id="tCajaNumero" maxlength="20" inputmode="numeric" placeholder="Ej. 12" autocomplete="off"></div>
+      </div>
+      <div class="campo" id="campoReceptor" hidden style="margin-bottom:12px"><label>Nombre de quien recibe <span class="req">*</span></label><input id="tReceptor" maxlength="120" placeholder="Ej. Ana López, recepción" autocomplete="off"></div>
+      <div class="campo" id="campoGuia" hidden style="margin-bottom:12px"><label>Número de guía <span class="req" id="reqGuia">*</span></label><input id="tGuia" maxlength="60" placeholder="Ej. GT-778812" autocomplete="off"></div>
+      <div class="campo" id="campoTransporte" hidden style="margin-bottom:12px"><label>Empresa de transporte</label><input id="tTransporte" maxlength="80" placeholder="Ej. Cargo Expreso, Guatex" autocomplete="off"></div>
+      <div class="campo" id="campoFactura" hidden style="margin-bottom:12px"><label>Número de factura <span class="req">*</span></label><input id="tFactura" maxlength="40" placeholder="Ej. FAC-00123"></div>
+      <div class="campo"><label>Nota</label><textarea id="tNota" maxlength="300" rows="3" placeholder="Opcional"></textarea></div>
+    </div>
+    <div class="modal-pie"><button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" class="btn verde" id="btnTerminar">Confirmar</button></div>
+  </form>
+</dialog>
+
+<!-- QA: devolver a producción -->
+<dialog class="modal chico" id="modalRechazar">
+  <form id="formRechazar" novalidate>
+    <div class="modal-cabecera"><h2 id="tituloRechazar">Devolver a producción</h2><button type="button" class="cerrar" data-cerrar>&times;</button></div>
+    <div class="modal-cuerpo">
+      <div class="error-form" id="errorRechazar" hidden></div>
+      <div class="campo"><label>Regresar al paso</label><select id="rPaso"></select></div>
+      <div class="campo" style="margin-top:12px" id="campoModo"><label>¿Qué se repite?</label>
+        <div class="opciones-radio">
+          <label><input type="radio" name="rModo" value="desde" checked> <span><b>Desde ese paso en adelante</b><br><small style="color:var(--texto-2)">Se repiten ese paso y todos los de producción que siguen, luego QA. Para rehacer todo, elige el primer paso.</small></span></label>
+          <label><input type="radio" name="rModo" value="solo"> <span><b>Solo ese paso</b><br><small style="color:var(--texto-2)">Se corrige únicamente ese paso y regresa directo a QA.</small></span></label>
+        </div>
+        <div class="ayuda" id="rResumen"></div></div>
+      <div class="campo" style="margin-top:12px"><label>Motivo <span class="req">*</span></label><textarea id="rMotivo" maxlength="250" rows="3" placeholder="Ej. Contacto abierto con la pieza 12"></textarea></div>
+    </div>
+    <div class="modal-pie"><button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" class="btn rojo-borde" id="btnRechazar">Devolver</button></div>
+  </form>
+</dialog>
+
+<!-- QA: validar reapertura -->
+<dialog class="modal" id="modalValidar">
+  <form id="formValidar" novalidate>
+    <div class="modal-cabecera"><h2 id="tituloValidar">Validar reapertura</h2><button type="button" class="cerrar" data-cerrar>&times;</button></div>
+    <div class="modal-cuerpo">
+      <div class="error-form" id="errorValidar" hidden></div>
+      <div class="nota-caso" id="vMotivoDoctor" style="margin-bottom:14px;font-size:13px;background:var(--campo);border:1px solid var(--panel-borde);border-radius:8px;padding:10px 12px"></div>
+      <div class="campo"><label>Clasificación <span class="req">*</span></label>
+        <div class="opciones-radio">
+          <label><input type="radio" name="clasif" value="garantia_total"> Garantía total</label>
+          <label><input type="radio" name="clasif" value="garantia_parcial_sin_cobro"> Garantía parcial sin cobro</label>
+          <label><input type="radio" name="clasif" value="garantia_parcial_con_cobro"> Garantía parcial con cobro</label>
+          <label><input type="radio" name="clasif" value="cobro"> Cobro</label>
+        </div></div>
+      <div class="grid" style="margin-top:14px">
+        <div class="campo"><label>Motivo <span class="req">*</span></label><select id="vMotivo"></select></div>
+        <div class="campo"><label>Observación</label><input id="vObs" maxlength="300" placeholder="Obligatoria si el motivo es Otro"></div>
+      </div>
+    </div>
+    <div class="modal-pie"><button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" class="btn verde">Validar e ingresar</button></div>
+  </form>
+</dialog>
+
+<!-- Ingresos: modificar -->
+<dialog class="modal" id="modalModificar">
+  <form id="formModificar" novalidate>
+    <div class="modal-cabecera"><h2 id="tituloModificar">Modificar caso</h2><button type="button" class="cerrar" data-cerrar>&times;</button></div>
+    <div class="modal-cuerpo">
+      <div class="error-form" id="errorModificar" hidden></div>
+      <div class="aviso azul" id="mFdc" hidden style="margin:0 0 14px"></div>
+      <div class="grid tres">
+        <div class="campo"><label>Tipo de trabajo</label><select id="mTipo"></select></div>
+        <div class="campo"><label>Material</label><select id="mMaterial"></select></div>
+        <div class="campo"><label>Unidades</label><select id="mUnidad"></select></div>
+        <div class="campo"><label>Guía de color</label><select id="mGuia"></select></div>
+        <div class="campo"><label>Color</label><select id="mColor"></select></div>
+        <div class="campo"><label>Fecha de entrega</label><input type="date" id="mFecha"></div>
+        <div class="campo"><label>Sale por</label><select id="mEntrega"><option value="mensajero">Mensajero</option><option value="transporte">Transporte (guía)</option></select></div>
+      </div>
+      <div class="seccion-form">Piezas</div>
+      <div id="mOdontograma"></div>
+      <div class="campo" style="margin-top:14px"><label>Qué se corrigió y por qué <span class="req">*</span></label><input id="mNota" maxlength="250" placeholder="Ej. El doctor confirmó por teléfono que es una corona"></div>
+    </div>
+    <div class="modal-pie"><button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" class="btn verde">Guardar cambios</button></div>
+  </form>
+</dialog>
+
+<!-- Ingresos: cancelar -->
+<dialog class="modal chico" id="modalCancelar">
+  <form id="formCancelar" novalidate>
+    <div class="modal-cabecera"><h2 id="tituloCancelar">Cancelar caso</h2><button type="button" class="cerrar" data-cerrar>&times;</button></div>
+    <div class="modal-cuerpo">
+      <div class="error-form" id="errorCancelar" hidden></div>
+      <div class="campo"><label>Motivo <span class="req">*</span></label><textarea id="cMotivo" maxlength="250" rows="3" placeholder="Ej. Solicitud duplicada"></textarea></div>
+    </div>
+    <div class="modal-pie"><button type="button" class="btn" data-cerrar>Volver</button><button type="submit" class="btn rojo-borde" id="btnMotivo">Cancelar caso</button></div>
+  </form>
+</dialog>
+
+<!-- Asignar mensajero / reasignar técnico -->
+<dialog class="modal chico" id="modalAsignar">
+  <form id="formAsignar" novalidate>
+    <div class="modal-cabecera"><h2 id="tituloAsignar">Asignar</h2><button type="button" class="cerrar" data-cerrar>&times;</button></div>
+    <div class="modal-cuerpo">
+      <div class="error-form" id="errorAsignar" hidden></div>
+      <div class="campo"><label id="etiquetaAsignar">Persona</label><select id="aPersona"></select><div class="ayuda" id="ayudaAsignar"></div></div>
+      <div class="campo" style="margin-top:12px"><label>Nota</label><input id="aNota" maxlength="200" placeholder="Opcional"></div>
+    </div>
+    <div class="modal-pie"><button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" class="btn verde">Asignar</button></div>
+  </form>
+</dialog>
+
+<!-- Imprimir la orden después de aprobar -->
+<dialog class="modal chico" id="modalImprimir">
+  <div class="modal-cabecera"><h2 id="tituloImprimir">Caso ingresado</h2><button type="button" class="cerrar" data-cerrar>&times;</button></div>
+  <div class="modal-cuerpo"><p id="textoImprimir" style="color:var(--texto-2)"></p></div>
+  <div class="modal-pie"><button type="button" class="btn" data-cerrar>Después</button><button type="button" class="btn verde" id="btnImprimir">Imprimir orden (PDF)</button></div>
+</dialog>
+
+<!-- Prioridad -->
+<dialog class="modal chico" id="modalPrioridad">
+  <form id="formPrioridad" novalidate>
+    <div class="modal-cabecera"><h2 id="tituloPrioridad">Prioridad</h2><button type="button" class="cerrar" data-cerrar>&times;</button></div>
+    <div class="modal-cuerpo">
+      <div class="error-form" id="errorPrioridad" hidden></div>
+      <div class="campo"><label>Prioridad</label><select id="pValor"><option value="1">1 · Emergencia</option><option value="2">2 · VIP</option><option value="3">3 · Normal</option></select>
+        <div class="ayuda">Cambia el orden en que se entrega a los técnicos. El doctor no ve este dato.</div></div>
+      <div class="campo" style="margin-top:12px"><label>Motivo <span class="req">*</span></label><input id="pMotivo" maxlength="200" placeholder="Ej. El paciente viaja el viernes"></div>
+    </div>
+    <div class="modal-pie"><button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" class="btn verde">Guardar</button></div>
+  </form>
+</dialog>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/validaciones.js"></script>
+<script src="js/formulario-caso.js"></script>
+<script>window.VISTA_VALIDACION = true;</script>
+<script src="js/bandeja.js"></script>
+</body>
+</html>

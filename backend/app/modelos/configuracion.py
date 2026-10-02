@@ -107,6 +107,8 @@ class FlujoPaso(Base):
     flujo_id: Mapped[int] = mapped_column(ForeignKey("flujos.id", ondelete="CASCADE"), index=True)
     orden: Mapped[int] = mapped_column(Integer)
     area_id: Mapped[int] = mapped_column(ForeignKey("areas.id"))
+    # Corre al mismo tiempo que el paso anterior (ej. CAM_IMP y CAM_FRES con el mismo diseño)
+    paralelo: Mapped[bool] = mapped_column(Boolean, default=False)
     flujo: Mapped[Flujo] = relationship(back_populates="pasos")
     area: Mapped["Area"] = relationship()  # noqa: F821 (definida en modelos/__init__)
 

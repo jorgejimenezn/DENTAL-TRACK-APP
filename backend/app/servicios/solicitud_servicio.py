@@ -14,15 +14,15 @@ from app.core.dependencias import Actor
 from app.core.errores import Conflicto, ErrorNegocio, NoEncontrado
 from app.esquemas.solicitud import (ArchivoOut, CasoRef, ClienteBreve, DireccionPerfil, DireccionSel, DireccionTexto,
                                     HistorialOut, PerfilSolicitud, ReaperturaIn, RecorridoPaso, SolicitudIn,
-                                    SolicitudOut, SolicitudResumen, ValorOut)
+                                    SolicitudOut, SolicitudResumen, ValorOut, PausaOut)
 from app.modelos import ROL_CLIENTE, Cliente, Direccion, Usuario
 from app.modelos.configuracion import Color, DiaNoLaborable, Flujo, GuiaColor, Material, MotivoRP, TipoTrabajo, Unidad
-from app.modelos.solicitud import (COLUMNAS_TABLERO, ESTADOS, ESTADOS_CERRADOS, Correlativo, Solicitud, SolicitudArchivo,
-                                   SolicitudHistorial)
+from app.modelos.solicitud import (COLUMNAS_TABLERO, ESTADOS, ESTADOS_CERRADOS, Correlativo, PausaCaso, Solicitud,
+                                   SolicitudArchivo, SolicitudHistorial)
 from app.repositorios.archivo_repo import ArchivoRepositorio
 from app.servicios.auditoria_servicio import AuditoriaServicio
 from app.servicios.configuracion_servicio import ZONA, CalendarioServicio
-from app.servicios.recorrido import NOMBRE_ETAPA, Motor
+from app.servicios.recorrido import NOMBRE_ETAPA, Motor, ahora
 
 # Personal que puede ingresar solicitudes a nombre de un cliente (pedidos por teléfono, etc.)
 ROLES_CAPTURA = {"admin", "supervisor", "ingresos", "facturacion", "demo"}  # demo: captura para demostraciones
@@ -369,6 +369,106 @@ class SolicitudServicio:
                                  {"codigo": solicitud.codigo, "motivo": motivo})
         return self.obtener(solicitud.id, actor)
 
+    # ================= Pausas =================
+    def pausar(self, solicitud_id: int, motivo: str, actor: Actor) -> SolicitudOut:
+        """El caso se detiene: nadie lo puede trabajar y su tiempo no cuenta hasta que se reanude."""
+        if actor.rol not in ROLES_ESTADO:
+            raise ErrorNegocio("Solo administración o supervisión pueden pausar un caso", 403)
+        s = self._visible(solicitud_id, actor)
+        if s.estado in ESTADOS_CERRADOS:
+            raise ErrorNegocio("El caso ya está cerrado")
+        if s.pausada:
+            raise Conflicto("El caso ya está en pausa")
+        motivo = " ".join(motivo.split())
+        areas = " + ".join(p.area.nombre for p in Motor.pasos_activos(s)) or None
+        momento = ahora()
+        s.pausada, s.pausa_motivo, s.pausada_en, s.pausada_por_id = True, motivo, momento, actor.id
+        self.sesion.add(PausaCaso(solicitud_id=s.id, codigo=s.codigo, areas=areas, motivo=motivo,
+                                  pausado_por_id=actor.id, pausado_en=momento, fecha_entrega_antes=s.fecha_entrega))
+        s.historial.append(SolicitudHistorial(estado=s.estado, nota=f"Caso en pausa: {motivo}"[:300], usuario_id=actor.id))
+        Motor(self.sesion).repartir_colas()  # quien lo tenía asignado queda con espacio
+        self.sesion.commit()
+        self.auditoria.registrar("pausar", "solicitud", s.id, actor, {"codigo": s.codigo, "motivo": motivo, "areas": areas})
+        return self.obtener(s.id, actor)
+
+    def reanudar(self, solicitud_id: int, nota: str | None, fecha: date | None, actor: Actor) -> SolicitudOut:
+        """Llegó lo pendiente: el caso continúa donde estaba y las horas en pausa se descuentan de sus metas."""
+        if actor.rol not in ROLES_ESTADO:
+            raise ErrorNegocio("Solo administración o supervisión pueden reanudar un caso", 403)
+        s = self._visible(solicitud_id, actor)
+        if not s.pausada:
+            raise Conflicto("El caso no está en pausa")
+        pausa = self.sesion.scalar(select(PausaCaso).where(PausaCaso.solicitud_id == s.id, PausaCaso.reanudado_en.is_(None))
+                                   .order_by(PausaCaso.id.desc()))
+        momento = ahora()
+        inicio = pausa.pausado_en if pausa else (s.pausada_en or momento)
+        from app.core.jornada import Jornada
+        horas = Jornada(self.sesion).horas(inicio, momento)
+        for p in Motor.pasos_activos(s):  # el tiempo en pausa no cuenta para la meta del paso
+            if p.iniciado_en and p.iniciado_en <= inicio:
+                p.pausa_trabajo = float(p.pausa_trabajo or 0) + horas
+            else:
+                p.pausa_espera = float(p.pausa_espera or 0) + horas
+        nota = " ".join((nota or "").split()) or None
+        texto = f"Caso reanudado después de {horas:g} h laborales en pausa" + (f" · {nota}" if nota else "")
+        if fecha and fecha != s.fecha_entrega:
+            self._validar_nueva_fecha(fecha)
+            texto += f" · nueva fecha de entrega {_fecha_texto(fecha)}"
+            s.fecha_entrega = fecha
+        if pausa:
+            pausa.reanudado_por_id, pausa.reanudado_en, pausa.nota_reanudar = actor.id, momento, nota
+            pausa.horas_laborales, pausa.fecha_entrega_nueva = horas, fecha if fecha else None
+        s.pausada, s.pausa_motivo, s.pausada_en, s.pausada_por_id = False, None, None, None
+        s.historial.append(SolicitudHistorial(estado=s.estado, nota=texto[:300], usuario_id=actor.id))
+        self.sesion.flush()
+        Motor(self.sesion).repartir_colas()
+        self.sesion.commit()
+        self.auditoria.registrar("reanudar", "solicitud", s.id, actor,
+                                 {"codigo": s.codigo, "horas_pausa": horas, "nota": nota,
+                                  "fecha_entrega": str(fecha) if fecha else None})
+        return self.obtener(s.id, actor)
+
+    def _validar_nueva_fecha(self, fecha: date) -> None:
+        hoy = datetime.now(ZONA).date()
+        if fecha < hoy or fecha > hoy + timedelta(days=180):
+            raise ErrorNegocio("La fecha de entrega debe estar entre hoy y los próximos 180 días")
+        if fecha.weekday() >= 5:
+            raise ErrorNegocio("Los sábados y domingos no hay entregas")
+        bloqueo = self.sesion.scalar(select(DiaNoLaborable).where(DiaNoLaborable.fecha == fecha,
+                                                                  DiaNoLaborable.hora_corte.is_(None)))
+        if bloqueo:
+            raise ErrorNegocio(f"El {_fecha_texto(fecha)} no se labora ({bloqueo.motivo})")
+
+    def pausas(self, actor: Actor, desde: date | None = None, hasta: date | None = None,
+               solicitud_id: int | None = None) -> list[PausaOut]:
+        """Auditoría de pausas."""
+        consulta = select(PausaCaso).order_by(PausaCaso.pausado_en.desc())
+        if solicitud_id:
+            self._visible(solicitud_id, actor)
+            consulta = consulta.where(PausaCaso.solicitud_id == solicitud_id)
+        elif actor.rol not in ROLES_ESTADO | {"operaciones", "demo"}:
+            raise ErrorNegocio("No tienes permiso para ver la auditoría de pausas", 403)
+        if desde:
+            consulta = consulta.where(PausaCaso.pausado_en >= datetime.combine(desde, datetime.min.time(), ZONA))
+        if hasta:
+            consulta = consulta.where(PausaCaso.pausado_en < datetime.combine(hasta + timedelta(days=1),
+                                                                              datetime.min.time(), ZONA))
+        doctor = self._es_doctor(actor)
+        nombre = lambda u: None if not u else ("Laboratorio" if doctor else f"{u.nombre} {u.apellido}".strip())  # noqa: E731
+        clientes = {}
+        salida = []
+        for p in self.sesion.scalars(consulta.limit(500)):
+            if p.solicitud_id not in clientes:
+                caso = self.sesion.get(Solicitud, p.solicitud_id)
+                clientes[p.solicitud_id] = caso.cliente.razon_social if caso else None
+            salida.append(PausaOut(id=p.id, solicitud_id=p.solicitud_id, codigo=p.codigo, cliente=clientes[p.solicitud_id],
+                                   areas=p.areas, motivo=p.motivo, pausado_por=nombre(p.pausado_por),
+                                   pausado_en=p.pausado_en, reanudado_por=nombre(p.reanudado_por),
+                                   reanudado_en=p.reanudado_en, nota_reanudar=p.nota_reanudar,
+                                   horas_laborales=p.horas_laborales, fecha_entrega_antes=p.fecha_entrega_antes,
+                                   fecha_entrega_nueva=p.fecha_entrega_nueva))
+        return salida
+
     def cambiar_prioridad(self, solicitud_id: int, prioridad: int, motivo: str, actor: Actor) -> SolicitudOut:
         if actor.rol not in ROLES_ESTADO:
             raise ErrorNegocio("Solo administración o supervisión cambian la prioridad", 403)
@@ -414,8 +514,8 @@ class SolicitudServicio:
             prioridad=None if self._es_doctor(actor) else s.prioridad,  # el nivel del cliente no se muestra al doctor
             fecha_entrega=s.fecha_entrega, creado_en=s.creado_en,
             caso_origen=s.caso_origen.codigo if s.caso_origen else None, fuera_catalogo=s.fuera_catalogo,
-            manual=bool(s.manual),
-            area_actual=(lambda p: p.area.nombre if p else None)(Motor.paso_actual(s)),
+            manual=bool(s.manual), pausada=bool(s.pausada), pausa_motivo=s.pausa_motivo, pausada_en=s.pausada_en,
+            area_actual=" + ".join(p.area.nombre for p in Motor.pasos_activos(s)) or None,
             caja=None if self._es_doctor(actor) or not s.caja_numero else f"{s.caja_color} {s.caja_numero}",
             pasos_total=len([p for p in s.pasos if p.estado != "omitido"]),
             pasos_hechos=len([p for p in s.pasos if p.estado == "terminado"]),
@@ -508,10 +608,11 @@ class SolicitudServicio:
             reaperturas=[CasoRef(id=r.id, codigo=r.codigo, estado=r.estado, estado_texto=ESTADOS[r.estado][0],
                                  creado_en=r.creado_en) for r in reaperturas],
             puede_reabrir=puede, motivo_no_reabrir=motivo, factura_numero=s.factura_numero,
+            pausas=self.pausas(actor, solicitud_id=s.id),
             recorrido=[RecorridoPaso(
                 id=p.id, orden=p.orden, area=p.area.nombre, etapa=p.etapa, etapa_texto=NOMBRE_ETAPA[p.etapa],
                 estado=p.estado, activado_en=p.activado_en, terminado_en=p.terminado_en, nota=p.nota, vuelta=p.vuelta,
-                receptor=p.receptor, recolectado_en=p.recolectado_en,
+                receptor=p.receptor, recolectado_en=p.recolectado_en, grupo=p.grupo or 0,
                 # los nombres del personal no se muestran al doctor
                 tecnico=None if self._es_doctor(actor) else nombre(p.tecnico),
                 atendido_por=None if self._es_doctor(actor) else nombre(p.atendido_por))

@@ -12,7 +12,7 @@ function tarjeta(c) {
   const pct = c.pasos_total ? Math.round(c.pasos_hechos * 100 / c.pasos_total) : 0;
   return `<a class="kcard ${c.emergencia ? "urgente" : ""}" href="caso.html?id=${c.id}">
     <div class="fila"><b class="codigo-caso">${escapar(c.codigo)}</b>
-      ${c.emergencia ? '<span class="badge rojo">EMERGENCIA</span>' : ""}${c.tipo_caso === "RP" ? '<span class="badge azul">RP</span>' : ""}${etiquetaManual(c, usuario.rol)}
+      ${c.emergencia ? '<span class="badge rojo">EMERGENCIA</span>' : ""}${c.tipo_caso === "RP" ? '<span class="badge azul">RP</span>' : ""}${etiquetaManual(c, usuario.rol)}${c.pausada ? '<span class="badge naranja">En pausa</span>' : ""}
       <span class="fecha ${tarde ? "tarde" : ""}">${entregado ? "Entregado " + escapar(fechaHora(c.entregado_en).split(",")[0]) : "Entrega " + escapar(fecha(c.fecha_entrega))}</span></div>
     <div class="pac">${escapar(c.paciente)}</div>
     ${c.caja ? `<div style="margin-top:4px">${etiquetaCaja(c.caja)}</div>` : ""}

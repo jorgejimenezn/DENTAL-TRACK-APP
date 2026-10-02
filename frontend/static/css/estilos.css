@@ -532,3 +532,13 @@ a.btn{text-decoration:none}
 
 /* Orden manual (capturada por el laboratorio) */
 .badge.morado{background:rgba(168,85,247,.15);color:#c084fc;border:1px solid rgba(168,85,247,.35)}
+
+/* Pausas */
+.aviso-pausa{margin:0 0 16px;padding:12px 14px;border-radius:10px;border:1px solid rgba(245,158,11,.45);background:rgba(245,158,11,.12);color:var(--texto);font-size:13px}
+.aviso-pausa small{color:var(--texto-2)}
+.badge.naranja{background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.4)}
+.pestanas button.alerta b{color:var(--rojo-texto)}
+/* Flujos: pasos en paralelo */
+.check-paralelo{display:inline-flex;align-items:center;gap:6px;margin-left:10px;font-size:11px;font-weight:500;color:var(--texto-2);cursor:pointer}
+.check-paralelo input{accent-color:var(--azul)}
+.editor-paso.paralelo{border-left:3px solid var(--azul)}

@@ -19,6 +19,8 @@ ESTADOS = {
     "validacion_qa": ("Validación de QA", "Recibido"),
     "recibida": ("En revisión de Ingresos", "Recibido"),
     "en_produccion": ("En producción", "En producción"),
+    "validacion_diseno": ("Validación de diseño", "En producción"),
+    "diseno_enviado": ("Diseño enviado: pendiente de tu aprobación", "En producción"),
     "control_calidad": ("Control de calidad", "Control de calidad"),
     "facturacion": ("Facturación y empaque", "Listo para entrega"),
     "listo_entrega": ("Listo para entrega", "Listo para entrega"),
@@ -46,6 +48,11 @@ class Solicitud(Base):
     cliente_id: Mapped[int] = mapped_column(ForeignKey("clientes.id"), index=True)
     creado_por_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Pausa: el supervisor detiene el caso (y su tiempo) hasta que llegue lo pendiente
+    pausada: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    pausa_motivo: Mapped[str | None] = mapped_column(String(250), nullable=True)
+    pausada_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    pausada_por_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     # Orden manual: la capturó el personal del laboratorio a nombre del cliente (no el doctor desde su cuenta)
     manual: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     manual_motivo: Mapped[str | None] = mapped_column(String(200), nullable=True)
@@ -164,9 +171,11 @@ PASO_SIN_TECNICO = "sin_tecnico"  # producción: nadie tiene asignada esa área 
 PASO_ASIGNADO = "asignado"        # producción: en la bandeja de un técnico, esperando turno
 PASO_EN_PROCESO = "en_proceso"    # producción: el técnico lo está trabajando (uno a la vez)
 PASO_RECOLECTADO = "recolectado"  # recolecta: el mensajero ya tiene el material y va hacia el laboratorio
+PASO_ENVIADO = "enviado"          # validación de diseño: enviado al cliente, esperando su respuesta
 PASO_TERMINADO = "terminado"
 PASO_OMITIDO = "omitido"          # cancelado o reemplazado al rehacer el recorrido
-PASOS_ACTIVOS = {PASO_EN_AREA, PASO_EN_COLA, PASO_SIN_TECNICO, PASO_ASIGNADO, PASO_EN_PROCESO, PASO_RECOLECTADO}
+PASOS_ACTIVOS = {PASO_EN_AREA, PASO_EN_COLA, PASO_SIN_TECNICO, PASO_ASIGNADO, PASO_EN_PROCESO, PASO_RECOLECTADO,
+                 PASO_ENVIADO}
 PASOS_CARGA = {PASO_ASIGNADO, PASO_EN_PROCESO, PASO_RECOLECTADO}  # cuentan para el tope de trabajos del técnico
 
 
@@ -188,6 +197,12 @@ class SolicitudPaso(Base):
     nota: Mapped[str | None] = mapped_column(String(300), nullable=True)
     receptor: Mapped[str | None] = mapped_column(String(120), nullable=True)  # quien recibió la entrega
     recolectado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    enviado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)  # diseño enviado al cliente
+    # Pasos con el mismo grupo corren en paralelo; el siguiente grupo empieza cuando todos terminan
+    grupo: Mapped[int] = mapped_column(Integer, default=0)
+    # Horas laborales en pausa (no cuentan para la meta): antes de iniciar y ya iniciado
+    pausa_espera: Mapped[float] = mapped_column(Float, default=0)
+    pausa_trabajo: Mapped[float] = mapped_column(Float, default=0)
     vuelta: Mapped[int] = mapped_column(Integer, default=1)  # sube cuando QA devuelve el caso
 
     solicitud: Mapped[Solicitud] = relationship(back_populates="pasos")
@@ -218,3 +233,23 @@ class TiempoPaso(Base):
     meta_horas: Mapped[float] = mapped_column(Float)
     cumplio: Mapped[bool] = mapped_column(Boolean)
     devuelto: Mapped[bool] = mapped_column(Boolean, default=False)  # QA devolvió el caso a este paso o antes
+
+
+class PausaCaso(Base):
+    """Auditoría de pausas: quién pausó, por qué, cuánto duró y quién reanudó."""
+    __tablename__ = "pausas"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    solicitud_id: Mapped[int] = mapped_column(ForeignKey("solicitudes.id", ondelete="CASCADE"), index=True)
+    codigo: Mapped[str] = mapped_column(String(20))
+    areas: Mapped[str | None] = mapped_column(String(200), nullable=True)  # dónde estaba el caso al pausar
+    motivo: Mapped[str] = mapped_column(String(250))
+    pausado_por_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
+    pausado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    reanudado_por_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
+    reanudado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    nota_reanudar: Mapped[str | None] = mapped_column(String(250), nullable=True)
+    horas_laborales: Mapped[float | None] = mapped_column(Float, nullable=True)
+    fecha_entrega_antes: Mapped[date | None] = mapped_column(Date, nullable=True)
+    fecha_entrega_nueva: Mapped[date | None] = mapped_column(Date, nullable=True)
+    pausado_por: Mapped["Usuario | None"] = relationship(foreign_keys=[pausado_por_id])  # noqa: F821
+    reanudado_por: Mapped["Usuario | None"] = relationship(foreign_keys=[reanudado_por_id])  # noqa: F821

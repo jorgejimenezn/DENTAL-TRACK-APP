@@ -26,6 +26,7 @@ from app.modelos.solicitud import (PASO_ASIGNADO, PASO_EN_AREA, PASO_EN_COLA, PA
 ESTADO_POR_ETAPA = {
     "recolecta": "pendiente_recolecta", "ingresos": "recibida", "validacion_rp": "validacion_qa",
     "produccion": "en_produccion", "qa": "control_calidad", "facturacion": "facturacion", "entrega": "listo_entrega",
+    "validacion_diseno": "validacion_diseno",
 }
 PLAZO_RECOLECTA_HORAS = 2  # horas laborales para recoger en la clínica (no aplica a transporte)
 
@@ -40,6 +41,7 @@ def estado_etapa(s: Solicitud, etapa: str) -> str:
 NOMBRE_ETAPA = {
     "recolecta": "Recolecta", "ingresos": "Ingresos", "validacion_rp": "Validación de RP", "produccion": "Producción",
     "qa": "Control de calidad", "facturacion": "Facturación", "entrega": "Entrega",
+    "validacion_diseno": "Validación de diseño",
 }
 
 
@@ -63,6 +65,8 @@ def tipo_area(nombre: str) -> str:
         return "qa"
     if n.startswith("factura"):
         return "facturacion"
+    if n.startswith("validacion de diseno"):
+        return "validacion_diseno"
     return "produccion"
 
 
@@ -81,8 +85,9 @@ class Motor:
         return self.sesion.scalar(select(Flujo).where(Flujo.tipo_trabajo_id == s.tipo_trabajo_id,
                                                       Flujo.modalidad == s.modalidad, Flujo.activo.is_(True)))
 
-    def plan(self, s: Solicitud) -> list[tuple[Area, str]]:
-        """Pasos (área, etapa) del caso. Garantiza siempre una revisión de Ingresos."""
+    def plan(self, s: Solicitud) -> list[tuple[Area, str, bool]]:
+        """Pasos (área, etapa, en paralelo con el anterior) del caso. Garantiza siempre una revisión de Ingresos.
+        Solo se respeta el paralelo entre pasos de producción."""
         flujo = self.flujo(s)
         plan, vio_ingresos = [], False
         for p in (flujo.pasos if flujo else []):
@@ -93,25 +98,25 @@ class Motor:
                 etapa = "entrega" if vio_ingresos else "recolecta"
             else:
                 etapa = t
-            plan.append((p.area, etapa))
+            paralelo = bool(p.paralelo) and etapa == "produccion" and bool(plan) and plan[-1][1] == "produccion"
+            plan.append((p.area, etapa, paralelo))
         if not vio_ingresos:
             ingresos = self._area_de("ingresos")
             inicio = [x for x in plan if x[1] == "recolecta"]
             if not inicio and s.modalidad == "analogo" and self._area_de("logistica"):
-                inicio = [(self._area_de("logistica"), "recolecta")]
+                inicio = [(self._area_de("logistica"), "recolecta", False)]
             resto = [x for x in plan if x[1] != "recolecta"]
             # Sin flujo (tipo fuera de catálogo) solo se llega hasta Ingresos; al aprobarlo se completa el recorrido
-            plan = inicio + ([(ingresos, "ingresos")] if ingresos else []) + (resto if flujo else [])
+            plan = inicio + ([(ingresos, "ingresos", False)] if ingresos else []) + (resto if flujo else [])
         if s.tipo_caso == "RP":
             qa = self._area_de("qa")
             if qa:
-                plan.insert(0, (qa, "validacion_rp"))
+                plan.insert(0, (qa, "validacion_rp", False))
         return plan
 
     def iniciar(self, s: Solicitud, usuario_id: int | None, nota: str) -> None:
         """Crea los pasos de un caso nuevo y activa el primero."""
-        for i, (area, etapa) in enumerate(self.plan(s), start=1):
-            s.pasos.append(SolicitudPaso(orden=i, area_id=area.id, area=area, etapa=etapa, estado=PASO_PENDIENTE))
+        self._agregar(s, self.plan(s), 1, 1)
         self.sesion.flush()
         self.avanzar(s, usuario_id, nota)
 
@@ -122,17 +127,32 @@ class Motor:
                 p.estado = PASO_OMITIDO
         plan = self.plan(s)
         indice = next((i for i, x in enumerate(plan) if x[1] == "ingresos"), -1)
-        siguiente = max(p.orden for p in s.pasos) + 1
-        for area, etapa in plan[indice + 1:]:
-            s.pasos.append(SolicitudPaso(orden=siguiente, area_id=area.id, area=area, etapa=etapa,
-                                         estado=PASO_PENDIENTE, vuelta=actual.vuelta))
-            siguiente += 1
+        resto = plan[indice + 1:]
+        if resto:
+            resto[0] = (resto[0][0], resto[0][1], False)  # el primero después de Ingresos nunca es paralelo
+        self._agregar(s, resto, max(p.orden for p in s.pasos) + 1, max(p.grupo or 0 for p in s.pasos) + 1,
+                      actual.vuelta)
         self.sesion.flush()
+
+    @staticmethod
+    def _agregar(s: Solicitud, plan: list[tuple], orden: int, grupo: int, vuelta: int = 1) -> None:
+        """Agrega pasos pendientes; los marcados en paralelo comparten el grupo del anterior."""
+        grupo -= 1
+        for i, (area, etapa, paralelo) in enumerate(plan):
+            if not (paralelo and i):
+                grupo += 1
+            s.pasos.append(SolicitudPaso(orden=orden + i, area_id=area.id, area=area, etapa=etapa, grupo=grupo,
+                                         estado=PASO_PENDIENTE, vuelta=vuelta))
 
     # ================= Movimiento =================
     @staticmethod
     def paso_actual(s: Solicitud) -> SolicitudPaso | None:
         return next((p for p in sorted(s.pasos, key=lambda x: x.orden) if p.estado in PASOS_ACTIVOS), None)
+
+    @staticmethod
+    def pasos_activos(s: Solicitud) -> list[SolicitudPaso]:
+        """Todos los pasos en curso (más de uno cuando hay pasos en paralelo)."""
+        return [p for p in sorted(s.pasos, key=lambda x: x.orden) if p.estado in PASOS_ACTIVOS]
 
     def terminar(self, paso: SolicitudPaso, usuario_id: int | None, nota: str | None = None) -> None:
         paso.estado = PASO_TERMINADO
@@ -147,32 +167,48 @@ class Motor:
             self._jornada = Jornada(self.sesion)
         j, s = self._jornada, paso.solicitud
         produccion = paso.etapa == "produccion"
-        total = j.horas(paso.activado_en, paso.terminado_en)
+        # las horas en pausa no cuentan para la meta
+        p_espera, p_trabajo = float(paso.pausa_espera or 0), float(paso.pausa_trabajo or 0)
+        total = max(j.horas(paso.activado_en, paso.terminado_en) - p_espera - p_trabajo, 0.0)
         meta = float(paso.area.meta_horas or 4)
         if paso.etapa == "recolecta" and s.recolecta_metodo != "transporte":
             # lo que se mide es cuánto tardó en recogerse en la clínica: plazo fijo de 2 horas laborales
-            total = j.horas(paso.activado_en, paso.recolectado_en or paso.terminado_en)
+            total = max(j.horas(paso.activado_en, paso.recolectado_en or paso.terminado_en) - p_espera, 0.0)
             meta = float(PLAZO_RECOLECTA_HORAS)
+        total = round(total, 2)
         self.sesion.add(TiempoPaso(
             paso_id=paso.id, solicitud_id=s.id, codigo=s.codigo, area_id=paso.area_id, area=paso.area.nombre,
             etapa=paso.etapa, tipo_trabajo=s.tipo_trabajo, responsable_id=paso.tecnico_id if produccion else usuario_id,
             vuelta=paso.vuelta, activado_en=paso.activado_en, iniciado_en=paso.iniciado_en,
             terminado_en=paso.terminado_en,
-            espera_horas=j.horas(paso.activado_en, paso.iniciado_en) if produccion and paso.iniciado_en else None,
-            trabajo_horas=j.horas(paso.iniciado_en, paso.terminado_en) if produccion and paso.iniciado_en else None,
+            espera_horas=round(max(j.horas(paso.activado_en, paso.iniciado_en) - p_espera, 0), 2)
+            if produccion and paso.iniciado_en else None,
+            trabajo_horas=round(max(j.horas(paso.iniciado_en, paso.terminado_en) - p_trabajo, 0), 2)
+            if produccion and paso.iniciado_en else None,
             total_horas=total, meta_horas=meta, cumplio=total <= meta))
 
     def avanzar(self, s: Solicitud, usuario_id: int | None, nota: str | None = None) -> None:
-        """Activa el siguiente paso pendiente y actualiza el estado visible del caso."""
+        """Activa el siguiente grupo de pasos pendientes y actualiza el estado visible del caso.
+        Si aún hay pasos en paralelo en curso, el caso espera a que terminen todos."""
         anterior = s.estado
-        siguiente = next((p for p in sorted(s.pasos, key=lambda x: x.orden) if p.estado == PASO_PENDIENTE), None)
+        en_curso = self.pasos_activos(s)
+        if en_curso:
+            if nota:
+                s.historial.append(SolicitudHistorial(estado=s.estado, nota=(
+                    nota + " · espera a " + ", ".join(p.area.nombre for p in en_curso))[:300], usuario_id=usuario_id))
+            return
+        pendientes = [p for p in sorted(s.pasos, key=lambda x: x.orden) if p.estado == PASO_PENDIENTE]
+        siguiente = pendientes[0] if pendientes else None
         if siguiente:
-            self.activar(s, siguiente)
+            grupo = [p for p in pendientes if p.grupo == siguiente.grupo] if siguiente.grupo else [siguiente]
+            for p in grupo:
+                self.activar(s, p)
             s.estado = estado_etapa(s, siguiente.etapa)
         else:
             s.estado = "entregada"
         if s.estado != anterior or nota:
-            texto = nota or (f"Pasa a {siguiente.area.nombre}" if siguiente else "Caso entregado y finalizado")
+            destino = " + ".join(p.area.nombre for p in self.pasos_activos(s)) if siguiente else ""
+            texto = nota or (f"Pasa a {destino}" if siguiente else "Caso entregado y finalizado")
             s.historial.append(SolicitudHistorial(estado=s.estado, nota=texto[:300], usuario_id=usuario_id))
 
     def activar(self, s: Solicitud, paso: SolicitudPaso) -> None:
@@ -230,9 +266,10 @@ class Motor:
         return len(pasos)
 
     def carga(self, usuario_id: int, etapas: tuple[str, ...] = ("produccion",)) -> int:
-        return self.sesion.scalar(select(func.count()).select_from(SolicitudPaso)
+        """Trabajos que ocupan al empleado (los casos en pausa no cuentan para su tope)."""
+        return self.sesion.scalar(select(func.count()).select_from(SolicitudPaso).join(Solicitud)
                                   .where(SolicitudPaso.tecnico_id == usuario_id, SolicitudPaso.etapa.in_(etapas),
-                                         SolicitudPaso.estado.in_(PASOS_CARGA))) or 0
+                                         SolicitudPaso.estado.in_(PASOS_CARGA), Solicitud.pausada.is_(False))) or 0
 
     def asignar(self, s: Solicitud, paso: SolicitudPaso) -> None:
         self.sesion.flush()  # la sesión no hace autoflush: la carga debe ver lo recién asignado
@@ -253,7 +290,7 @@ class Motor:
         liberados = self.liberar_ausentes()
         pendientes = list(self.sesion.execute(
             select(SolicitudPaso, Solicitud).join(Solicitud)
-            .where(SolicitudPaso.estado.in_([PASO_EN_COLA, PASO_SIN_TECNICO]))
+            .where(SolicitudPaso.estado.in_([PASO_EN_COLA, PASO_SIN_TECNICO]), Solicitud.pausada.is_(False))
             .order_by(Solicitud.prioridad, Solicitud.fecha_entrega, SolicitudPaso.activado_en)))
         asignados = 0
         for paso, s in pendientes:

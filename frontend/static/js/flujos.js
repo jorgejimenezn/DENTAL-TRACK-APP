@@ -2,7 +2,11 @@
 if (!iniciarPagina(["admin", "demo"])) throw new Error("sin acceso");
 
 const MODALIDADES = { digital: "Digital", analogo: "Analógico" };
-let catalogo = null, flujos = [], edicion = null; // edicion: { tipo, modalidad, pasos: [area_id] }
+let catalogo = null, flujos = [], edicion = null; // edicion: { tipo, modalidad, pasos: [area_id], paralelo: [bool] }
+const esProduccion = id => {
+  const n = (catalogo.areas.find(a => a.id === id)?.nombre || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  return !/^(ingreso|logistic|qa|control de calidad|factura|validacion de diseno)/.test(n);
+};
 
 async function cargar() {
   try {
@@ -21,7 +25,7 @@ function celda(tipo, modalidad) {
   if (f) {
     estado = f.activo ? '<span class="badge verde">Activo</span>' : '<span class="badge rojo">Inactivo</span>';
     cuerpo = `<div class="pasos">${f.pasos.map((p, i) => `
-      ${i ? '<span class="flecha">→</span>' : ""}
+      ${i ? (p.paralelo ? '<span class="flecha" title="En paralelo con el anterior">∥</span>' : '<span class="flecha">→</span>') : ""}
       <span class="paso ${p.tecnicos ? "" : "sin-tecnicos"}" title="${p.tecnicos} empleado(s) pueden hacer este paso">
         <span class="n">${p.orden}</span>${escapar(p.area)}<span class="t">${p.tecnicos}</span></span>`).join("")}</div>`;
   }
@@ -60,7 +64,7 @@ const areaNombre = id => catalogo.areas.find(a => a.id === id)?.nombre || "?";
 function abrir(tipoId, modalidad) {
   const tipo = catalogo.tipos.find(t => t.id === tipoId);
   const f = buscarFlujo(tipoId, modalidad);
-  edicion = { tipo, modalidad, pasos: f ? f.pasos.map(p => p.area_id) : [] };
+  edicion = { tipo, modalidad, pasos: f ? f.pasos.map(p => p.area_id) : [], paralelo: f ? f.pasos.map(p => !!p.paralelo) : [] };
   $("tituloFlujo").textContent = `${tipo.nombre} · ${MODALIDADES[modalidad]}`;
   $("chkActivo").checked = f ? f.activo : true;
   $("selArea").innerHTML = catalogo.areas.filter(a => a.activo).map(a => `<option value="${a.id}">${escapar(a.nombre)}</option>`).join("");
@@ -70,29 +74,37 @@ function abrir(tipoId, modalidad) {
 }
 
 function pintarEditor() {
+  edicion.paralelo = edicion.pasos.map((a, i) => !!edicion.paralelo[i] && i > 0 && esProduccion(a) && esProduccion(edicion.pasos[i - 1]));
   $("editorPasos").innerHTML = edicion.pasos.map((a, i) => `
-    <div class="editor-paso">
-      <span class="num">${i + 1}</span><span class="area">${escapar(areaNombre(a))}</span>
+    <div class="editor-paso ${edicion.paralelo[i] ? "paralelo" : ""}">
+      <span class="num">${i + 1}</span><span class="area">${escapar(areaNombre(a))}
+        ${i > 0 && esProduccion(a) && esProduccion(edicion.pasos[i - 1]) ? `<label class="check-paralelo" title="Este paso inicia al mismo tiempo que el anterior; el siguiente espera a que terminen los dos"><input type="checkbox" data-paralelo="${i}" ${edicion.paralelo[i] ? "checked" : ""}> en paralelo con el anterior</label>` : ""}</span>
       <button type="button" class="btn" data-mover="${i}" data-dir="-1" ${i ? "" : "disabled"} aria-label="Subir">↑</button>
       <button type="button" class="btn" data-mover="${i}" data-dir="1" ${i < edicion.pasos.length - 1 ? "" : "disabled"} aria-label="Bajar">↓</button>
       <button type="button" class="btn rojo-borde" data-quitar="${i}" aria-label="Quitar">✕</button>
     </div>`).join("") || '<div class="nota" style="margin:0 0 6px">Agrega el primer paso.</div>';
 }
 
+$("editorPasos").addEventListener("change", e => {
+  const c = e.target.closest("[data-paralelo]");
+  if (c) { edicion.paralelo[Number(c.dataset.paralelo)] = c.checked; pintarEditor(); }
+});
 $("editorPasos").addEventListener("click", e => {
+  if (e.target.closest("[data-paralelo]")) return;
   const mover = e.target.closest("[data-mover]"), quitar = e.target.closest("[data-quitar]");
   if (mover) {
     const i = Number(mover.dataset.mover), j = i + Number(mover.dataset.dir);
     [edicion.pasos[i], edicion.pasos[j]] = [edicion.pasos[j], edicion.pasos[i]];
+    [edicion.paralelo[i], edicion.paralelo[j]] = [edicion.paralelo[j], edicion.paralelo[i]];
   }
-  if (quitar) edicion.pasos.splice(Number(quitar.dataset.quitar), 1);
+  if (quitar) { edicion.pasos.splice(Number(quitar.dataset.quitar), 1); edicion.paralelo.splice(Number(quitar.dataset.quitar), 1); }
   pintarEditor();
 });
 
 $("btnAgregarPaso").onclick = () => {
   const area = Number($("selArea").value);
   if (!area) return;
-  edicion.pasos.push(area);
+  edicion.pasos.push(area); edicion.paralelo.push(false);
   pintarEditor();
 };
 
@@ -101,7 +113,7 @@ $("formFlujo").onsubmit = async e => {
   if (!edicion.pasos.length) return mostrarErrores($("errorFlujo"), new Error("El flujo necesita al menos un paso."));
   try {
     await api("PUT", "/config/flujos", { tipo_trabajo_id: edicion.tipo.id, modalidad: edicion.modalidad,
-      activo: $("chkActivo").checked, area_ids: edicion.pasos });
+      activo: $("chkActivo").checked, area_ids: edicion.pasos, paralelo: edicion.paralelo });
     $("modalFlujo").close(); toast("Flujo guardado"); cargar();
   } catch (error) { mostrarErrores($("errorFlujo"), error); }
 };

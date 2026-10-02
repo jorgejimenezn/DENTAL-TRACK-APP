@@ -96,6 +96,7 @@ class PasoOut(BaseModel):
     area_id: int
     area: str
     tecnicos: int = Field(description="Empleados que pueden realizar este paso para este tipo de trabajo")
+    paralelo: bool = False
 
 
 class FlujoOut(BaseModel):
@@ -112,6 +113,8 @@ class FlujoIn(BaseModel):
     modalidad: Modalidad
     activo: bool = True
     area_ids: list[int] = Field(min_length=1, description="Áreas en el orden en que se recorren")
+    paralelo: list[bool] = Field(default=[], description="Por cada paso: true = corre al mismo tiempo que el anterior "
+                                                          "(solo entre áreas de producción, ej. CAM_IMP y CAM_FRES)")
 
 
 # --- Asignaciones ---

@@ -134,6 +134,8 @@ class FlujoIn(BaseModel):
     modalidad: Modalidad
     activo: bool = True
     area_ids: list[int] = Field(min_length=1, description="Áreas en el orden en que se recorren")
+    paralelo: list[bool] = Field(default=[], description="Por cada paso: true = corre al mismo tiempo que el anterior "
+                                                          "(solo áreas de producción, ej. CAM_IMP y CAM_FRES)")
 
 
 class AsignacionAreaIn(BaseModel):
@@ -255,6 +257,20 @@ class ModificacionIn(BaseModel):
     fecha_entrega: date
     entrega_metodo: Literal["mensajero", "transporte"] | None = Field(default=None, description="Salida del trabajo")
     nota: str = Field(min_length=3, max_length=250, description="Qué se corrigió y por qué")
+
+
+class ReanudarIn(BaseModel):
+    nota: str | None = Field(default=None, max_length=250, description="Qué se recibió para continuar")
+    fecha_entrega: date | None = Field(default=None, description="Nueva fecha de entrega (opcional)")
+
+
+class EnvioIn(BaseModel):
+    nota: str | None = Field(default=None, max_length=200, description="Ej. enviado por WhatsApp al Dr.")
+
+
+class CambiosDisenoIn(BaseModel):
+    volver_a_paso_id: int | None = Field(default=None, description="Paso de diseño a repetir (vacío = el último)")
+    motivo: str = Field(min_length=3, max_length=250)
 
 
 class MetodoIn(BaseModel):

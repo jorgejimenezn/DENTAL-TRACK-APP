@@ -29,6 +29,7 @@ COLORES_CAJA = {"azul": "#1f6feb", "celeste": "#5bc0eb", "verde": "#1a7f37", "na
 CLASIFICACIONES = {"garantia_total": "Garantía total", "garantia_parcial_sin_cobro": "Garantía parcial sin cobro",
                    "garantia_parcial_con_cobro": "Garantía parcial con cobro", "cobro": "Cobro"}
 ETAPAS = {"recolecta": "Recolecta", "ingresos": "Ingresos", "validacion_rp": "Validación RP", "produccion": "Producción",
+          "validacion_diseno": "Validación de diseño",
           "qa": "Control de calidad", "facturacion": "Facturación", "entrega": "Entrega"}
 
 E = {

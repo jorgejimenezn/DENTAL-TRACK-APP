@@ -3,7 +3,9 @@ const usuario = iniciarPagina(["admin", "supervisor", "ingresos", "tecnico", "qa
 if (!usuario) throw new Error("sin acceso");
 const esDemo = usuario.rol === "demo";
 const esSupervision = ["admin", "supervisor"].includes(usuario.rol);
-let datos = null, areaElegida = null, arbol = null, pasoActivo = null;
+let datos = null, areaElegida = null, arbol = null, pasoActivo = null, modoTerminar = "terminar";
+const VISTA_VALIDACION = !!window.VISTA_VALIDACION;  // tablero de validación de diseño (validaciones.html)
+if (VISTA_VALIDACION && !["admin", "supervisor", "demo"].includes(usuario.rol)) { location.href = "inicio.html"; throw new Error("sin acceso"); }
 const indice = new Map();  // paso_id → datos del paso (para los modales)
 
 const ACCION = {
@@ -22,6 +24,9 @@ const ACCION = {
   entregado: { texto: "Entregado", clase: "verde", titulo: "Entregado al cliente" },
   entregado_transporte: { texto: "Entregado a transporte", clase: "verde", titulo: "Entregado a transporte" },
   cambiar_metodo: { texto: "Cambiar método", clase: "" },
+  enviar_cliente: { texto: "Enviado al cliente", clase: "" },
+  aprobar_diseno: { texto: "Cliente aprobó", clase: "verde", titulo: "Diseño aprobado por el cliente" },
+  cambios_diseno: { texto: "Pidió cambios", clase: "rojo-borde" },
   asignar_mensajero: { texto: "Asignar mensajero", clase: "" },
   asignar: { texto: "Reasignar", clase: "" },
   prioridad: { texto: "Prioridad", clase: "" },
@@ -41,6 +46,8 @@ function tarjeta(p, { actual = false, mostrarTecnico = false } = {}) {
     p.fuera_catalogo ? '<span class="badge azul">Fuera de catálogo</span>' : "",
     p.manual ? '<span class="badge morado">Orden manual</span>' : "",
     p.vuelta > 1 ? `<span class="badge rojo">Retrabajo ${p.vuelta - 1}</span>` : "",
+    p.pausada ? '<span class="badge naranja">En pausa</span>' : "",
+    p.paralelo_con?.length ? '<span class="badge azul">En paralelo</span>' : "",
     p.modalidad === "analogo" ? '<span class="badge gris">Analógico</span>' : '<span class="badge gris">Digital</span>',
   ].join("");
   const extra = [];
@@ -56,6 +63,9 @@ function tarjeta(p, { actual = false, mostrarTecnico = false } = {}) {
     if (p.guia) extra.push(`<div class="linea">Guía: <b>${escapar(p.guia)}</b></div>`);
   }
   if (p.etapa === "facturacion") extra.push(`<div class="linea">Cliente Odoo: <b>${escapar(p.cliente_odoo || "sin registrar")}</b> · ${p.credito ? '<span class="badge verde">Crédito: no pasa a Cobros</span>' : '<span class="badge gris">Contado</span>'}</div>`);
+  if (p.pausada) extra.push(`<div class="aviso-pausa" style="margin:0"><b>En pausa:</b> ${escapar(p.pausa_motivo || "")}. Espera a que supervisión lo reanude.</div>`);
+  if (p.paralelo_con?.length) extra.push(`<div class="linea">Al mismo tiempo en: <b>${escapar(p.paralelo_con.join(", "))}</b>. El caso avanza cuando todas terminan.</div>`);
+  if (p.etapa === "validacion_diseno" && p.enviado_en) extra.push(`<div class="linea">Enviado al cliente ${escapar(fechaHora(p.enviado_en))}${p.dias ? ` · <b>${p.dias} día(s) sin respuesta</b>` : ""}</div>`);
   if (p.devolucion) extra.push(`<div class="aviso rojo" style="margin:0"><div><b>Retrabajo:</b> ${escapar(p.devolucion.replace("Devuelto por QA: ", ""))}</div></div>`);
   if (p.instrucciones) extra.push(`<div class="nota-caso">${escapar(p.instrucciones)}</div>`);
   if (ES_RUTA(p) && ["asignado", "recolectado"].includes(p.estado) && !mostrarTecnico && usuario.rol !== "mensajero") extra.push(`<div class="linea">Mensajero: <b>${escapar(p.tecnico)}</b></div>`);
@@ -68,6 +78,7 @@ function tarjeta(p, { actual = false, mostrarTecnico = false } = {}) {
     if (a === "hecho") texto = p.etapa === "recolecta" ? "Recolectado" : "Entregado";
     if (a === "asignar_mensajero" && p.estado === "asignado") texto = "Cambiar mensajero";
     if (a === "asignar" && ["en_cola", "sin_tecnico"].includes(p.estado)) texto = "Asignar";
+    if (a === "enviar_cliente" && p.estado === "enviado") texto = "Reenviar";
     if (a === "cambiar_metodo") texto = p.metodo === "transporte" ? "Cambiar a mensajero" : "Cambiar a transporte";
     if (a === "iniciar" && esDemo) texto = "Iniciar";
     return `<button class="btn ${ACCION[a].clase}" data-accion="${a}" data-paso="${p.paso_id}">${texto}</button>`;
@@ -103,7 +114,9 @@ function pintarProduccion(pr) {
     ${l.en_espera.length ? `<div class="trabajos">${l.en_espera.map(p => tarjeta(p)).join("")}</div>` : '<div class="vacio-card">Sin trabajos en espera.</div>'}
     ${l.en_espera.length && !l.en_espera[0].acciones.includes("iniciar") ? '<p class="nota">Llegaste al máximo de trabajos simultáneos: termina alguno para iniciar otro.</p>' : ""}
   </section>`).join("");
-  $("produccion").innerHTML = normal + lotes;
+  const pausados = pr.pausados?.length ? `<section class="bandeja-seccion"><h2>En pausa <span class="sub">${pr.pausados.length} · supervisión los reanuda cuando llegue lo pendiente</span></h2>
+    <div class="trabajos">${pr.pausados.map(p => tarjeta(p)).join("")}</div></section>` : "";
+  $("produccion").innerHTML = normal + lotes + pausados;
 }
 
 function pintarRutas(rutas) {
@@ -144,8 +157,26 @@ function pintarSupervision(resumen) {
     </button>`).join("")}</div></section>`;
 }
 
+let pestanaValidacion = "por_enviar";
+const RANGOS_VALIDACION = [["hoy", "Hoy"], ["1", "1 día"], ["2-3", "2–3 días"], ["4+", "4 días o más"]];
+function pintarValidaciones(v) {
+  indice.clear();
+  const pestañas = [["por_enviar", "Por enviar", v.por_enviar.length], ...RANGOS_VALIDACION.map(([k, t]) => [k, `Enviados · ${t}`, v.rangos[k]])];
+  if (!pestañas.some(p => p[0] === pestanaValidacion)) pestanaValidacion = "por_enviar";
+  const lista = pestanaValidacion === "por_enviar" ? v.por_enviar : v.enviados.filter(e => e.rango === pestanaValidacion);
+  $("supervision").innerHTML = `<div class="pestanas" id="pestanasValidacion">${pestañas.map(([k, t, n]) =>
+    `<button class="${k === pestanaValidacion ? "activa" : ""} ${k === "4+" && n ? "alerta" : ""}" data-pv="${k}">${t} <b>${n}</b></button>`).join("")}</div>`;
+  $("areas").innerHTML = `<section class="bandeja-seccion">${lista.length ? `<div class="trabajos">${lista.map(p => tarjeta(p)).join("")}</div>`
+    : `<div class="vacio-card">${pestanaValidacion === "por_enviar" ? "No hay diseños por enviar al cliente." : "No hay diseños enviados en este rango."}</div>`}</section>`;
+}
+
 async function cargar() {
   $("errorBandeja").hidden = true;
+  if (VISTA_VALIDACION) {
+    try { pintarValidaciones(await api("GET", "/validaciones-diseno")); }
+    catch (error) { mostrarErrores($("errorBandeja"), error); }
+    return;
+  }
   try {
     datos = await api("GET", "/bandeja" + (areaElegida ? `?area_id=${areaElegida}` : ""));
     indice.clear();
@@ -157,6 +188,8 @@ async function cargar() {
 }
 
 $("supervision").addEventListener("click", e => {
+  const pv = e.target.closest("[data-pv]");
+  if (pv) { pestanaValidacion = pv.dataset.pv; return cargar(); }
   const b = e.target.closest("[data-area]");
   if (!b) return;
   if (esDemo) return document.getElementById(`area-${b.dataset.area}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -184,6 +217,15 @@ document.addEventListener("click", async e => {
   if (accion === "recolectado") return ejecutar(b, () => api("POST", `/pasos/${id}/recolectado`), `${pasoActivo.codigo}: material recolectado, llévalo al laboratorio`).catch(() => {});
   if (accion === "iniciar") return ejecutar(b, () => api("POST", `/pasos/${id}/iniciar`), `${pasoActivo.codigo} iniciado`).catch(() => {});
   if (accion === "rechazar") return abrirRechazo();
+  if (accion === "cambios_diseno") return abrirRechazo(true);
+  if (accion === "enviar_cliente") {
+    modoTerminar = "enviar";
+    $("tituloTerminar").textContent = `Diseño enviado · ${pasoActivo.codigo}`;
+    $("textoTerminar").textContent = "Registra que enviaste el diseño al cliente (WhatsApp, correo…). Queda en espera de su respuesta en el tablero de validación.";
+    ["campoFactura", "campoCaja", "campoReceptor", "campoGuia", "campoTransporte"].forEach(c => $(c).hidden = true);
+    $("tNota").value = ""; $("errorTerminar").hidden = true;
+    return $("modalTerminar").showModal();
+  }
   if (accion === "validar_rp") return abrirValidacion();
   if (accion === "modificar") return abrirModificacion();
   if (accion === "cancelar" || accion === "no_se_pudo" || accion === "cambiar_metodo") {
@@ -200,6 +242,7 @@ document.addEventListener("click", async e => {
   }
   if (accion === "asignar" || accion === "asignar_mensajero") return abrirAsignacion(accion);
   if (accion === "prioridad") return abrirPrioridad();
+  modoTerminar = "terminar";
   // terminar / aprobar / aprobar_qa / facturar / recolectado / entregado
   $("tituloTerminar").textContent = `${ACCION[accion].titulo} · ${pasoActivo.codigo}`;
   $("textoTerminar").textContent = accion === "aprobar"
@@ -218,6 +261,7 @@ document.addEventListener("click", async e => {
   $("tGuia").value = ""; $("tTransporte").value = "";
   if (accion === "entregado_transporte") $("textoTerminar").textContent = "Registra la guía del envío. Con esto el caso queda entregado y finalizado.";
   if (accion === "recibido_transporte") $("textoTerminar").textContent = "Confirma que el material llegó por transporte. El caso pasa a Ingresos.";
+  if (accion === "aprobar_diseno") $("textoTerminar").textContent = "El cliente aprobó el diseño. El caso continúa a impresión o fresado.";
   if (accion === "entregado_lab") $("textoTerminar").textContent = "El material ya está en el laboratorio. El caso pasa a Ingresos.";
   $("tFactura").value = pasoActivo.factura_numero || ""; $("tNota").value = ""; $("errorTerminar").hidden = true;
   $("modalTerminar").showModal();
@@ -236,16 +280,25 @@ $("formTerminar").onsubmit = async e => {
                    caja_numero: $("campoCaja").hidden ? null : $("tCajaNumero").value.trim(),
                    guia: $("campoGuia").hidden ? null : ($("tGuia").value.trim() || null),
                    transporte: $("campoTransporte").hidden ? null : ($("tTransporte").value.trim() || null) };
+  if (modoTerminar === "enviar")
+    return ejecutar($("btnTerminar"), () => api("POST", `/pasos/${pasoActivo.paso_id}/enviar-cliente`, { nota: $("tNota").value.trim() || null }),
+      `${pasoActivo.codigo}: diseño enviado al cliente`).catch(err => mostrarErrores($("errorTerminar"), err));
   const aprobado = !$("campoCaja").hidden ? { ...pasoActivo } : null;
   await ejecutar($("btnTerminar"), () => api("POST", `/pasos/${pasoActivo.paso_id}/terminar`, cuerpo), `${pasoActivo.codigo} avanzó al siguiente paso`)
     .then(() => { if (aprobado) ofrecerImpresion(aprobado); })
     .catch(err => mostrarErrores($("errorTerminar"), err));
 };
 
-function abrirRechazo() {
+let modoRechazo = "qa";
+function abrirRechazo(diseno = false) {
+  modoRechazo = diseno ? "diseno" : "qa";
+  $("tituloRechazar").textContent = diseno ? `Cambios del cliente · ${pasoActivo.codigo}` : "Devolver a producción";
+  $("campoModo").hidden = diseno;
+  $("btnRechazar").textContent = diseno ? "Regresar a diseño" : "Devolver";
+  $("rMotivo").placeholder = diseno ? "Ej. El doctor pide cerrar el contacto con la 12" : "Ej. Contacto abierto con la pieza 12";
   $("errorRechazar").hidden = true; $("rMotivo").value = "";
   const previos = pasoActivo.pasos_previos;
-  $("rPaso").innerHTML = previos.map((p, i) => `<option value="${p.id}">${escapar(p.area)}${i === 0 && previos.length > 1 ? " (todo el trabajo)" : ""}</option>`).join("");
+  $("rPaso").innerHTML = previos.map((p, i) => `<option value="${p.id}">${escapar(p.area)}${i === 0 && previos.length > 1 && modoRechazo !== "diseno" ? " (todo el trabajo)" : ""}</option>`).join("");
   $("rPaso").value = previos.at(-1)?.id || "";  // por defecto, el paso anterior
   document.querySelector("[name=rModo][value=desde]").checked = true;
   resumenRechazo();
@@ -255,6 +308,9 @@ $("formRechazar").onsubmit = async e => {
   e.preventDefault();
   if ($("rMotivo").value.trim().length < 3) return mostrarErrores($("errorRechazar"), new Error("Describe el motivo"));
   const modo = document.querySelector("[name=rModo]:checked").value;
+  if (modoRechazo === "diseno")
+    return ejecutar(null, () => api("POST", `/pasos/${pasoActivo.paso_id}/cambios-diseno`, { volver_a_paso_id: Number($("rPaso").value) || null, motivo: $("rMotivo").value.trim() }),
+      `${pasoActivo.codigo} regresó a diseño`).catch(err => mostrarErrores($("errorRechazar"), err));
   await ejecutar(null, () => api("POST", `/pasos/${pasoActivo.paso_id}/rechazar`, { volver_a_paso_id: Number($("rPaso").value), modo, motivo: $("rMotivo").value.trim() }),
     `${pasoActivo.codigo} regresó a producción`).catch(err => mostrarErrores($("errorRechazar"), err));
 };
@@ -432,6 +488,7 @@ document.addEventListener("click", async e => {
 function resumenRechazo() {
   const previos = pasoActivo.pasos_previos, i = previos.findIndex(p => p.id === Number($("rPaso").value));
   const modo = document.querySelector("[name=rModo]:checked")?.value;
+  if (modoRechazo === "diseno") { $("rResumen").textContent = ""; return; }
   const areas = i < 0 ? [] : (modo === "solo" ? [previos[i]] : previos.slice(i)).map(p => p.area);
   $("rResumen").textContent = areas.length ? `Se repetirá: ${[...areas, "QA"].join(" → ")}` : "";
 }

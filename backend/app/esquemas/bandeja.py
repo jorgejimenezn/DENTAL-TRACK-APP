@@ -60,6 +60,10 @@ class PasoBandeja(BaseModel):
     cliente_odoo: str | None = None
     credito: bool = False
     devolucion: str | None = None  # motivo de QA cuando es un retrabajo
+    pausada: bool = False              # el supervisor detuvo el caso: no se puede trabajar
+    pausa_motivo: str | None = None
+    enviado_en: datetime | None = None  # validación de diseño: cuándo se envió al cliente
+    paralelo_con: list[str] = []        # otras áreas que trabajan este caso al mismo tiempo
     metodo: str | None = None          # recolecta/entrega: mensajero | transporte
     limite: datetime | None = None     # recolecta con mensajero: plazo de 2 horas laborales
     vencida: bool = False              # pasó el plazo sin recolectar
@@ -85,6 +89,7 @@ class Produccion(BaseModel):
     asignados: list[PasoBandeja]  # solo se llena en áreas por lote (las demás ven actual, siguiente y el conteo)
     en_espera: int = 0
     lotes: list[LoteArea] = []
+    pausados: list[PasoBandeja] = []  # asignados a mí pero el caso está en pausa
     total: int
     max_trabajos: int | None
 
@@ -160,6 +165,16 @@ class ModificacionIn(BaseModel):
         if any(p not in PIEZAS_FDI for p in v):
             raise ValueError("Piezas no válidas (FDI)")
         return sorted(set(v))
+
+
+class CambiosDisenoIn(BaseModel):
+    """El cliente pidió cambios al diseño: regresa a un paso de producción y vuelve a validarse."""
+    volver_a_paso_id: int | None = Field(default=None, description="Paso de diseño a repetir (vacío = el último)")
+    motivo: str = Field(min_length=3, max_length=250)
+
+
+class EnvioIn(BaseModel):
+    nota: str | None = Field(default=None, max_length=200, description="Ej. enviado por WhatsApp al Dr.")
 
 
 class MetodoIn(BaseModel):

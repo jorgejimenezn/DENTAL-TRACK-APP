@@ -4,6 +4,7 @@ if (!usuario) throw new Error("sin acceso");
 const parametros = new URLSearchParams(location.search);
 const casoId = Number(parametros.get("id"));
 const ESTADOS = {
+  validacion_diseno: "Validación de diseño", diseno_enviado: "Diseño enviado al cliente",
   pendiente_recolecta: "Pendiente de recolecta", material_en_camino: "Material en camino", espera_transporte: "Esperando transporte", validacion_qa: "Validación de QA", recibida: "Recibida",
   en_produccion: "En producción", control_calidad: "Control de calidad", facturacion: "Facturación y empaque",
   listo_entrega: "Listo para entrega", en_ruta: "En ruta de entrega", entregada: "Entregada", cancelada: "Cancelada",
@@ -25,6 +26,7 @@ function pintar() {
     `<span class="badge ${COLOR_ESTADO[c.estado] || "gris"}">${escapar(c.estado_texto)}</span>`,
     c.emergencia ? '<span class="badge rojo">EMERGENCIA</span>' : "",
     c.fuera_catalogo ? '<span class="badge azul">Fuera de catálogo</span>' : "",
+    c.pausada ? '<span class="badge naranja">En pausa</span>' : "",
     etiquetaManual(c, usuario.rol),
     c.prioridad ? `<span class="badge gris">Prioridad ${c.prioridad}</span>` : "",
   ].join("");
@@ -78,13 +80,24 @@ function pintar() {
   $("formPrioridad").hidden = !(["admin", "supervisor"].includes(usuario.rol) && !["entregada", "cancelada"].includes(c.estado));
   $("nuevaPrioridad").value = c.prioridad || 3;
   $("formCancelar").hidden = !(["admin", "supervisor"].includes(usuario.rol) && !["entregada", "cancelada"].includes(c.estado));
+  const supervisa = ["admin", "supervisor"].includes(usuario.rol) && !["entregada", "cancelada"].includes(c.estado);
+  $("formPausa").hidden = !(supervisa && !c.pausada);
+  $("formReanudar").hidden = !(supervisa && c.pausada);
+  $("fechaReanudar").value = "";
+  $("avisoPausa").hidden = !c.pausada;
+  $("avisoPausa").innerHTML = c.pausada ? `<b>Caso en pausa</b> desde ${escapar(fechaHora(c.pausada_en))}: ${escapar(c.pausa_motivo || "")}`
+    + (usuario.rol === "doctor" ? "<br><small>El laboratorio continuará cuando reciba lo pendiente.</small>" : "") : "";
+  $("bloquePausas").hidden = !c.pausas.length;
+  $("pausas").innerHTML = c.pausas.map(p => `<div class="item"><span class="nombre">${escapar(p.motivo)}<small>${escapar(fechaHora(p.pausado_en))}${p.pausado_por ? ` · ${escapar(p.pausado_por)}` : ""}${p.areas ? ` · ${escapar(p.areas)}` : ""}</small>
+      ${p.reanudado_en ? `<small>Reanudado ${escapar(fechaHora(p.reanudado_en))} · ${p.horas_laborales ?? 0} h laborales${p.nota_reanudar ? ` · ${escapar(p.nota_reanudar)}` : ""}</small>` : ""}</span>
+      <span class="badge ${p.reanudado_en ? "gris" : "naranja"}">${p.reanudado_en ? "Reanudado" : "En pausa"}</span></div>`).join("");
   // Recorrido: pasos del flujo de este caso
-  const activos = ["en_area", "en_cola", "sin_tecnico", "asignado", "en_proceso", "recolectado"];
-  const TEXTO_PASO = { en_area: "En el área", en_cola: "En cola", sin_tecnico: "Sin técnico", asignado: "Asignado", en_proceso: "En proceso", recolectado: "Recolectado · en camino", terminado: "Hecho", pendiente: "Pendiente" };
+  const activos = ["en_area", "en_cola", "sin_tecnico", "asignado", "en_proceso", "recolectado", "enviado"];
+  const TEXTO_PASO = { enviado: "Enviado al cliente", en_area: "En el área", en_cola: "En cola", sin_tecnico: "Sin técnico", asignado: "Asignado", en_proceso: "En proceso", recolectado: "Recolectado · en camino", terminado: "Hecho", pendiente: "Pendiente" };
   $("bloqueRecorrido").hidden = !c.recorrido.length;
   $("recorrido").innerHTML = c.recorrido.map((p, i) => `
     <li class="${p.estado === "terminado" ? "hecho" : activos.includes(p.estado) ? "ahora" : ""}"><span class="n">${i + 1}</span>
-      <span><b>${escapar(p.area)}</b> <small style="color:var(--texto-3)">${escapar(p.etapa_texto)}${p.vuelta > 1 ? " · retrabajo" : ""}</small></span>
+      <span><b>${escapar(p.area)}</b> <small style="color:var(--texto-3)">${escapar(p.etapa_texto)}${p.vuelta > 1 ? " · retrabajo" : ""}${p.grupo && c.recorrido.some(x => x !== p && x.grupo === p.grupo) ? " · en paralelo" : ""}</small></span>
       <span class="quien">${escapar(TEXTO_PASO[p.estado] || p.estado)}${p.tecnico || p.atendido_por ? ` · ${escapar(p.atendido_por || p.tecnico)}` : ""}${p.receptor ? ` · recibió ${escapar(p.receptor)}` : ""}</span></li>`).join("");
   $("bloqueReaperturas").hidden = !c.reaperturas.length;
   $("reaperturas").innerHTML = c.reaperturas.map(r => `
@@ -120,6 +133,22 @@ $("formPrioridad").onsubmit = async e => {
   if (motivo.length < 3) return toast("Escribe el motivo del cambio", true);
   try { caso = await api("POST", `/solicitudes/${casoId}/prioridad`, { prioridad: Number($("nuevaPrioridad").value), motivo }); $("motivoPrioridad").value = ""; toast("Prioridad actualizada"); pintar(); }
   catch (error) { toast(error.message, true); }
+};
+
+$("formPausa").onsubmit = async e => {
+  e.preventDefault();
+  const motivo = $("motivoPausa").value.trim();
+  if (motivo.length < 3) return toast("Escribe el motivo de la pausa", true);
+  try { caso = await api("POST", `/solicitudes/${casoId}/pausar`, { motivo }); $("motivoPausa").value = ""; toast("Caso en pausa"); pintar(); }
+  catch (error) { toast(error.message, true); }
+};
+
+$("formReanudar").onsubmit = async e => {
+  e.preventDefault();
+  try {
+    caso = await api("POST", `/solicitudes/${casoId}/reanudar`, { nota: $("notaReanudar").value.trim() || null, fecha_entrega: $("fechaReanudar").value || null });
+    $("notaReanudar").value = ""; toast("Caso reanudado"); pintar();
+  } catch (error) { toast(error.message, true); }
 };
 
 $("formCancelar").onsubmit = async e => {

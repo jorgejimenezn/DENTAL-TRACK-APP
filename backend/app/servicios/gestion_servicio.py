@@ -214,6 +214,14 @@ class GestionServicio:
                                "mensajero": _nombre(p.tecnico), "limite": limite, "vencida": momento > limite})
         recolectas.sort(key=lambda r: r["limite"])
         vivo = {
+            "pausados": sum(1 for s in vigentes if s.pausada),
+            "pausados_lista": [{"id": s.id, "codigo": s.codigo, "cliente": s.cliente.razon_social, "motivo": s.pausa_motivo,
+                                "desde": s.pausada_en} for s in sorted((x for x in vigentes if x.pausada),
+                                                                       key=lambda x: x.pausada_en or x.creado_en)][:30],
+            "validaciones_por_enviar": self.sesion.scalar(select(func.count()).select_from(SolicitudPaso).where(
+                SolicitudPaso.etapa == "validacion_diseno", SolicitudPaso.estado == "en_area")) or 0,
+            "validaciones_enviadas": self.sesion.scalar(select(func.count()).select_from(SolicitudPaso).where(
+                SolicitudPaso.etapa == "validacion_diseno", SolicitudPaso.estado == "enviado")) or 0,
             "recolectas_pendientes": len(recolectas),
             "recolectas_vencidas": sum(1 for r in recolectas if r["vencida"]),
             "recolectas_lista": recolectas[:30],

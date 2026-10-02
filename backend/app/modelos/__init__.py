@@ -35,7 +35,8 @@ def valores_area(nombre: str) -> dict:
     """Valores iniciales: Yesos, CAM_IMP y CAM_FRES trabajan por lote (15); CAM tiene meta de 8 h, el resto 4 h."""
     n = nombre.upper()
     lote = n.startswith("YESO") or n.startswith("CAM")
-    return {"lote": lote, "max_simultaneos": 15 if lote else 1, "meta_horas": 8.0 if n.startswith("CAM") else 4.0}
+    meta = 8.0 if n.startswith("CAM") or n.startswith("VALIDACI") else 4.0
+    return {"lote": lote, "max_simultaneos": 15 if lote else 1, "meta_horas": meta}
 
 
 class Usuario(Base):

@@ -1,4 +1,5 @@
 """Rutas internas de solicitudes (CN / RP) y archivos adjuntos."""
+from datetime import date
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, File, Query, Response, UploadFile
@@ -9,8 +10,8 @@ from app.core.dependencias import Actor, obtener_actor
 from app.db.mongo import obtener_mongo
 from app.db.postgres import obtener_sesion
 from app.esquemas.bandeja import PrioridadIn
-from app.esquemas.solicitud import (ArchivoOut, ClienteBreve, MotivoIn, PerfilSolicitud, Tablero, ReaperturaIn, SolicitudIn,
-                                    SolicitudOut, SolicitudResumen)
+from app.esquemas.solicitud import (ArchivoOut, ClienteBreve, MotivoIn, PausaOut, PerfilSolicitud, ReanudarIn,
+                                    ReaperturaIn, SolicitudIn, SolicitudOut, SolicitudResumen, Tablero)
 from app.repositorios.archivo_repo import ArchivoRepositorio
 from app.rutas.proveedores import servicio_auditoria
 from app.servicios.auditoria_servicio import AuditoriaServicio
@@ -85,6 +86,24 @@ def reabrir(solicitud_id: int, datos: ReaperturaIn, actor: Actor = Depends(obten
 def cancelar(solicitud_id: int, datos: MotivoIn, actor: Actor = Depends(obtener_actor),
              s: SolicitudServicio = Depends(_servicio)):
     return s.cancelar(solicitud_id, datos.motivo, actor)
+
+
+@router.post("/solicitudes/{solicitud_id}/pausar", response_model=SolicitudOut)
+def pausar(solicitud_id: int, datos: MotivoIn, actor: Actor = Depends(obtener_actor),
+           s: SolicitudServicio = Depends(_servicio)):
+    return s.pausar(solicitud_id, datos.motivo, actor)
+
+
+@router.post("/solicitudes/{solicitud_id}/reanudar", response_model=SolicitudOut)
+def reanudar(solicitud_id: int, datos: ReanudarIn, actor: Actor = Depends(obtener_actor),
+             s: SolicitudServicio = Depends(_servicio)):
+    return s.reanudar(solicitud_id, datos.nota, datos.fecha_entrega, actor)
+
+
+@router.get("/pausas", response_model=list[PausaOut])
+def pausas(desde: date | None = None, hasta: date | None = None, actor: Actor = Depends(obtener_actor),
+           s: SolicitudServicio = Depends(_servicio)):
+    return s.pausas(actor, desde, hasta)
 
 
 @router.get("/solicitudes/{solicitud_id}/orden.pdf")

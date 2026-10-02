@@ -24,7 +24,7 @@ async function cargar() {
     $("tabla").innerHTML = casos.length ? casos.map(c => `
       <tr>
         <td class="principal"><a href="caso.html?id=${c.id}" class="codigo-caso">${escapar(c.codigo)}</a>
-          ${c.emergencia ? ' <span class="badge rojo">EMERGENCIA</span>' : ""} ${etiquetaManual(c, usuario.rol)}
+          ${c.emergencia ? ' <span class="badge rojo">EMERGENCIA</span>' : ""} ${etiquetaManual(c, usuario.rol)}${c.pausada ? ' <span class="badge naranja">En pausa</span>' : ""}
           <span class="sub">${escapar(c.paciente)}${c.caso_origen ? ` · reapertura de ${escapar(c.caso_origen)}` : ""}</span></td>
         ${esDoctor ? "" : `<td data-label="Cliente">${escapar(c.cliente)}${c.prioridad ? `<span class="sub">Prioridad ${c.prioridad}</span>` : ""}</td>`}
         <td data-label="Trabajo">${escapar(c.trabajo)}<span class="sub">Piezas ${escapar(c.piezas.join(", "))}</span></td>

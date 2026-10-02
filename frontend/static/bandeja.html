@@ -50,11 +50,11 @@
 <!-- QA: devolver a producción -->
 <dialog class="modal chico" id="modalRechazar">
   <form id="formRechazar" novalidate>
-    <div class="modal-cabecera"><h2>Devolver a producción</h2><button type="button" class="cerrar" data-cerrar>&times;</button></div>
+    <div class="modal-cabecera"><h2 id="tituloRechazar">Devolver a producción</h2><button type="button" class="cerrar" data-cerrar>&times;</button></div>
     <div class="modal-cuerpo">
       <div class="error-form" id="errorRechazar" hidden></div>
       <div class="campo"><label>Regresar al paso</label><select id="rPaso"></select></div>
-      <div class="campo" style="margin-top:12px"><label>¿Qué se repite?</label>
+      <div class="campo" style="margin-top:12px" id="campoModo"><label>¿Qué se repite?</label>
         <div class="opciones-radio">
           <label><input type="radio" name="rModo" value="desde" checked> <span><b>Desde ese paso en adelante</b><br><small style="color:var(--texto-2)">Se repiten ese paso y todos los de producción que siguen, luego QA. Para rehacer todo, elige el primer paso.</small></span></label>
           <label><input type="radio" name="rModo" value="solo"> <span><b>Solo ese paso</b><br><small style="color:var(--texto-2)">Se corrige únicamente ese paso y regresa directo a QA.</small></span></label>
@@ -62,7 +62,7 @@
         <div class="ayuda" id="rResumen"></div></div>
       <div class="campo" style="margin-top:12px"><label>Motivo <span class="req">*</span></label><textarea id="rMotivo" maxlength="250" rows="3" placeholder="Ej. Contacto abierto con la pieza 12"></textarea></div>
     </div>
-    <div class="modal-pie"><button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" class="btn rojo-borde">Devolver</button></div>
+    <div class="modal-pie"><button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" class="btn rojo-borde" id="btnRechazar">Devolver</button></div>
   </form>
 </dialog>
 

@@ -7,14 +7,15 @@ from sqlalchemy.orm import Session, selectinload
 from app.core.dependencias import Actor
 from app.core.errores import Conflicto, ErrorNegocio, NoEncontrado
 from app.core.jornada import Jornada
-from app.esquemas.bandeja import (CLASIFICACIONES, AreaBandeja, AsignarIn, Bandeja, Candidato, LoteArea, MetodoIn,
+from app.esquemas.bandeja import (CLASIFICACIONES, AreaBandeja, AsignarIn, Bandeja, Candidato, CambiosDisenoIn,
+                                  EnvioIn, LoteArea, MetodoIn,
                                   ModificacionIn, PasoBandeja, PasoPrevio, Produccion, RechazoIn, ResumenArea,
                                   TerminarIn, ValidacionRpIn)
 from app.modelos import ROL_CLIENTE, Area, Usuario
 from app.modelos.configuracion import ColorCaja, DiaNoLaborable, MotivoRP
 from app.modelos.solicitud import ESTADOS_CERRADOS
 from app.modelos.solicitud import (PASO_ASIGNADO, PASO_EN_AREA, PASO_EN_COLA, PASO_EN_PROCESO, PASO_PENDIENTE,
-                                   PASO_RECOLECTADO, PASO_SIN_TECNICO, PASOS_ACTIVOS, PASOS_CARGA, Solicitud, SolicitudHistorial,
+                                   PASO_ENVIADO, PASO_RECOLECTADO, PASO_SIN_TECNICO, PASOS_ACTIVOS, PASOS_CARGA, Solicitud, SolicitudHistorial,
                                    SolicitudPaso, TiempoPaso)
 from app.servicios.auditoria_servicio import AuditoriaServicio
 from app.servicios.configuracion_servicio import ZONA
@@ -29,6 +30,7 @@ ACCIONES_AREA = {
     "validacion_rp": ["validar_rp"],
     "qa": ["aprobar_qa", "rechazar"],
     "facturacion": ["facturar"],
+    "validacion_diseno": ["enviar_cliente", "aprobar_diseno", "cambios_diseno"],
 }
 RUTAS = ("recolecta", "entrega")
 ESTADOS_RUTA = [PASO_EN_AREA, PASO_ASIGNADO, PASO_RECOLECTADO]
@@ -66,6 +68,7 @@ ESTADOS_REASIGNABLES = {PASO_ASIGNADO, PASO_EN_COLA, PASO_SIN_TECNICO, PASO_EN_P
 NOTA_TERMINAR = {
     "recolecta": "Material recolectado", "qa": "Aprobado por control de calidad",
     "entrega": "Entregado al cliente", "facturacion": "Facturado y empacado",
+    "validacion_diseno": "Diseño aprobado por el cliente",
 }
 
 
@@ -95,8 +98,10 @@ class ProduccionServicio:
     def _vigente(self, paso: SolicitudPaso, etapas: set[str] | None = None) -> Solicitud:
         """El paso debe ser el actual del caso (evita que dos personas lo atiendan a la vez)."""
         s = paso.solicitud
-        if self.motor.paso_actual(s) is not paso or paso.estado not in PASOS_ACTIVOS:
+        if paso.estado not in PASOS_ACTIVOS or paso not in self.motor.pasos_activos(s):
             raise Conflicto(f"{s.codigo} ya no está en este paso. Actualiza tu bandeja")
+        if s.pausada:
+            raise Conflicto(f"{s.codigo} está en pausa: {s.pausa_motivo or 'sin motivo'}")
         if etapas and paso.etapa not in etapas:
             raise ErrorNegocio(f"Esta acción no corresponde a la etapa de {NOMBRE_ETAPA[paso.etapa]}")
         return s
@@ -113,15 +118,18 @@ class ProduccionServicio:
             return None, False
         if not hasattr(self, "_jornada"):
             self._jornada = Jornada(self.sesion)
-        limite = self._jornada.sumar(p.activado_en, PLAZO_RECOLECTA_HORAS)
+        # si el caso estuvo en pausa, el plazo se corre esas horas
+        limite = self._jornada.sumar(p.activado_en, PLAZO_RECOLECTA_HORAS + float(p.pausa_espera or 0))
         return limite, (p.recolectado_en or ahora()) > limite
 
     def _salida(self, p: SolicitudPaso, acciones: list[str]) -> PasoBandeja:
         s = p.solicitud
+        if s.pausada:
+            acciones = []  # un caso en pausa no se trabaja hasta que el supervisor lo reanude
         limite, vencida = self._plazo(p)
         es_ruta = p.etapa in RUTAS
         previos = []
-        if p.etapa == "qa":  # opciones para devolver el caso
+        if p.etapa in ("qa", "validacion_diseno"):  # opciones para devolver el caso
             ultimos: dict[int, SolicitudPaso] = {}
             primero: dict[int, int] = {}
             for x in sorted(s.pasos, key=lambda y: y.orden):
@@ -153,6 +161,9 @@ class ProduccionServicio:
             limite=limite, vencida=vencida, recolectado_en=p.recolectado_en,
             guia=(s.recolecta_guia if p.etapa == "recolecta" else s.entrega_guia) if es_ruta else None,
             transporte=s.entrega_transporte if p.etapa == "entrega" else None,
+            pausada=bool(s.pausada), pausa_motivo=s.pausa_motivo, enviado_en=p.enviado_en,
+            paralelo_con=[x.area.nombre for x in s.pasos if x is not p and x.grupo and x.grupo == p.grupo
+                          and x.estado != "omitido"],
             acciones=acciones, pasos_previos=previos)
 
     @staticmethod
@@ -182,7 +193,9 @@ class ProduccionServicio:
             SolicitudPaso.estado.in_(PASOS_CARGA))), key=self._orden_prioridad)
         produccion = None
         demo = actor.rol == DEMO
-        if not demo and (mios or any(tipo_area(a.nombre) == "produccion" for a in areas)):
+        pausados = [p for p in mios if p.solicitud.pausada]
+        mios = [p for p in mios if not p.solicitud.pausada]
+        if not demo and (mios or pausados or any(tipo_area(a.nombre) == "produccion" for a in areas)):
             normales = [p for p in mios if not p.area.lote]
             actual = next((p for p in normales if p.estado == PASO_EN_PROCESO), None)
             en_espera = [p for p in normales if p.estado == PASO_ASIGNADO]
@@ -202,7 +215,8 @@ class ProduccionServicio:
             produccion = Produccion(
                 actual=self._salida(actual, ["terminar"]) if actual else None,
                 siguiente=self._salida(siguiente, [] if actual else ["iniciar"]) if siguiente else None,
-                asignados=[], en_espera=max(len(en_espera) - 1, 0), lotes=lotes, total=len(mios),
+                asignados=[], en_espera=max(len(en_espera) - 1, 0), lotes=lotes,
+                pausados=[self._salida(p, []) for p in pausados], total=len(mios),
                 max_trabajos=usuario.max_trabajos if usuario else None)
 
         # --- Mensajero: sus recolectas y entregas ---
@@ -221,6 +235,9 @@ class ProduccionServicio:
                 return acciones_ruta(p, "demo" if demo else "logistica")
             if demo and p.etapa == "produccion":  # la demo hace el trabajo de cualquier técnico
                 return ["terminar"] if p.estado == PASO_EN_PROCESO else ["iniciar"]
+            if p.etapa == "validacion_diseno":
+                return (["enviar_cliente", "aprobar_diseno", "cambios_diseno"] if p.estado == PASO_EN_AREA
+                        else ["aprobar_diseno", "cambios_diseno", "enviar_cliente"])
             if p.estado == PASO_EN_AREA:
                 return ACCIONES_AREA.get(p.etapa, [])
             if supervisa and p.etapa == "produccion" and p.estado in ESTADOS_REASIGNABLES:
@@ -283,9 +300,9 @@ class ProduccionServicio:
             raise ErrorNegocio("Este trabajo no está asignado a ti", 403)
         if paso.estado != PASO_ASIGNADO:
             raise Conflicto("Este trabajo ya se inició")
-        mios = sorted(self.sesion.scalars(select(SolicitudPaso).where(
+        mios = sorted((p for p in self.sesion.scalars(select(SolicitudPaso).where(
             SolicitudPaso.tecnico_id == actor.id, SolicitudPaso.etapa == "produccion",
-            SolicitudPaso.estado.in_(PASOS_CARGA))), key=self._orden_prioridad)
+            SolicitudPaso.estado.in_(PASOS_CARGA))) if not p.solicitud.pausada), key=self._orden_prioridad)
         if paso.area.lote:
             en_area = sum(1 for p in mios if p.estado == PASO_EN_PROCESO and p.area_id == paso.area_id)
             if en_area >= paso.area.max_simultaneos:
@@ -441,10 +458,7 @@ class ProduccionServicio:
             p.orden += len(repetir)
         self.sesion.flush()
         motivo = " ".join(datos.motivo.split())
-        for i, p in enumerate(repetir, start=1):
-            s.pasos.append(SolicitudPaso(orden=paso.orden + i, area_id=p.area_id, area=p.area, etapa=p.etapa,
-                                         estado=PASO_PENDIENTE, vuelta=paso.vuelta + 1,
-                                         nota=f"Devuelto por QA: {motivo}"[:300]))
+        self._repetir(s, paso, repetir, f"Devuelto por QA: {motivo}")
         ids_devueltos = [p.id for p in repetir if p is not paso]
         for t in self.sesion.scalars(select(TiempoPaso).where(TiempoPaso.paso_id.in_(ids_devueltos))):
             t.devuelto = True
@@ -453,6 +467,85 @@ class ProduccionServicio:
         alcance = "solo ese paso" if datos.modo == "solo" else f"{len(repetir) - 1} paso(s) de producción"
         self._finalizar(s, paso, actor, f"QA devolvió el caso a {destino.area.nombre} ({alcance}): {motivo}",
                         "rechazar_qa", {"volver_a": destino.area.nombre, "modo": datos.modo, "motivo": motivo})
+
+    def _repetir(self, s: Solicitud, despues_de: SolicitudPaso, repetir: list[SolicitudPaso], nota: str) -> None:
+        """Agrega copias pendientes de `repetir` después de `despues_de`. Los que eran paralelos lo siguen siendo."""
+        grupos: dict[int, int] = {}
+        siguiente = max((x.grupo or 0) for x in s.pasos) + 1
+        for i, p in enumerate(repetir, start=1):
+            clave = p.grupo or -p.id
+            if clave not in grupos or p.etapa != "produccion":
+                grupos[clave] = siguiente
+                siguiente += 1
+            s.pasos.append(SolicitudPaso(orden=despues_de.orden + i, area_id=p.area_id, area=p.area, etapa=p.etapa,
+                                         estado=PASO_PENDIENTE, vuelta=despues_de.vuelta + 1, grupo=grupos[clave],
+                                         nota=nota[:300]))
+
+    # ================= Validación de diseño con el cliente =================
+    def enviar_cliente(self, paso_id: int, datos: EnvioIn, actor: Actor) -> None:
+        """El supervisor envió el diseño al cliente (fuera de la plataforma) y espera su respuesta."""
+        paso = self._paso(paso_id)
+        s = self._vigente(paso, {"validacion_diseno"})
+        self._permiso_area(paso, actor)
+        reenvio = paso.estado == PASO_ENVIADO
+        paso.estado, paso.enviado_en = PASO_ENVIADO, ahora()
+        s.estado = "diseno_enviado"
+        nota = (" · " + " ".join(datos.nota.split())) if datos.nota else ""
+        s.historial.append(SolicitudHistorial(estado=s.estado, usuario_id=actor.id,
+                                              nota=(("Diseño reenviado" if reenvio else "Diseño enviado al cliente")
+                                                    + " para su aprobación" + nota)[:300]))
+        self.sesion.commit()
+        self.auditoria.registrar("enviar_diseno", "solicitud", s.id, actor, {"codigo": s.codigo, "reenvio": reenvio})
+
+    def cambios_diseno(self, paso_id: int, datos: CambiosDisenoIn, actor: Actor) -> None:
+        """El cliente pidió cambios: se repite el paso de diseño elegido y vuelve a validarse."""
+        paso = self._paso(paso_id)
+        s = self._vigente(paso, {"validacion_diseno"})
+        self._permiso_area(paso, actor)
+        previos = [p for p in sorted(s.pasos, key=lambda x: x.orden)
+                   if p.etapa == "produccion" and p.estado == "terminado" and p.orden < paso.orden]
+        if not previos:
+            raise ErrorNegocio("No hay un paso de diseño previo al que regresar")
+        destino = next((p for p in previos if p.id == datos.volver_a_paso_id), None) if datos.volver_a_paso_id \
+            else previos[-1]
+        if not destino:
+            raise ErrorNegocio("Elige un paso de producción ya realizado en este caso")
+        for p in s.pasos:
+            if p.orden > paso.orden and p.estado == PASO_PENDIENTE:
+                p.orden += 2
+        self.sesion.flush()
+        motivo = " ".join(datos.motivo.split())
+        self._repetir(s, paso, [destino, paso], f"Cambios pedidos por el cliente: {motivo}")
+        self.motor.terminar(paso, actor.id, f"El cliente pidió cambios: {motivo}")
+        self.sesion.flush()
+        self._finalizar(s, paso, actor, f"El cliente pidió cambios al diseño; regresa a {destino.area.nombre}: {motivo}",
+                        "cambios_diseno", {"volver_a": destino.area.nombre, "motivo": motivo})
+
+    def validaciones(self, actor: Actor) -> dict:
+        """Tablero del supervisor: diseños por enviar y enviados sin respuesta, por antigüedad."""
+        if actor.rol not in SUPERVISION | {DEMO}:
+            raise ErrorNegocio("Solo supervisión valida diseños con el cliente", 403)
+        opciones = (selectinload(SolicitudPaso.solicitud).selectinload(Solicitud.cliente),
+                    selectinload(SolicitudPaso.solicitud).selectinload(Solicitud.pasos),
+                    selectinload(SolicitudPaso.area), selectinload(SolicitudPaso.tecnico))
+        pasos = sorted(self.sesion.scalars(select(SolicitudPaso).options(*opciones).where(
+            SolicitudPaso.etapa == "validacion_diseno", SolicitudPaso.estado.in_([PASO_EN_AREA, PASO_ENVIADO]))),
+            key=self._orden_prioridad)
+        hoy = datetime.now(ZONA).date()
+        por_enviar, enviados = [], []
+        for p in pasos:
+            salida = self._salida(p, ["enviar_cliente", "aprobar_diseno", "cambios_diseno"] if p.estado == PASO_EN_AREA
+                                  else ["aprobar_diseno", "cambios_diseno", "enviar_cliente"]).model_dump()
+            if p.estado == PASO_EN_AREA:
+                por_enviar.append(salida)
+            else:
+                dias = (hoy - p.enviado_en.astimezone(ZONA).date()).days
+                salida["dias"] = dias
+                salida["rango"] = "hoy" if dias <= 0 else "1" if dias == 1 else "2-3" if dias <= 3 else "4+"
+                enviados.append(salida)
+        enviados.sort(key=lambda x: x["enviado_en"])
+        return {"por_enviar": por_enviar, "enviados": enviados,
+                "rangos": {r: sum(1 for e in enviados if e["rango"] == r) for r in ("hoy", "1", "2-3", "4+")}}
 
     # ================= Ingresos =================
     def modificar(self, paso_id: int, datos: ModificacionIn, actor: Actor) -> None:

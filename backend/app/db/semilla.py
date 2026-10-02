@@ -10,7 +10,7 @@ from app.modelos import Area, Usuario, valores_area
 
 AREAS_INICIALES = [
     "Ingresos", "Logística", "Yesos", "Diseño", "CAD", "CAM_IMP",
-    "CAM_FRES", "Finalización", "QA", "Facturación_Cobros",
+    "CAM_FRES", "Finalización", "QA", "Facturación_Cobros", "Validación de diseño",
 ]
 
 
@@ -36,6 +36,8 @@ def inicializar_base():
                                password_hash=cifrar_password(config.DEMO_PASSWORD), rol="demo", activo=True))
         sesion.flush()
         sembrar_configuracion(sesion)
+        sesion.flush()
+        agregar_validacion_diseno(sesion)
         sesion.commit()
 
 
@@ -45,3 +47,30 @@ def preparar_recorridos():
     with SesionLocal() as sesion:
         if Motor(sesion).preparar_existentes():
             sesion.commit()
+
+
+def agregar_validacion_diseno(sesion) -> None:
+    """Una sola vez: inserta "Validación de diseño" en los flujos donde Diseño/CAD va seguido de impresión o fresado.
+    Después el administrador puede quitarla o moverla; esta función no vuelve a tocar los flujos."""
+    from app.modelos.configuracion import Flujo, FlujoPaso, Parametro
+    from app.servicios.recorrido import _normal
+    if sesion.get(Parametro, "flujos_validacion_diseno"):
+        return
+    validacion = next((a for a in sesion.scalars(select(Area)) if _normal(a.nombre).startswith("validacion de diseno")), None)
+    if not validacion:
+        return
+    es_diseno = lambda a: _normal(a.nombre).startswith(("diseno", "cad"))  # noqa: E731
+    es_cam = lambda a: _normal(a.nombre).startswith("cam")  # noqa: E731
+    for flujo in sesion.scalars(select(Flujo)):
+        pasos = sorted(flujo.pasos, key=lambda p: p.orden)
+        if any(p.area_id == validacion.id for p in pasos):
+            continue
+        j = next((i for i, p in enumerate(pasos) if es_cam(p.area)), None)
+        if not j or not es_diseno(pasos[j - 1].area):
+            continue
+        datos = [(p.area_id, p.paralelo) for p in pasos]
+        datos.insert(j, (validacion.id, False))
+        flujo.pasos.clear()
+        sesion.flush()
+        flujo.pasos.extend(FlujoPaso(orden=i + 1, area_id=a, paralelo=par) for i, (a, par) in enumerate(datos))
+    sesion.add(Parametro(clave="flujos_validacion_diseno", valor="hecho"))

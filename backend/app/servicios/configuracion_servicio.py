@@ -241,7 +241,7 @@ class FlujoServicio(_Base):
     def _salida(self, flujo: Flujo, cobertura: dict) -> FlujoOut:
         return FlujoOut(id=flujo.id, tipo_trabajo_id=flujo.tipo_trabajo_id, tipo_trabajo=flujo.tipo_trabajo.nombre,
                         modalidad=flujo.modalidad, activo=flujo.activo,
-                        pasos=[PasoOut(orden=p.orden, area_id=p.area_id, area=p.area.nombre,
+                        pasos=[PasoOut(orden=p.orden, area_id=p.area_id, area=p.area.nombre, paralelo=bool(p.paralelo),
                                        tecnicos=cobertura.get((p.area_id, flujo.tipo_trabajo_id), 0))
                                for p in flujo.pasos])
 
@@ -260,19 +260,28 @@ class FlujoServicio(_Base):
             raise ErrorNegocio("Una o más áreas no existen")
         if any(not areas[i].activo for i in datos.area_ids):
             raise ErrorNegocio("No se pueden usar áreas inactivas en un flujo")
+        from app.servicios.recorrido import tipo_area
+        paralelo = (list(datos.paralelo) + [False] * len(datos.area_ids))[:len(datos.area_ids)]
+        for i, par in enumerate(paralelo):
+            if par and (i == 0 or tipo_area(areas[datos.area_ids[i]].nombre) != "produccion"
+                        or tipo_area(areas[datos.area_ids[i - 1]].nombre) != "produccion"):
+                raise ErrorNegocio(f"{areas[datos.area_ids[i]].nombre} no puede ir en paralelo: solo se permiten "
+                                   "áreas de producción en paralelo con otra área de producción")
         flujo = self.sesion.scalar(select(Flujo).where(Flujo.tipo_trabajo_id == tipo.id,
                                                        Flujo.modalidad == datos.modalidad))
-        antes = [p.area.nombre for p in flujo.pasos] if flujo else []
+        etiqueta = lambda nombre, par: ("∥ " if par else "") + nombre  # noqa: E731
+        antes = [etiqueta(p.area.nombre, p.paralelo) for p in flujo.pasos] if flujo else []
         if not flujo:
             flujo = Flujo(tipo_trabajo=tipo, modalidad=datos.modalidad)
             self.sesion.add(flujo)
         flujo.pasos.clear()
         self.sesion.flush()  # libera los "orden" anteriores antes de insertar los nuevos
-        flujo.pasos.extend(FlujoPaso(orden=i + 1, area_id=a) for i, a in enumerate(datos.area_ids))
+        flujo.pasos.extend(FlujoPaso(orden=i + 1, area_id=a, paralelo=paralelo[i]) for i, a in enumerate(datos.area_ids))
         flujo.activo = datos.activo
         self.sesion.commit()
         self._registrar("flujo", actor, {"tipo": tipo.nombre, "modalidad": datos.modalidad, "activo": datos.activo,
-                                          "cambios": {"pasos": [antes, [areas[i].nombre for i in datos.area_ids]]}},
+                                          "cambios": {"pasos": [antes, [etiqueta(areas[a].nombre, paralelo[i])
+                                                                      for i, a in enumerate(datos.area_ids)]]}},
                         flujo.id)
         self.sesion.refresh(flujo)
         return self._salida(flujo, AsignacionServicio(self.sesion, self.auditoria).cobertura())

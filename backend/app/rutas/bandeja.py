@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencias import Actor, obtener_actor
 from app.db.postgres import obtener_sesion
-from app.esquemas.bandeja import (AsignarIn, Bandeja, CancelarIn, Candidato, MetodoIn, ModificacionIn, RechazoIn, TerminarIn,
+from app.esquemas.bandeja import (AsignarIn, Bandeja, CambiosDisenoIn, CancelarIn, Candidato, EnvioIn, MetodoIn,
+                                  ModificacionIn, RechazoIn, TerminarIn,
                                   ValidacionRpIn)
 from app.rutas.proveedores import servicio_auditoria
 from app.servicios.auditoria_servicio import AuditoriaServicio
@@ -95,3 +96,22 @@ def cambiar_metodo(paso_id: int, datos: MetodoIn, actor: Actor = Depends(obtener
                    s: ProduccionServicio = Depends(_servicio)):
     s.cambiar_metodo(paso_id, datos, actor)
     return Response(status_code=204)
+
+
+@router.post("/pasos/{paso_id}/enviar-cliente", status_code=204)
+def enviar_cliente(paso_id: int, datos: EnvioIn, actor: Actor = Depends(obtener_actor),
+                   s: ProduccionServicio = Depends(_servicio)):
+    s.enviar_cliente(paso_id, datos, actor)
+    return Response(status_code=204)
+
+
+@router.post("/pasos/{paso_id}/cambios-diseno", status_code=204)
+def cambios_diseno(paso_id: int, datos: CambiosDisenoIn, actor: Actor = Depends(obtener_actor),
+                   s: ProduccionServicio = Depends(_servicio)):
+    s.cambios_diseno(paso_id, datos, actor)
+    return Response(status_code=204)
+
+
+@router.get("/validaciones-diseno")
+def validaciones(actor: Actor = Depends(obtener_actor), s: ProduccionServicio = Depends(_servicio)):
+    return s.validaciones(actor)

@@ -5,10 +5,12 @@
 - El resto del personal puede consultarlas.
 - Los archivos se suben primero (POST /archivos) y luego se envían sus IDs en la solicitud.
 """
+from datetime import date
+
 from fastapi import APIRouter, Depends, File, Query, Response, UploadFile
 
 from app.backend import descargar, llamar
-from app.esquemas import MotivoIn, PrioridadIn, ReaperturaIn, SolicitudIn
+from app.esquemas import MotivoIn, PrioridadIn, ReanudarIn, ReaperturaIn, SolicitudIn
 from app.seguridad import requiere_rol, usuario_actual
 
 router = APIRouter(tags=["Solicitudes"])
@@ -92,3 +94,19 @@ async def descargar_archivo(solicitud_id: int, archivo_id: str, u: dict = Depend
 @router.post("/solicitudes/{solicitud_id}/prioridad", summary="Cambiar la prioridad de un caso (admin, supervisor)")
 async def prioridad(solicitud_id: int, datos: PrioridadIn, u: dict = Depends(admin_o_supervisor)):
     return await llamar("POST", f"/solicitudes/{solicitud_id}/prioridad", u, json=datos.model_dump())
+
+
+@router.post("/solicitudes/{solicitud_id}/pausar", summary="Pausar un caso con motivo (admin, supervisor). Detiene su tiempo")
+async def pausar(solicitud_id: int, datos: MotivoIn, u: dict = Depends(admin_o_supervisor)):
+    return await llamar("POST", f"/solicitudes/{solicitud_id}/pausar", u, json=datos.model_dump())
+
+
+@router.post("/solicitudes/{solicitud_id}/reanudar", summary="Reanudar un caso en pausa (admin, supervisor)")
+async def reanudar(solicitud_id: int, datos: ReanudarIn, u: dict = Depends(admin_o_supervisor)):
+    return await llamar("POST", f"/solicitudes/{solicitud_id}/reanudar", u, json=datos.model_dump(mode="json"))
+
+
+@router.get("/pausas", summary="Auditoría de pausas (quién, por qué, cuánto duró)")
+async def pausas(desde: date | None = None, hasta: date | None = None,
+                 u: dict = Depends(requiere_rol("admin", "supervisor", "operaciones", "demo"))):
+    return await llamar("GET", "/pausas", u, params={"desde": desde and str(desde), "hasta": hasta and str(hasta)})

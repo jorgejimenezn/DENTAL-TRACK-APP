@@ -17,8 +17,8 @@
 from fastapi import APIRouter, Depends, Response
 
 from app.backend import llamar
-from app.esquemas import AsignarIn, CancelarPasoIn, MetodoIn, ModificacionIn, RechazoIn, TerminarIn, ValidacionRpIn
-from app.seguridad import usuario_actual
+from app.esquemas import AsignarIn, CambiosDisenoIn, CancelarPasoIn, EnvioIn, MetodoIn, ModificacionIn, RechazoIn, TerminarIn, ValidacionRpIn
+from app.seguridad import requiere_rol, usuario_actual
 
 router = APIRouter(tags=["Bandeja"])
 
@@ -96,3 +96,22 @@ async def recolectado(paso_id: int, u: dict = Depends(usuario_actual)):
 async def cambiar_metodo(paso_id: int, datos: MetodoIn, u: dict = Depends(usuario_actual)):
     await llamar("POST", f"/pasos/{paso_id}/metodo", u, json=datos.model_dump())
     return Response(status_code=204)
+
+
+@router.post("/pasos/{paso_id}/enviar-cliente", status_code=204,
+             summary="Validación de diseño: el diseño se envió al cliente (fuera de la plataforma)")
+async def enviar_cliente(paso_id: int, datos: EnvioIn, u: dict = Depends(usuario_actual)):
+    await llamar("POST", f"/pasos/{paso_id}/enviar-cliente", u, json=datos.model_dump())
+    return Response(status_code=204)
+
+
+@router.post("/pasos/{paso_id}/cambios-diseno", status_code=204,
+             summary="Validación de diseño: el cliente pidió cambios (regresa al paso de diseño)")
+async def cambios_diseno(paso_id: int, datos: CambiosDisenoIn, u: dict = Depends(usuario_actual)):
+    await llamar("POST", f"/pasos/{paso_id}/cambios-diseno", u, json=datos.model_dump())
+    return Response(status_code=204)
+
+
+@router.get("/validaciones-diseno", summary="Tablero: diseños por enviar y enviados al cliente sin respuesta")
+async def validaciones(u: dict = Depends(requiere_rol("admin", "supervisor", "demo"))):
+    return await llamar("GET", "/validaciones-diseno", u)

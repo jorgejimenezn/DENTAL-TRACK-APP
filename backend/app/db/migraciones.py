@@ -130,6 +130,24 @@ def migrar() -> None:
             "ALTER TABLE solicitudes ADD COLUMN manual_motivo VARCHAR(200)",
             "UPDATE solicitudes s SET manual = TRUE FROM usuarios u WHERE u.id = s.creado_por_id AND u.rol <> 'doctor'",
         ]
+    if solicitudes and "pausada" not in solicitudes:  # pausas
+        pasos += [
+            "ALTER TABLE solicitudes ADD COLUMN pausada BOOLEAN NOT NULL DEFAULT FALSE",
+            "ALTER TABLE solicitudes ADD COLUMN pausa_motivo VARCHAR(250)",
+            "ALTER TABLE solicitudes ADD COLUMN pausada_en TIMESTAMPTZ",
+            "ALTER TABLE solicitudes ADD COLUMN pausada_por_id INTEGER REFERENCES usuarios(id)",
+        ]
+    if pasos_solicitud and "grupo" not in pasos_solicitud:  # pasos en paralelo, pausas y validación de diseño
+        pasos += [
+            "ALTER TABLE solicitud_pasos ADD COLUMN grupo INTEGER NOT NULL DEFAULT 0",
+            "UPDATE solicitud_pasos SET grupo = orden",
+            "ALTER TABLE solicitud_pasos ADD COLUMN pausa_espera DOUBLE PRECISION NOT NULL DEFAULT 0",
+            "ALTER TABLE solicitud_pasos ADD COLUMN pausa_trabajo DOUBLE PRECISION NOT NULL DEFAULT 0",
+            "ALTER TABLE solicitud_pasos ADD COLUMN enviado_en TIMESTAMPTZ",
+        ]
+    flujo_pasos = _columnas(inspector, "flujo_pasos")
+    if flujo_pasos and "paralelo" not in flujo_pasos:
+        pasos.append("ALTER TABLE flujo_pasos ADD COLUMN paralelo BOOLEAN NOT NULL DEFAULT FALSE")
     if pasos_solicitud and "recolectado_en" not in pasos_solicitud:
         pasos.append("ALTER TABLE solicitud_pasos ADD COLUMN recolectado_en TIMESTAMPTZ")
 

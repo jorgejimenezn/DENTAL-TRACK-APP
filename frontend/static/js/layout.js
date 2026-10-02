@@ -15,6 +15,8 @@ const ICONOS = {
   metas: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/>',
   ausencias: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 14l6 5M15 14l-6 5"/>',
   cobros: '<rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h4"/>',
+  validacion: '<path d="M4 5h16v11H4z"/><path d="M9 20h6M12 16v4"/><path d="M8.5 10.5l2.5 2.5 4.5-5"/>',
+  pausa: '<circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/>',
   casos: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
 };
 
@@ -33,6 +35,8 @@ const MENU = [
   { grupo: "Operación", roles: ["admin", "supervisor", "operaciones", "facturacion", "demo"] },
   { href: "dashboard.html", texto: "Dashboard", icono: "dashboard", roles: ["admin", "supervisor", "operaciones", "demo"] },
   { href: "ausencias.html", texto: "Ausencias", icono: "ausencias", roles: ["admin", "supervisor", "demo"] },
+  { href: "validaciones.html", texto: "Validación de diseño", icono: "validacion", roles: ["admin", "supervisor", "demo"] },
+  { href: "pausas.html", texto: "Pausas", icono: "pausa", roles: ["admin", "supervisor", "operaciones", "demo"] },
   { href: "cobros.html", texto: "Cobros", icono: "cobros", roles: ["admin", "supervisor", "operaciones", "facturacion", "demo"] },
   { grupo: "Solicitudes", roles: null },
   { href: "nueva-solicitud.html", texto: "Nueva solicitud", icono: "solicitud", roles: ["doctor", "admin", "supervisor", "ingresos", "facturacion", "demo"] },
@@ -48,7 +52,7 @@ const MENU = [
   { href: "mis-metricas.html", texto: "Mis métricas", icono: "dashboard", roles: ["ingresos", "tecnico", "qa", "facturacion", "logistica", "mensajero"] },
 ];
 // Pantallas que el perfil demo solo consulta (el backend rechaza cualquier cambio)
-const SOLO_LECTURA_DEMO = ["clientes.html", "empleados.html", "bitacora.html", "catalogos.html", "flujos.html", "asignaciones.html",
+const SOLO_LECTURA_DEMO = ["pausas.html", "clientes.html", "empleados.html", "bitacora.html", "catalogos.html", "flujos.html", "asignaciones.html",
                            "calendario.html", "areas.html", "ausencias.html", "cobros.html"];
 // Pantallas que no están en el menú: se marca la opción de la que dependen
 const PADRES = { "caso.html": "casos.html", "reapertura.html": "casos.html" };

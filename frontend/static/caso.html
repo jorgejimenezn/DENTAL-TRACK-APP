@@ -21,6 +21,7 @@
     </div>
     <div class="aviso verde" id="avisoNuevo" hidden style="margin:0 0 16px"></div>
     <div class="error-form" id="errorCaso" hidden></div>
+    <div class="aviso-pausa" id="avisoPausa" hidden></div>
 
     <div class="detalle-grid" id="contenidoCaso" hidden>
       <div>
@@ -51,6 +52,16 @@
             <div class="campo" style="margin-top:10px"><input id="motivoPrioridad" maxlength="200" placeholder="Motivo del cambio"></div>
             <button class="btn" style="margin-top:10px;width:100%">Cambiar prioridad</button>
           </form>
+          <form id="formPausa" hidden style="margin-top:14px;border-top:1px solid var(--panel-borde);padding-top:14px">
+            <div class="campo"><label>Pausar el caso (supervisión)</label><input id="motivoPausa" maxlength="250" placeholder="Motivo, ej. falta registro de mordida"></div>
+            <div class="ayuda" style="font-size:11px;color:var(--texto-3);margin-top:4px">Nadie lo puede trabajar y su tiempo no cuenta hasta que lo reanudes. El doctor ve el motivo.</div>
+            <button class="btn" style="margin-top:10px;width:100%">Pausar caso</button>
+          </form>
+          <form id="formReanudar" hidden style="margin-top:14px;border-top:1px solid var(--panel-borde);padding-top:14px">
+            <div class="campo"><label>Reanudar el caso</label><input id="notaReanudar" maxlength="250" placeholder="Qué se recibió (opcional)"></div>
+            <div class="campo" style="margin-top:10px"><label>Nueva fecha de entrega (opcional)</label><input type="date" id="fechaReanudar"></div>
+            <button class="btn verde" style="margin-top:10px;width:100%">Reanudar caso</button>
+          </form>
           <form id="formCancelar" hidden style="margin-top:14px;border-top:1px solid var(--panel-borde);padding-top:14px">
             <div class="campo"><label>Cancelar el caso (administración)</label><input id="motivoCancelar" maxlength="250" placeholder="Motivo"></div>
             <button class="btn rojo-borde" style="margin-top:10px;width:100%">Cancelar caso</button>
@@ -63,6 +74,10 @@
         <section class="card paso-card" id="bloqueRecorrido" hidden>
           <h2>Recorrido</h2>
           <ul class="recorrido" id="recorrido"></ul>
+        </section>
+        <section class="card paso-card" id="bloquePausas" hidden>
+          <h2>Pausas</h2>
+          <div class="lista-items" id="pausas"></div>
         </section>
         <section class="card paso-card">
           <h2>Línea de tiempo</h2>

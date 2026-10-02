@@ -157,6 +157,28 @@ class MotivoIn(BaseModel):
     motivo: str = Field(min_length=3, max_length=250)
 
 
+class ReanudarIn(BaseModel):
+    nota: str | None = Field(default=None, max_length=250, description="Qué se recibió para continuar")
+    fecha_entrega: date | None = Field(default=None, description="Nueva fecha de entrega (opcional)")
+
+
+class PausaOut(BaseModel):
+    id: int
+    solicitud_id: int
+    codigo: str
+    cliente: str | None = None
+    areas: str | None
+    motivo: str
+    pausado_por: str | None
+    pausado_en: datetime
+    reanudado_por: str | None
+    reanudado_en: datetime | None
+    nota_reanudar: str | None
+    horas_laborales: float | None
+    fecha_entrega_antes: date | None
+    fecha_entrega_nueva: date | None
+
+
 # ---------------- Salida ----------------
 class ArchivoOut(BaseModel):
     id: str
@@ -208,6 +230,7 @@ class RecorridoPaso(BaseModel):
     nota: str | None
     receptor: str | None = None
     recolectado_en: datetime | None = None
+    grupo: int = 0  # mismo grupo = pasos en paralelo
     vuelta: int
 
 
@@ -232,6 +255,9 @@ class SolicitudResumen(BaseModel):
     caso_origen: str | None
     fuera_catalogo: bool
     manual: bool = False  # orden capturada por el laboratorio (el doctor la ve como "Creada por el laboratorio")
+    pausada: bool = False
+    pausa_motivo: str | None = None
+    pausada_en: datetime | None = None
     area_actual: str | None = None
     caja: str | None = None
     pasos_total: int = 0
@@ -273,6 +299,7 @@ class SolicitudOut(SolicitudResumen):
     motivo_no_reabrir: str | None
     factura_numero: str | None
     recorrido: list[RecorridoPaso]
+    pausas: list[PausaOut] = []
 
 
 class DireccionPerfil(BaseModel):
