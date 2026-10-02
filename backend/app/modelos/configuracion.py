@@ -1,7 +1,7 @@
 """Modelos de configuración administrable: catálogos, flujos, asignaciones, calendario y parámetros."""
-from datetime import date
+from datetime import date, datetime
 
-from sqlalchemy import Boolean, Column, Date, ForeignKey, Integer, String, Table, UniqueConstraint
+from sqlalchemy import Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, String, Table, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.postgres import Base
@@ -140,3 +140,13 @@ class Parametro(Base):
     __tablename__ = "parametros"
     clave: Mapped[str] = mapped_column(String(40), primary_key=True)
     valor: Mapped[str] = mapped_column(String(40))
+
+
+class Geocodigo(Base):
+    """Coordenadas de un municipio (para los mapas de calor), consultadas una vez y guardadas."""
+    __tablename__ = "geocodigos"
+    clave: Mapped[str] = mapped_column(String(160), primary_key=True)  # "departamento|municipio" normalizado
+    lat: Mapped[float | None] = mapped_column(Float, nullable=True)
+    lng: Mapped[float | None] = mapped_column(Float, nullable=True)
+    encontrado: Mapped[bool] = mapped_column(Boolean, default=False)
+    actualizado: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

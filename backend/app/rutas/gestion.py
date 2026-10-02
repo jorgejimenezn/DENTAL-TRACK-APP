@@ -9,7 +9,7 @@ from app.db.postgres import obtener_sesion
 from app.esquemas.gestion import AreaOperacionIn, AusenciaIn, PagoIn
 from app.rutas.proveedores import servicio_auditoria
 from app.servicios.auditoria_servicio import AuditoriaServicio
-from app.servicios.gestion_servicio import GestionServicio
+from app.servicios.gestion_servicio import GestionServicio, TableroServicio
 
 router = APIRouter(tags=["Gestión"])
 
@@ -68,3 +68,14 @@ def operacion(desde: date | None = None, hasta: date | None = None, actor: Actor
 @router.get("/metricas/mias")
 def mias(actor: Actor = Depends(obtener_actor), s: GestionServicio = Depends(_servicio)):
     return s.mias(actor)
+
+
+@router.get("/agenda-entregas")
+def agenda(actor: Actor = Depends(obtener_actor), sesion: Session = Depends(obtener_sesion)):
+    return TableroServicio(sesion).agenda(actor)
+
+
+@router.get("/metricas/mapa")
+def mapa(capa: str, desde: date | None = None, hasta: date | None = None, tipo_trabajo_id: int | None = None,
+         material_id: int | None = None, actor: Actor = Depends(obtener_actor), sesion: Session = Depends(obtener_sesion)):
+    return TableroServicio(sesion).mapa(actor, capa, desde, hasta, tipo_trabajo_id, material_id)

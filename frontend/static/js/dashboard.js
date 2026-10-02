@@ -78,10 +78,59 @@ function mostrarTab(tab) {
   document.querySelectorAll("[data-panel]").forEach(p => p.hidden = p.dataset.panel !== tab);
   $("rango").hidden = tab === "vivo";
   history.replaceState(null, "", "#" + tab);
+  if (tab === "mapas") prepararMapas();
+}
+
+/* ---------- Mapas de calor: entregas (azul) y recolectas (rojo), con filtros independientes ---------- */
+const GRADIENTES = {  // sobre fondo oscuro: más casos = más claro
+  entregas: { 0.25: "#1e3a8a", 0.55: "#2563eb", 0.8: "#60a5fa", 1: "#dbeafe" },
+  recolectas: { 0.25: "#7f1d1d", 0.55: "#dc2626", 0.8: "#f87171", 1: "#fee2e2" },
+};
+const mapas = {};
+async function prepararMapas() {
+  if (!window.L) return;
+  if (!mapas.listo) {
+    mapas.listo = true;
+    try {
+      const arbol = await api("GET", "/config/arbol");
+      const materiales = new Map();
+      arbol.tipos.forEach(t => t.materiales.forEach(m => materiales.set(m.id, m.nombre)));
+      document.querySelectorAll(".mapa-card").forEach(card => {
+        card.querySelector('[data-filtro="tipo_trabajo_id"]').innerHTML += arbol.tipos.map(t => `<option value="${t.id}">${escapar(t.nombre)}</option>`).join("");
+        card.querySelector('[data-filtro="material_id"]').innerHTML += [...materiales].sort((a, b) => a[1].localeCompare(b[1]))
+          .map(([id, n]) => `<option value="${id}">${escapar(n)}</option>`).join("");
+        card.querySelectorAll("select").forEach(s => s.onchange = () => cargarMapa(card.dataset.capa));
+      });
+    } catch (error) { mostrarErrores($("errorDash"), error); }
+    ["entregas", "recolectas"].forEach(capa => {
+      const m = L.map(`mapa-${capa}`, { zoomControl: true, attributionControl: true }).setView([14.62, -90.52], 11);
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+        maxZoom: 18, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>' }).addTo(m);
+      mapas[capa] = { mapa: m, calor: null };
+    });
+  }
+  ["entregas", "recolectas"].forEach(capa => { mapas[capa]?.mapa.invalidateSize(); cargarMapa(capa); });
+}
+async function cargarMapa(capa) {
+  const card = document.querySelector(`.mapa-card[data-capa="${capa}"]`), m = mapas[capa];
+  if (!card || !m) return;
+  const params = new URLSearchParams({ capa, desde: $("fDesde").value, hasta: $("fHasta").value });
+  card.querySelectorAll("[data-filtro]").forEach(s => { if (s.value) params.set(s.dataset.filtro, s.value); });
+  try {
+    const d = await api("GET", "/metricas/mapa?" + params);
+    if (m.calor) m.mapa.removeLayer(m.calor);
+    m.calor = L.heatLayer(d.puntos, { radius: 22, blur: 18, minOpacity: 0.35, max: Math.max(3, Math.ceil(d.puntos.length / 8)), gradient: GRADIENTES[capa] }).addTo(m.mapa);
+    if (d.puntos.length) m.mapa.fitBounds(L.latLngBounds(d.puntos.map(p => [p[0], p[1]])).pad(0.25), { maxZoom: 13 });
+    card.querySelector("[data-resumen]").textContent = `${num(d.ubicados)} de ${num(d.total)} caso(s) ubicados`
+      + (d.aproximados ? ` · ${num(d.aproximados)} solo por departamento` : "");
+    card.querySelector("[data-lugares]").innerHTML = d.lugares.length
+      ? d.lugares.map(l => `<tr><td>${escapar(l.lugar)}</td><td>${num(l.casos)}</td></tr>`).join("")
+      : `<tr><td colspan="2" class="vacio">Sin ${capa} en el periodo con esos filtros.</td></tr>`;
+  } catch (error) { card.querySelector("[data-resumen]").textContent = error.message; }
 }
 $("pestanasDash").onclick = e => { const b = e.target.closest("[data-tab]"); if (b) mostrarTab(b.dataset.tab); };
 mostrarTab(location.hash.slice(1));
 $("btnActualizar").onclick = cargar;
-$("btnPeriodo").onclick = cargar;
+$("btnPeriodo").onclick = () => { cargar(); if (mapas.listo) ["entregas", "recolectas"].forEach(cargarMapa); };
 cargar();
 setInterval(cargar, 120000);

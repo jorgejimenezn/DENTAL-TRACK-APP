@@ -59,12 +59,15 @@
            + tarjeta("casos.html", "Mis casos", "Casos vigentes e historial. Desde un caso entregado puedes pedir una reapertura (RP).")
            + tarjeta("tablero.html", "Mi tablero", "Tus casos vigentes en Kanban, por etapa.");
     } else if (usuario.rol === "operaciones") {
-      html = tarjeta("dashboard.html", "Dashboard de operación", "Carga en vivo, cumplimiento de metas, puntualidad, retrabajos y reaperturas.")
+      html = tarjeta("dashboard.html", "Dashboard de operación", "Carga en vivo, cumplimiento de metas, puntualidad, retrabajos, reaperturas y mapas de entregas y recolectas.")
+           + tarjeta("agenda.html", "Agenda de entregas", "Atrasados, lo que sale hoy y los próximos días.")
+           + tarjeta("pausas.html", "Pausas", "Casos detenidos y su historial.")
            + tarjeta("cobros.html", "Cobros", "Facturas pendientes de pago por antigüedad.")
            + tarjeta("casos.html", "Solicitudes", "Consulta de casos nuevos y reaperturas.");
     } else if (usuario.rol === "supervisor") {
       html = tarjeta("dashboard.html", "Dashboard", "Operación en vivo y cumplimiento de metas.")
            + tarjeta("bandeja.html", "Bandeja del laboratorio", "Carga de cada área, colas y casos sin técnico.")
+           + tarjeta("agenda.html", "Agenda de entregas", "Atrasados, lo que sale hoy, el siguiente día hábil y lo que está listo.")
            + tarjeta("validaciones.html", "Validación de diseño", "Diseños por enviar al cliente y los que esperan su respuesta.")
            + tarjeta("pausas.html", "Pausas", "Casos detenidos por falta de algo y su historial.")
            + tarjeta("ausencias.html", "Ausencias", "Quién no labora: el sistema no le asigna y reparte lo suyo.")

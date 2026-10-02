@@ -6,6 +6,7 @@
 - Métricas de operación: admin, supervisor y operaciones. Métricas personales: cada empleado las suyas.
 """
 from datetime import date
+from typing import Literal
 
 from fastapi import APIRouter, Depends, Response
 
@@ -65,3 +66,16 @@ async def operacion(desde: date | None = None, hasta: date | None = None, u: dic
 @router.get("/metricas/mias", summary="Mis métricas personales (solo mis datos)")
 async def mias(u: dict = Depends(usuario_actual)):
     return await llamar("GET", "/metricas/mias", u)
+
+
+@router.get("/agenda-entregas", summary="Agenda de entregas: atrasados, hoy, siguiente día hábil, próximos y listos para salir")
+async def agenda(u: dict = Depends(requiere_rol("admin", "supervisor", "operaciones", "demo", "logistica"))):
+    return await llamar("GET", "/agenda-entregas", u)
+
+
+@router.get("/metricas/mapa", summary="Mapa de calor de entregas o recolectas (puntos por zona o municipio)")
+async def mapa(capa: Literal["entregas", "recolectas"], desde: date | None = None, hasta: date | None = None,
+               tipo_trabajo_id: int | None = None, material_id: int | None = None, u: dict = Depends(metricas)):
+    return await llamar("GET", "/metricas/mapa", u, params={
+        "capa": capa, "desde": desde and str(desde), "hasta": hasta and str(hasta),
+        "tipo_trabajo_id": tipo_trabajo_id, "material_id": material_id})

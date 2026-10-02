@@ -107,6 +107,7 @@ async def reanudar(solicitud_id: int, datos: ReanudarIn, u: dict = Depends(admin
 
 
 @router.get("/pausas", summary="Auditoría de pausas (quién, por qué, cuánto duró)")
-async def pausas(desde: date | None = None, hasta: date | None = None,
+async def pausas(desde: date | None = None, hasta: date | None = None, abiertas: bool = False,
                  u: dict = Depends(requiere_rol("admin", "supervisor", "operaciones", "demo"))):
-    return await llamar("GET", "/pausas", u, params={"desde": desde and str(desde), "hasta": hasta and str(hasta)})
+    return await llamar("GET", "/pausas", u, params={"desde": desde and str(desde), "hasta": hasta and str(hasta),
+                                                     "abiertas": str(abiertas).lower()})

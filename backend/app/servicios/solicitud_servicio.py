@@ -461,7 +461,7 @@ class SolicitudServicio:
             raise ErrorNegocio(f"El {_fecha_texto(fecha)} no se labora ({bloqueo.motivo})")
 
     def pausas(self, actor: Actor, desde: date | None = None, hasta: date | None = None,
-               solicitud_id: int | None = None) -> list[PausaOut]:
+               solicitud_id: int | None = None, abiertas: bool = False) -> list[PausaOut]:
         """Auditoría de pausas."""
         consulta = select(PausaCaso).order_by(PausaCaso.pausado_en.desc())
         if solicitud_id:
@@ -469,6 +469,9 @@ class SolicitudServicio:
             consulta = consulta.where(PausaCaso.solicitud_id == solicitud_id)
         elif actor.rol not in ROLES_ESTADO | {"operaciones", "demo"}:
             raise ErrorNegocio("No tienes permiso para ver la auditoría de pausas", 403)
+        if abiertas:  # las que siguen en pausa, sin importar cuándo empezaron
+            consulta = consulta.where(PausaCaso.reanudado_en.is_(None))
+            desde = hasta = None
         if desde:
             consulta = consulta.where(PausaCaso.pausado_en >= datetime.combine(desde, datetime.min.time(), ZONA))
         if hasta:

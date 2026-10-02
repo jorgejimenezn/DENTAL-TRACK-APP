@@ -542,3 +542,19 @@ a.btn{text-decoration:none}
 .check-paralelo{display:inline-flex;align-items:center;gap:6px;margin-left:10px;font-size:11px;font-weight:500;color:var(--texto-2);cursor:pointer}
 .check-paralelo input{accent-color:var(--azul)}
 .editor-paso.paralelo{border-left:3px solid var(--azul)}
+/* Mapas de calor */
+.panel-metricas.mapas{grid-template-columns:1fr 1fr}
+@media (max-width:1000px){.panel-metricas.mapas{grid-template-columns:1fr}}
+.filtros-mapa{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 10px}
+.mapa{height:380px;border-radius:10px;border:1px solid var(--panel-borde);background:#0b0b0b;z-index:0}
+.mapa.leaflet-container{background:#0b0b0b}
+.mapa-pie{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:8px 0}
+.leyenda-calor{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--texto-2)}
+.leyenda-calor i{display:inline-block;width:110px;height:8px;border-radius:4px}
+.leyenda-calor.entregas i{background:linear-gradient(90deg,#1e3a8a,#2563eb,#60a5fa,#dbeafe)}
+.leyenda-calor.recolectas i{background:linear-gradient(90deg,#7f1d1d,#dc2626,#f87171,#fee2e2)}
+.tabla-lugares{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
+.tabla-lugares th,.tabla-lugares td{text-align:left;padding:5px 6px;border-bottom:1px solid var(--panel-borde)}
+.tabla-lugares th{color:var(--texto-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.tabla-lugares td:last-child,.tabla-lugares th:last-child{text-align:right}
+.leaflet-container{font-family:inherit}

@@ -14,25 +14,25 @@
     <div class="encabezado">
       <div>
         <h1>Pausas</h1>
-        <p>Auditoría de los casos que supervisión detuvo: quién, por qué, dónde estaba el caso y cuánto duró.</p>
+        <p>Casos en pausa por antigüedad y el historial de auditoría: quién pausó, por qué, dónde estaba el caso y cuánto duró.</p>
       </div>
       <button class="btn" id="btnActualizar">Actualizar</button>
     </div>
+    <div class="kpis" id="resumen"></div>
     <div class="card">
-      <div class="filtros">
+      <div class="pestanas" id="pestanas"></div>
+      <div class="filtros" id="filtrosHistorial" hidden>
         <div class="campo"><label>Desde</label><input type="date" id="fDesde"></div>
         <div class="campo"><label>Hasta</label><input type="date" id="fHasta"></div>
-        <div class="campo"><label>Estado</label><select id="fEstado"><option value="">Todas</option><option value="abiertas">En pausa ahora</option><option value="cerradas">Reanudadas</option></select></div>
-        <div class="campo ancho"><label>Buscar</label><input id="fTexto" placeholder="Código, cliente o motivo"></div>
       </div>
-      <div class="kpis" id="resumen" style="margin-bottom:14px"></div>
+      <div class="filtros"><div class="campo ancho"><input id="fTexto" placeholder="Buscar por código, cliente o motivo"></div></div>
       <div class="tabla-wrap">
         <table class="responsiva">
-          <thead><tr><th>Caso</th><th>Motivo</th><th>Pausó</th><th>Reanudó</th><th>Horas laborales</th></tr></thead>
-          <tbody id="tabla"><tr><td colspan="5" class="cargando">Cargando…</td></tr></tbody>
+          <thead id="cabecera"></thead>
+          <tbody id="tabla"><tr><td class="cargando">Cargando…</td></tr></tbody>
         </table>
       </div>
-      <p class="nota">Las horas en pausa no cuentan para las metas de las áreas ni para el plazo de recolecta.</p>
+      <p class="nota">Los días se cuentan en calendario desde que se pausó. Las horas en pausa no cuentan para las metas de las áreas ni para el plazo de recolecta.</p>
     </div>
   </main>
 </div>
@@ -44,31 +44,52 @@ if (!iniciarPagina(["admin", "supervisor", "operaciones", "demo"])) throw new Er
 const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const hoy = new Date(), hace = new Date(); hace.setDate(hoy.getDate() - 29);
 $("fDesde").value = ymd(hace); $("fHasta").value = ymd(hoy);
-let pausas = [];
-const kpi = (t, v, s = "") => `<div class="kpi"><span>${t}</span><b>${v}</b>${s ? `<small>${s}</small>` : ""}</div>`;
+const kpi = (t, v, s = "", alerta = false) => `<div class="kpi ${alerta ? "alerta" : ""}"><span>${t}</span><b>${v}</b>${s ? `<small>${s}</small>` : ""}</div>`;
+const RANGOS = [["hoy", "En pausa · Hoy", 0, 0], ["1-2", "1–2 días", 1, 2], ["3-5", "3–5 días", 3, 5], ["6+", "Más de 5 días", 6, 99999]];
+let abiertas = [], historial = [], pestana = "hoy";
+const dias = p => Math.floor((new Date(ymd(hoy) + "T00:00:00") - new Date(ymd(new Date(p.pausado_en)) + "T00:00:00")) / 86400000);
 
 function pintar() {
-  const texto = $("fTexto").value.trim().toLowerCase(), estado = $("fEstado").value;
-  const lista = pausas.filter(p => (!texto || [p.codigo, p.cliente, p.motivo].some(v => (v || "").toLowerCase().includes(texto)))
-    && (!estado || (estado === "abiertas" ? !p.reanudado_en : !!p.reanudado_en)));
-  const cerradas = pausas.filter(p => p.reanudado_en), horas = cerradas.reduce((t, p) => t + (p.horas_laborales || 0), 0);
-  $("resumen").innerHTML = kpi("Pausas en el periodo", pausas.length) + kpi("En pausa ahora", pausas.length - cerradas.length)
-    + kpi("Promedio en pausa", cerradas.length ? `${(horas / cerradas.length).toFixed(1)} h` : "—", "horas laborales");
-  $("tabla").innerHTML = lista.length ? lista.map(p => `<tr>
+  const grupos = Object.fromEntries(RANGOS.map(([k, , a, b]) => [k, abiertas.filter(p => dias(p) >= a && dias(p) <= b)]));
+  $("pestanas").innerHTML = RANGOS.map(([k, t]) => `<button data-p="${k}" class="${k === pestana ? "activa" : ""} ${k === "6+" && grupos[k].length ? "alerta" : ""}">${t} <b>${grupos[k].length}</b></button>`).join("")
+    + `<button data-p="historial" class="${pestana === "historial" ? "activa" : ""}">Historial (auditoría)</button>`;
+  const cerradas = historial.filter(p => p.reanudado_en), horas = cerradas.reduce((t, p) => t + (p.horas_laborales || 0), 0);
+  $("resumen").innerHTML = kpi("En pausa ahora", abiertas.length, "", abiertas.length > 0) + kpi("Más de 5 días", grupos["6+"].length, "", grupos["6+"].length > 0)
+    + kpi("Pausas en el periodo", historial.length, "historial") + kpi("Promedio en pausa", cerradas.length ? `${(horas / cerradas.length).toFixed(1)} h` : "—", "horas laborales");
+  $("filtrosHistorial").hidden = pestana !== "historial";
+  const texto = $("fTexto").value.trim().toLowerCase();
+  const filtra = p => !texto || [p.codigo, p.cliente, p.motivo].some(v => (v || "").toLowerCase().includes(texto));
+  if (pestana === "historial") {
+    $("cabecera").innerHTML = "<tr><th>Caso</th><th>Motivo</th><th>Pausó</th><th>Reanudó</th><th>Horas laborales</th></tr>";
+    const lista = historial.filter(filtra);
+    $("tabla").innerHTML = lista.length ? lista.map(p => `<tr>
       <td class="principal"><a class="codigo-caso" href="caso.html?id=${p.solicitud_id}">${escapar(p.codigo)}</a><span class="sub">${escapar(p.cliente || "")}${p.areas ? ` · ${escapar(p.areas)}` : ""}</span></td>
       <td data-label="Motivo">${escapar(p.motivo)}${p.nota_reanudar ? `<span class="sub">Al reanudar: ${escapar(p.nota_reanudar)}</span>` : ""}</td>
       <td data-label="Pausó">${escapar(p.pausado_por || "—")}<span class="sub">${escapar(fechaHora(p.pausado_en))}</span></td>
       <td data-label="Reanudó">${p.reanudado_en ? `${escapar(p.reanudado_por || "—")}<span class="sub">${escapar(fechaHora(p.reanudado_en))}</span>` : '<span class="badge naranja">En pausa</span>'}
         ${p.fecha_entrega_nueva ? `<span class="sub">Entrega movida a ${escapar(p.fecha_entrega_nueva)}</span>` : ""}</td>
       <td data-label="Horas">${p.horas_laborales != null ? `${p.horas_laborales} h` : "—"}</td></tr>`).join("")
-    : '<tr><td colspan="5" class="vacio">No hay pausas en este periodo.</td></tr>';
+      : '<tr><td colspan="5" class="vacio">No hay pausas en este periodo.</td></tr>';
+  } else {
+    $("cabecera").innerHTML = "<tr><th>Caso</th><th>Motivo</th><th>Dónde estaba</th><th>Desde</th><th>Días</th></tr>";
+    const lista = grupos[pestana].filter(filtra);
+    $("tabla").innerHTML = lista.length ? lista.map(p => `<tr>
+      <td class="principal"><a class="codigo-caso" href="caso.html?id=${p.solicitud_id}">${escapar(p.codigo)}</a><span class="sub">${escapar(p.cliente || "")}</span></td>
+      <td data-label="Motivo">${escapar(p.motivo)}</td>
+      <td data-label="Dónde estaba">${escapar(p.areas || "—")}</td>
+      <td data-label="Desde">${escapar(fechaHora(p.pausado_en))}<span class="sub">${escapar(p.pausado_por || "")}</span></td>
+      <td data-label="Días"><b>${dias(p)}</b></td></tr>`).join("")
+      : '<tr><td colspan="5" class="vacio">No hay casos en pausa en este rango.</td></tr>';
+  }
 }
 async function cargar() {
-  try { pausas = await api("GET", `/pausas?desde=${$("fDesde").value}&hasta=${$("fHasta").value}`); pintar(); }
-  catch (error) { $("tabla").innerHTML = `<tr><td colspan="5" class="vacio">${escapar(error.message)}</td></tr>`; }
+  try {
+    [abiertas, historial] = await Promise.all([api("GET", "/pausas?abiertas=true"), api("GET", `/pausas?desde=${$("fDesde").value}&hasta=${$("fHasta").value}`)]);
+    pintar();
+  } catch (error) { $("tabla").innerHTML = `<tr><td colspan="5" class="vacio">${escapar(error.message)}</td></tr>`; }
 }
+$("pestanas").onclick = e => { const b = e.target.closest("[data-p]"); if (b) { pestana = b.dataset.p; pintar(); } };
 ["fDesde", "fHasta"].forEach(id => $(id).onchange = cargar);
-$("fEstado").onchange = pintar;
 $("fTexto").addEventListener("input", debounce(pintar, 250));
 $("btnActualizar").onclick = cargar;
 cargar();

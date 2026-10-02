@@ -1,4 +1,5 @@
 """Gestión de la operación: áreas y metas, ausencias, cobros y métricas (dashboards)."""
+import re
 from datetime import date, datetime, time, timedelta
 from statistics import median
 
@@ -10,7 +11,7 @@ from app.core.errores import ErrorNegocio, NoEncontrado
 from app.core.jornada import ZONA
 from app.modelos import ROL_CLIENTE, Area, Ausencia, Usuario
 from app.modelos.configuracion import MotivoRP
-from app.modelos.solicitud import (ESTADOS_CERRADOS, PASO_EN_COLA, PASO_EN_PROCESO, PASO_SIN_TECNICO, PASOS_ACTIVOS,
+from app.modelos.solicitud import (ESTADOS, ESTADOS_CERRADOS, PASO_EN_COLA, PASO_EN_PROCESO, PASO_SIN_TECNICO, PASOS_ACTIVOS,
                                    PASOS_CARGA, Solicitud, SolicitudHistorial, SolicitudPaso, TiempoPaso)
 from app.servicios.auditoria_servicio import AuditoriaServicio
 from app.servicios.recorrido import Motor, tipo_area
@@ -342,3 +343,107 @@ class GestionServicio:
                           "vencido": p.solicitud.fecha_entrega < hoy, "emergencia": p.solicitud.emergencia}
                          for p in pendientes[:15]],
         }
+
+
+# ======================================================================
+LECTURA_AGENDA = LECTURA_METRICAS | {"logistica"}
+LISTOS_PARA_SALIR = {"facturacion", "listo_entrega", "en_ruta"}
+
+
+class TableroServicio:
+    """Agenda de entregas (qué sale, qué está atrasado) y mapas de calor de entregas y recolectas."""
+
+    def __init__(self, sesion: Session):
+        self.sesion = sesion
+
+    # ================= Agenda de entregas =================
+    def agenda(self, actor: Actor) -> dict:
+        if actor.rol not in LECTURA_AGENDA:
+            raise ErrorNegocio("No tienes permiso para ver la agenda de entregas", 403)
+        from app.core.jornada import Jornada
+        jornada, hoy = Jornada(self.sesion), _hoy()
+
+        def habiles(desde: date, cantidad: int) -> list[date]:
+            dias, d = [], desde
+            while len(dias) < cantidad and (d - desde).days < 60:
+                d += timedelta(days=1)
+                if jornada.ventana(d) and d.weekday() < 5:  # días de entrega: lunes a viernes laborables
+                    dias.append(d)
+            return dias
+        siguientes = habiles(hoy, 6)
+        manana, proximos = siguientes[0], set(siguientes[1:])
+        vigentes = list(self.sesion.scalars(select(Solicitud).options(
+            selectinload(Solicitud.cliente), selectinload(Solicitud.pasos).selectinload(SolicitudPaso.area))
+            .where(Solicitud.estado.not_in(ESTADOS_CERRADOS))))
+        grupos = {"atrasados": [], "hoy": [], "manana": [], "proximos": [], "listos": []}
+        for s in sorted(vigentes, key=lambda x: (x.fecha_entrega, x.prioridad, x.id)):
+            listo = s.estado in LISTOS_PARA_SALIR
+            fila = {
+                "id": s.id, "codigo": s.codigo, "cliente": s.cliente.razon_social, "paciente": s.paciente,
+                "trabajo": " · ".join(x for x in (s.tipo_trabajo, s.material) if x), "fecha_entrega": s.fecha_entrega,
+                "prioridad": s.prioridad, "emergencia": s.emergencia, "estado": s.estado, "estado_texto": ESTADOS[s.estado][0],
+                "area_actual": " + ".join(p.area.nombre for p in Motor.pasos_activos(s)) or None,
+                "caja": f"{s.caja_color} {s.caja_numero}" if s.caja_numero else None,
+                "sale_por": "Transporte" if s.entrega_metodo == "transporte" else "Mensajero",
+                "listo": listo, "pausada": bool(s.pausada), "pausa_motivo": s.pausa_motivo,
+                "dias_atraso": (hoy - s.fecha_entrega).days if s.fecha_entrega < hoy else 0,
+                # en riesgo: vence hoy o el siguiente día hábil y todavía no termina producción/QA
+                "riesgo": not listo and s.fecha_entrega <= manana,
+            }
+            if s.fecha_entrega < hoy:
+                grupos["atrasados"].append(fila)
+            elif s.fecha_entrega == hoy:
+                grupos["hoy"].append(fila)
+            elif s.fecha_entrega == manana:
+                grupos["manana"].append(fila)
+            elif s.fecha_entrega in proximos:
+                grupos["proximos"].append(fila)
+            if listo:
+                grupos["listos"].append(fila)
+        return {"fecha_hoy": hoy, "fecha_manana": manana, "proximos_hasta": max(proximos) if proximos else manana, **grupos}
+
+    # ================= Mapas de calor =================
+    def mapa(self, actor: Actor, capa: str, desde: date | None, hasta: date | None,
+             tipo_trabajo_id: int | None, material_id: int | None) -> dict:
+        if actor.rol not in LECTURA_METRICAS:
+            raise ErrorNegocio("No tienes permiso para ver los mapas", 403)
+        from app.servicios.ubicaciones import Ubicador, desplazar
+        hasta = hasta or _hoy()
+        desde = desde or hasta - timedelta(days=89)
+        rango = (_inicio(desde), _inicio(hasta + timedelta(days=1)))
+        filtros = []
+        if tipo_trabajo_id:
+            filtros.append(Solicitud.tipo_trabajo_id == tipo_trabajo_id)
+        if material_id:
+            filtros.append(Solicitud.material_id == material_id)
+        if capa == "entregas":
+            filas = list(self.sesion.execute(
+                select(Solicitud, func.max(SolicitudHistorial.fecha)).join(SolicitudHistorial)
+                .where(SolicitudHistorial.estado == "entregada", SolicitudHistorial.fecha >= rango[0],
+                       SolicitudHistorial.fecha < rango[1], *filtros).group_by(Solicitud.id)))
+            lugares = [(s, s.entrega_departamento, s.entrega_municipio, s.entrega_direccion) for s, _ in filas]
+        elif capa == "recolectas":
+            ids = select(SolicitudPaso.solicitud_id).where(
+                SolicitudPaso.etapa == "recolecta", SolicitudPaso.estado == "terminado",
+                SolicitudPaso.terminado_en >= rango[0], SolicitudPaso.terminado_en < rango[1])
+            filas = list(self.sesion.scalars(
+                select(Solicitud).where(Solicitud.id.in_(ids), Solicitud.recolecta_direccion.is_not(None), *filtros)))
+            lugares = [(s, s.recolecta_departamento, s.recolecta_municipio, s.recolecta_direccion) for s in filas]
+        else:
+            raise ErrorNegocio("Capa no válida: usa entregas o recolectas")
+        ubicador = Ubicador(self.sesion)
+        puntos, conteo, aproximados = [], {}, 0
+        for s, dep, mun, dire in lugares:
+            c = ubicador.coordenadas(dep, mun, dire)
+            if not c:
+                continue
+            lat, lng, nivel = c
+            aproximados += nivel == "departamento"
+            lat, lng = desplazar(lat, lng, s.codigo, 0.004 if nivel == "zona" else 0.012)
+            puntos.append([round(lat, 5), round(lng, 5), 1])
+            zona = re.search(r"\bzona\s*(\d{1,2})\b", dire or "", re.I) if nivel == "zona" else None
+            lugar = f"{mun} · Zona {zona.group(1)}" if zona else f"{mun}, {dep}" if nivel != "departamento" else dep
+            conteo[lugar] = conteo.get(lugar, 0) + 1
+        return {"capa": capa, "desde": desde, "hasta": hasta, "total": len(lugares), "ubicados": len(puntos),
+                "aproximados": aproximados, "puntos": puntos,
+                "lugares": [{"lugar": k, "casos": v} for k, v in sorted(conteo.items(), key=lambda x: -x[1])[:10]]}

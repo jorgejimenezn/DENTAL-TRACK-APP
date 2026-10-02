@@ -161,7 +161,8 @@ Administración y supervisión pausan un caso desde su detalle, con **motivo obl
 - Mientras está en pausa nadie lo puede trabajar: las bandejas lo muestran "En pausa" sin botones y no ocupa el tope de los técnicos.
 - El doctor ve **"En pausa"** con el motivo.
 - Al **reanudar** se registra qué se recibió y, si hace falta, una nueva fecha de entrega. Las **horas laborales en pausa se descuentan** de la meta del paso (espera o trabajo) y del plazo de recolecta.
-- Cada pausa queda en la tabla de auditoría `pausas` (quién pausó, motivo, dónde estaba el caso, quién reanudó, horas, cambio de fecha) y en la bitácora. Pantalla **Pausas** (admin, supervisor, operaciones) y conteo en el Dashboard.
+- Cada pausa queda en la tabla de auditoría `pausas` (quién pausó, motivo, dónde estaba el caso, quién reanudó, horas, cambio de fecha) y en la bitácora. Conteo en el Dashboard.
+- Pantalla **Pausas** (admin, supervisor, operaciones), como la de cobros: pestañas de casos en pausa por antigüedad (Hoy, 1–2 días, 3–5 días, más de 5 días en alerta) y una pestaña **Historial (auditoría)** con filtro de fechas.
 
 ## Validación de diseño con el cliente
 
@@ -170,6 +171,22 @@ Administración y supervisión pausan un caso desde su detalle, con **motivo obl
 - Pantalla **Validación de diseño**: "Por enviar" y enviados sin respuesta por antigüedad (Hoy, 1 día, 2–3 días, 4 días o más).
 - El doctor ve "Diseño enviado: pendiente de tu aprobación".
 - Al desplegar, los casos abiertos que aún no llegan a CAM (su siguiente paso de impresión o fresado está pendiente y justo antes va Diseño/CAD) reciben la validación en su recorrido. Se hace una sola vez.
+
+## Agenda de entregas
+
+Pantalla **Agenda de entregas** (admin, supervisor, operaciones, logística, demo) para ver de un vistazo qué está por salir:
+- Pestañas **Atrasados**, **Hoy**, **Siguiente día** (siguiente día hábil, de lunes a viernes según el calendario), **Próximos** (los 5 días hábiles siguientes) y **Listos para salir** (facturación, listo para entrega o en ruta).
+- Cada caso muestra dónde va (área actual o estado), fecha de entrega y días de atraso, caja y si sale por mensajero o transporte.
+- **En riesgo**: vence hoy o el siguiente día hábil y todavía no termina producción ni QA. Filtro "Solo en riesgo" y búsqueda por código, cliente, paciente o caja. Se actualiza sola cada 2 minutos.
+
+## Mapas de calor (Dashboard → Mapas)
+
+Dos mapas independientes, cada uno con su filtro de **tipo de trabajo** y **material**, sobre el periodo del Dashboard:
+- **Entregas** (tonos azules): dirección de entrega de los casos entregados.
+- **Recolectas** (tonos rojos): dirección de recolecta de las recolectas terminadas.
+- Debajo de cada mapa, las 10 zonas o municipios con más casos.
+- Ubicación aproximada, sin la casa exacta: en la Ciudad de Guatemala se usa la **zona** de la dirección ("Zona 10"); en el área metropolitana, el municipio (tabla incluida); otros municipios se consultan una vez a Nominatim (OpenStreetMap) y se guardan en la tabla `geocodigos`; si no se encuentra, el centro del departamento (cuenta como "aproximado").
+- Los mapas base (CARTO/OpenStreetMap) y Nominatim requieren internet. Para no consultar Nominatim: `GEOCODIFICAR=false` en el backend. Leaflet y leaflet.heat van incluidos en `frontend/static/vendor/leaflet`.
 
 ## Pasos en paralelo
 
@@ -258,6 +275,7 @@ INTERNAL_KEY=<clave-interna>
 ADMIN_EMAIL=<tu correo de administrador>
 ADMIN_PASSWORD=<contraseña inicial del administrador>
 PORT=8000
+# opcional: GEOCODIFICAR=false para no consultar Nominatim en los mapas
 # opcional: usuario de demostración
 DEMO_EMAIL=<correo del usuario demo>
 DEMO_PASSWORD=<contraseña del usuario demo>
@@ -375,7 +393,9 @@ Sin servidor Mongo se puede probar con `MONGO_URL=mongomock://local` (requiere `
 | POST | `/pasos/{id}/recolectado` | mensajero asignado, Logística |
 | POST | `/pasos/{id}/metodo` | Logística: cambiar entre mensajero y transporte |
 | POST | `/solicitudes/{id}/pausar`, `/solicitudes/{id}/reanudar` | admin, supervisor |
-| GET | `/pausas` | admin, supervisor, operaciones (auditoría) |
+| GET | `/pausas` | admin, supervisor, operaciones (auditoría; `?abiertas=true` solo las vigentes) |
+| GET | `/agenda-entregas` | admin, supervisor, operaciones, logística, demo |
+| GET | `/metricas/mapa?capa=entregas\|recolectas` | roles de métricas (filtros `desde`, `hasta`, `tipo_trabajo_id`, `material_id`) |
 | POST | `/pasos/{id}/enviar-cliente`, `/pasos/{id}/cambios-diseno` | supervisión (validación de diseño) |
 | GET | `/validaciones-diseno` | admin, supervisor |
 | POST | `/solicitudes/{id}/prioridad` | admin, supervisor |

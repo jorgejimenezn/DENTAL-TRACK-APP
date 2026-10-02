@@ -101,9 +101,9 @@ def reanudar(solicitud_id: int, datos: ReanudarIn, actor: Actor = Depends(obtene
 
 
 @router.get("/pausas", response_model=list[PausaOut])
-def pausas(desde: date | None = None, hasta: date | None = None, actor: Actor = Depends(obtener_actor),
-           s: SolicitudServicio = Depends(_servicio)):
-    return s.pausas(actor, desde, hasta)
+def pausas(desde: date | None = None, hasta: date | None = None, abiertas: bool = False,
+           actor: Actor = Depends(obtener_actor), s: SolicitudServicio = Depends(_servicio)):
+    return s.pausas(actor, desde, hasta, abiertas=abiertas)
 
 
 @router.get("/solicitudes/{solicitud_id}/orden.pdf")

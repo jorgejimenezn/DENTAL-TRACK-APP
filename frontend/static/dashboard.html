@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard · DENTAL TRACK</title>
 <link rel="stylesheet" href="css/estilos.css">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 </head>
 <body>
 <div class="marca" id="marca" aria-hidden="true"></div>
@@ -25,6 +26,7 @@
       <button data-tab="metas">Metas por área</button>
       <button data-tab="volumen">Volumen y reaperturas</button>
       <button data-tab="tecnicos">Técnicos</button>
+      <button data-tab="mapas">Mapas</button>
     </nav>
 
     <div class="rango-fechas" id="rango" hidden>
@@ -60,6 +62,32 @@
       </div>
     </div>
 
+    <div data-panel="mapas" hidden>
+      <div class="panel-metricas mapas">
+        <section class="card mapa-card" data-capa="entregas">
+          <h2>Entregas <span style="font-weight:400;color:var(--texto-3);font-size:12px">dónde se entregaron los casos del periodo</span></h2>
+          <div class="filtros-mapa">
+            <div class="campo"><label>Tipo de trabajo</label><select data-filtro="tipo_trabajo_id"><option value="">Todos</option></select></div>
+            <div class="campo"><label>Material</label><select data-filtro="material_id"><option value="">Todos</option></select></div>
+          </div>
+          <div class="mapa" id="mapa-entregas" role="img" aria-label="Entregas"></div>
+          <div class="mapa-pie"><span class="leyenda-calor entregas"><span>Menos</span><i></i><span>Más</span></span><span class="nota" data-resumen style="margin:0"></span></div>
+          <table class="tabla-lugares"><thead><tr><th>Zona o municipio</th><th>Casos</th></tr></thead><tbody data-lugares></tbody></table>
+        </section>
+        <section class="card mapa-card" data-capa="recolectas">
+          <h2>Recolectas <span style="font-weight:400;color:var(--texto-3);font-size:12px">dónde se recogió el material del periodo</span></h2>
+          <div class="filtros-mapa">
+            <div class="campo"><label>Tipo de trabajo</label><select data-filtro="tipo_trabajo_id"><option value="">Todos</option></select></div>
+            <div class="campo"><label>Material</label><select data-filtro="material_id"><option value="">Todos</option></select></div>
+          </div>
+          <div class="mapa" id="mapa-recolectas" role="img" aria-label="Recolectas"></div>
+          <div class="mapa-pie"><span class="leyenda-calor recolectas"><span>Menos</span><i></i><span>Más</span></span><span class="nota" data-resumen style="margin:0"></span></div>
+          <table class="tabla-lugares"><thead><tr><th>Zona o municipio</th><th>Casos</th></tr></thead><tbody data-lugares></tbody></table>
+        </section>
+      </div>
+      <p class="nota">Cada caso se ubica en su zona (Ciudad de Guatemala) o municipio; no es la dirección exacta. Los filtros de cada mapa son independientes.</p>
+    </div>
+
     <div data-panel="tecnicos" hidden>
       <section class="card">
         <h2 class="t">Producción por técnico</h2>
@@ -75,6 +103,8 @@
 <script src="js/api.js"></script>
 <script src="js/layout.js"></script>
 <script src="js/metricas.js"></script>
+<script src="vendor/leaflet/leaflet.js"></script>
+<script src="vendor/leaflet/leaflet-heat.js"></script>
 <script src="js/dashboard.js"></script>
 </body>
 </html>
