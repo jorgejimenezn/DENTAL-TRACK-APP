@@ -77,10 +77,10 @@ function pintar() {
     ? `<a class="btn verde" style="width:100%" href="reapertura.html?caso=${c.id}">Reabrir caso (RP)</a>
        <p class="nota">Para garantía o modificación. Pasa primero por QA, que define si aplica garantía o cobro.</p>`
     : `<p class="nota" style="margin:0">${escapar(c.motivo_no_reabrir || "Este caso no se puede reabrir")}.</p>`;
-  $("formPrioridad").hidden = !(["admin", "supervisor"].includes(usuario.rol) && !["entregada", "cancelada"].includes(c.estado));
+  $("formPrioridad").hidden = !(["admin", "supervisor", "demo"].includes(usuario.rol) && !["entregada", "cancelada"].includes(c.estado));
   $("nuevaPrioridad").value = c.prioridad || 3;
-  $("formCancelar").hidden = !(["admin", "supervisor"].includes(usuario.rol) && !["entregada", "cancelada"].includes(c.estado));
-  const supervisa = ["admin", "supervisor"].includes(usuario.rol) && !["entregada", "cancelada"].includes(c.estado);
+  $("formCancelar").hidden = !(["admin", "supervisor", "demo"].includes(usuario.rol) && !["entregada", "cancelada"].includes(c.estado));
+  const supervisa = ["admin", "supervisor", "demo"].includes(usuario.rol) && !["entregada", "cancelada"].includes(c.estado);
   $("formPausa").hidden = !(supervisa && !c.pausada);
   $("formReanudar").hidden = !(supervisa && c.pausada);
   $("fechaReanudar").value = "";

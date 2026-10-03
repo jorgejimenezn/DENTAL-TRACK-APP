@@ -205,7 +205,8 @@ Administración, Supervisión, Ingresos y Facturación (y el perfil demo) pueden
 Rol `demo` (Empleados → Rol **Demostración**, sin áreas). También puede crearse al arrancar con las variables opcionales del backend `DEMO_EMAIL` y `DEMO_PASSWORD`.
 - Menú de administrador completo en **solo consulta** (aviso "Modo demostración"; el backend rechaza cualquier cambio con 403).
 - **Línea de producción**: todas las áreas con sus casos y botones para hacer cualquier paso, sin reglas de turno. Lo que inicia en producción queda a su nombre para no alterar las métricas de los técnicos.
-- Puede crear solicitudes a nombre de un cliente e imprimir la orden. No cancela, no cambia prioridades ni reasigna.
+- Puede crear solicitudes a nombre de un cliente e imprimir la orden.
+- Desde el detalle del caso puede **pausar, reanudar, cancelar y cambiar la prioridad**, igual que supervisión, para probar esos flujos. No reasigna técnicos.
 
 ## Diseño adaptable
 

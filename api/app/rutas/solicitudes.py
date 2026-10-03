@@ -15,6 +15,7 @@ from app.seguridad import requiere_rol, usuario_actual
 
 router = APIRouter(tags=["Solicitudes"])
 admin_o_supervisor = requiere_rol("admin", "supervisor")
+gestion_caso = requiere_rol("admin", "supervisor", "demo")  # demo: para probar pausas, cancelación y prioridad
 
 
 # ---------- Archivos ----------
@@ -76,8 +77,8 @@ async def reabrir(solicitud_id: int, datos: ReaperturaIn, u: dict = Depends(usua
     return await llamar("POST", f"/solicitudes/{solicitud_id}/reapertura", u, json=datos.model_dump(mode="json"))
 
 
-@router.post("/solicitudes/{solicitud_id}/cancelar", summary="Cancelar un caso en cualquier etapa (admin, supervisor)")
-async def cancelar(solicitud_id: int, datos: MotivoIn, u: dict = Depends(admin_o_supervisor)):
+@router.post("/solicitudes/{solicitud_id}/cancelar", summary="Cancelar un caso en cualquier etapa (admin, supervisor, demo)")
+async def cancelar(solicitud_id: int, datos: MotivoIn, u: dict = Depends(gestion_caso)):
     return await llamar("POST", f"/solicitudes/{solicitud_id}/cancelar", u, json=datos.model_dump())
 
 
@@ -91,18 +92,18 @@ async def descargar_archivo(solicitud_id: int, archivo_id: str, u: dict = Depend
     return await descargar(f"/solicitudes/{solicitud_id}/archivos/{archivo_id}", u)
 
 
-@router.post("/solicitudes/{solicitud_id}/prioridad", summary="Cambiar la prioridad de un caso (admin, supervisor)")
-async def prioridad(solicitud_id: int, datos: PrioridadIn, u: dict = Depends(admin_o_supervisor)):
+@router.post("/solicitudes/{solicitud_id}/prioridad", summary="Cambiar la prioridad de un caso (admin, supervisor, demo)")
+async def prioridad(solicitud_id: int, datos: PrioridadIn, u: dict = Depends(gestion_caso)):
     return await llamar("POST", f"/solicitudes/{solicitud_id}/prioridad", u, json=datos.model_dump())
 
 
-@router.post("/solicitudes/{solicitud_id}/pausar", summary="Pausar un caso con motivo (admin, supervisor). Detiene su tiempo")
-async def pausar(solicitud_id: int, datos: MotivoIn, u: dict = Depends(admin_o_supervisor)):
+@router.post("/solicitudes/{solicitud_id}/pausar", summary="Pausar un caso con motivo (admin, supervisor, demo). Detiene su tiempo")
+async def pausar(solicitud_id: int, datos: MotivoIn, u: dict = Depends(gestion_caso)):
     return await llamar("POST", f"/solicitudes/{solicitud_id}/pausar", u, json=datos.model_dump())
 
 
-@router.post("/solicitudes/{solicitud_id}/reanudar", summary="Reanudar un caso en pausa (admin, supervisor)")
-async def reanudar(solicitud_id: int, datos: ReanudarIn, u: dict = Depends(admin_o_supervisor)):
+@router.post("/solicitudes/{solicitud_id}/reanudar", summary="Reanudar un caso en pausa (admin, supervisor, demo)")
+async def reanudar(solicitud_id: int, datos: ReanudarIn, u: dict = Depends(gestion_caso)):
     return await llamar("POST", f"/solicitudes/{solicitud_id}/reanudar", u, json=datos.model_dump(mode="json"))
 
 

@@ -12,7 +12,7 @@ const ROLES = {
   facturacion: "Facturación, empaque y cobros.",
   logistica: "Coordina rutas y asigna recolectas y entregas a los mensajeros.",
   mensajero: "Realiza las recolectas y entregas asignadas y las marca desde su celular.",
-  demo: "Demostraciones: ve todo como el administrador sin poder modificar, y puede hacer cualquier paso de la línea de producción. No necesita áreas.",
+  demo: "Demostraciones: ve todo como el administrador sin poder modificar, puede hacer cualquier paso de la línea de producción y pausar, reanudar, cancelar o cambiar la prioridad de un caso. No necesita áreas.",
 };
 
 let empleados = [];

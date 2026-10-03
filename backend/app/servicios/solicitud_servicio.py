@@ -28,6 +28,7 @@ from app.servicios.recorrido import NOMBRE_ETAPA, Motor, ahora
 ROLES_CAPTURA = {"admin", "supervisor", "ingresos", "facturacion", "demo"}  # demo: captura para demostraciones
 # Quién puede mover estados manualmente mientras no existen las bandejas de cada área
 ROLES_ESTADO = {"admin", "supervisor"}
+ROLES_GESTION_CASO = ROLES_ESTADO | {"demo"}  # pausar, reanudar, cancelar y prioridad (demo para pruebas)
 # Ven todas las solicitudes. El resto del personal solo ve los casos en los que participó:
 # técnico y mensajero, los pasos que tuvo asignados o atendió; Logística y QA, además, lo que llegó a su área.
 ROLES_VEN_TODO = {"admin", "supervisor", "operaciones", "demo", "ingresos", "facturacion"}
@@ -379,7 +380,7 @@ class SolicitudServicio:
         return self.obtener(solicitud.id, actor)
 
     def cancelar(self, solicitud_id: int, motivo: str, actor: Actor) -> SolicitudOut:
-        if actor.rol not in ROLES_ESTADO:
+        if actor.rol not in ROLES_GESTION_CASO:
             raise ErrorNegocio("Solo administración o supervisión pueden cancelar un caso en cualquier etapa", 403)
         solicitud = self._visible(solicitud_id, actor)
         if solicitud.estado in ESTADOS_CERRADOS:
@@ -393,7 +394,7 @@ class SolicitudServicio:
     # ================= Pausas =================
     def pausar(self, solicitud_id: int, motivo: str, actor: Actor) -> SolicitudOut:
         """El caso se detiene: nadie lo puede trabajar y su tiempo no cuenta hasta que se reanude."""
-        if actor.rol not in ROLES_ESTADO:
+        if actor.rol not in ROLES_GESTION_CASO:
             raise ErrorNegocio("Solo administración o supervisión pueden pausar un caso", 403)
         s = self._visible(solicitud_id, actor)
         if s.estado in ESTADOS_CERRADOS:
@@ -414,7 +415,7 @@ class SolicitudServicio:
 
     def reanudar(self, solicitud_id: int, nota: str | None, fecha: date | None, actor: Actor) -> SolicitudOut:
         """Llegó lo pendiente: el caso continúa donde estaba y las horas en pausa se descuentan de sus metas."""
-        if actor.rol not in ROLES_ESTADO:
+        if actor.rol not in ROLES_GESTION_CASO:
             raise ErrorNegocio("Solo administración o supervisión pueden reanudar un caso", 403)
         s = self._visible(solicitud_id, actor)
         if not s.pausada:
@@ -494,7 +495,7 @@ class SolicitudServicio:
         return salida
 
     def cambiar_prioridad(self, solicitud_id: int, prioridad: int, motivo: str, actor: Actor) -> SolicitudOut:
-        if actor.rol not in ROLES_ESTADO:
+        if actor.rol not in ROLES_GESTION_CASO:
             raise ErrorNegocio("Solo administración o supervisión cambian la prioridad", 403)
         solicitud = self._visible(solicitud_id, actor)
         if solicitud.estado in ESTADOS_CERRADOS:
