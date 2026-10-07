@@ -55,7 +55,7 @@ async def agregar_direccion(cliente_id: int, datos: DireccionIn, u: dict = Depen
 
 @router.put("/{cliente_id}/direcciones/{direccion_id}", summary="Editar dirección de entrega")
 async def actualizar_direccion(cliente_id: int, direccion_id: int, datos: DireccionIn,
-                               u: dict = Depends(ver_clientes)):
+                               u: dict = Depends(gestion_clientes)):
     return await llamar("PUT", f"/clientes/{cliente_id}/direcciones/{direccion_id}", u, json=datos.model_dump())
 
 
