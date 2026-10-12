@@ -53,3 +53,4 @@ $("fTipo").onchange = cargar;
 $("fOrigen").onchange = cargar;
 if (esDoctor) $("fOrigen").closest(".campo").remove();
 cargar();
+refrescoAutomatico(cargar, 60000);

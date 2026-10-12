@@ -32,10 +32,15 @@ DISPONIBLE = "conectado"
 # Roles que manejan estado. Técnicos y mensajeros son los que reciben trabajo individual;
 # en Ingresos, QA, Facturación y Logística el estado es informativo (trabajan con la cola del área).
 ROLES_CON_ESTADO = {"tecnico", "mensajero", "ingresos", "qa", "facturacion", "logistica"}
-ELEGIBLES_EMPLEADO = {"conectado", "refaccion", "almuerzo", "desconectado"}  # la capacitación se solicita
+# El empleado elige entre estos; la capacitación se solicita y "Desconectado" ocurre al cerrar sesión
+ELEGIBLES_EMPLEADO = {"conectado", "refaccion", "almuerzo"}
+ELEGIBLES_SUPERVISOR = {"conectado", "refaccion", "almuerzo", "desconectado"}
 LECTURA_PERSONAL = {"admin", "supervisor", "operaciones", "demo"}
 GESTION_PERSONAL = {"admin", "supervisor"}
 RUTAS = ("recolecta", "entrega")
+# Tras cerrar el navegador sin cerrar sesión, minutos sin actividad para considerarlo Desconectado
+# (cambiar de pantalla no cuenta: la siguiente pantalla registra actividad en segundos)
+MINUTOS_CIERRE_NAVEGADOR = 3
 
 
 def ahora() -> datetime:
@@ -125,7 +130,14 @@ class EstadosPersonal:
     def normalizar_usuario(self, u: Usuario, momento: datetime | None = None) -> list[SolicitudPaso]:
         momento = momento or ahora()
         if u.rol not in ROLES_CON_ESTADO or u.estado == "desconectado" or not u.estado_desde:
+            u.cierre_navegador_en = None
             return []
+        if u.cierre_navegador_en and momento - u.cierre_navegador_en >= timedelta(minutes=MINUTOS_CIERRE_NAVEGADOR):
+            # cerró el navegador y no volvió: Desconectado desde la hora en que lo cerró
+            cerro = max(u.cierre_navegador_en, u.estado_desde)
+            u.cierre_navegador_en = None
+            return self.cambiar(u, "desconectado", "cierre_navegador", min(cerro, self._limite(u.estado_desde)),
+                                automatico=True)
         limite = self._limite(u.estado_desde)
         if momento >= limite:
             return self.cambiar(u, "desconectado", "automatico", limite, automatico=True)
@@ -152,6 +164,11 @@ class EstadosPersonal:
             self.cambiar(u, "conectado", "inicio_sesion", actor_id=u.id)
             self._repartir()
 
+    def navegador_cerrado(self, u: Usuario) -> None:
+        """La página avisó que se cerró. Si no hay actividad en unos minutos, normalizar() lo desconecta."""
+        if u.rol in ROLES_CON_ESTADO and u.estado != "desconectado":
+            u.cierre_navegador_en = ahora()
+
     def al_cerrar_sesion(self, u: Usuario) -> None:
         if u.rol not in ROLES_CON_ESTADO:
             return
@@ -164,6 +181,9 @@ class EstadosPersonal:
         if u.rol not in ROLES_CON_ESTADO:
             return False
         cambio = bool(self.normalizar_usuario(u)) or (u.estado == "desconectado" and not u.estado_desde)
+        if u.cierre_navegador_en:  # volvió a usar el sistema (otra ventana o cambió de pantalla): no cerró
+            u.cierre_navegador_en = None
+            cambio = True
         if u.estado == "desconectado" and u.estado_auto and self.en_horario():
             self.cambiar(u, "conectado", "actividad", automatico=True)
             self._repartir()
@@ -199,7 +219,7 @@ class EstadosPersonal:
         if u.rol not in ROLES_CON_ESTADO:
             raise ErrorNegocio("Tu rol no maneja estados", 403)
         if estado not in ELEGIBLES_EMPLEADO:
-            raise ErrorNegocio("La capacitación se solicita y la autoriza el supervisor")
+            raise ErrorNegocio("La capacitación se solicita al supervisor y Desconectado se registra al cerrar sesión")
         anterior = u.estado
         self.normalizar_usuario(u)
         self.cambiar(u, estado, "usuario", actor_id=u.id)
@@ -264,7 +284,7 @@ class EstadosPersonal:
         """El supervisor termina una capacitación o corrige un estado (ej. alguien olvidó desconectarse)."""
         if actor.rol not in GESTION_PERSONAL:
             raise ErrorNegocio("Solo administración o supervisión cambian el estado de otra persona", 403)
-        if estado not in ELEGIBLES_EMPLEADO:
+        if estado not in ELEGIBLES_SUPERVISOR:
             raise ErrorNegocio("Para capacitación usa Autorizar capacitación")
         u = self._empleado(usuario_id)
         anterior = u.estado

@@ -58,4 +58,4 @@ if (!esDoctor) {
   $("fCliente").onchange = () => { clienteId = Number($("fCliente").value) || null; cargar(); };
 }
 cargar();
-setInterval(cargar, 120000);
+refrescoAutomatico(cargar, 60000);

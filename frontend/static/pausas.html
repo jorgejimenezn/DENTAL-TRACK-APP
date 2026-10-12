@@ -93,6 +93,7 @@ $("pestanas").onclick = e => { const b = e.target.closest("[data-p]"); if (b) { 
 $("fTexto").addEventListener("input", debounce(pintar, 250));
 $("btnActualizar").onclick = cargar;
 cargar();
+refrescoAutomatico(cargar, 60000);
 </script>
 </body>
 </html>

@@ -96,6 +96,7 @@ $("formPago").onsubmit = async e => {
 };
 document.querySelectorAll("[data-cerrar]").forEach(b => b.onclick = () => b.closest("dialog").close());
 cargar();
+refrescoAutomatico(cargar, 60000);
 </script>
 </body>
 </html>

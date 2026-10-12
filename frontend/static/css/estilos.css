@@ -567,12 +567,23 @@ a.btn{text-decoration:none}
 .leaflet-container{font-family:inherit}
 
 /* Estado del personal */
-.estado-personal{margin:10px 0 2px;padding:10px;border:1px solid var(--panel-borde);border-radius:10px;background:var(--campo)}
-.estado-personal .estado-fila{display:flex;align-items:center;gap:7px;margin-bottom:8px;flex-wrap:wrap}
-.estado-personal .estado-fila b{display:inline;font-size:13px;color:var(--texto)}
-.estado-personal .estado-fila small{color:var(--texto-3);font-size:11px;margin-left:auto}
-.estado-personal select{width:100%;padding:7px 9px;border:1px solid var(--campo-borde);border-radius:8px;background:var(--panel-alto);color:var(--texto);font:inherit;font-size:12px}
-.estado-pendiente{display:block;margin-top:7px;font-size:11px;color:var(--naranja-texto);line-height:1.35}
+.barra-estado{display:flex;justify-content:flex-end;margin:-14px 0 10px;position:relative;z-index:15}
+.estado-menu{position:relative}
+.estado-pill{display:inline-flex;align-items:center;gap:8px;padding:7px 12px 7px 11px;border-radius:999px;border:1px solid var(--campo-borde);
+  background:var(--panel);color:var(--texto);font:inherit;font-size:13px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.estado-pill:hover{border-color:var(--borde-hover)}
+.estado-pill b{font-weight:700}
+.estado-pill small{color:var(--texto-3);font-size:11px}
+.estado-pill svg{color:var(--texto-2)}
+.estado-opciones{position:absolute;right:0;top:calc(100% + 6px);min-width:270px;max-width:calc(100vw - 28px);background:var(--modal);
+  border:1px solid var(--panel-borde);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.45);padding:6px}
+.estado-titulo{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--texto-3);padding:8px 10px 6px}
+.estado-opcion{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;border-radius:8px;
+  padding:9px 10px;color:var(--texto);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.estado-opcion:hover,.estado-opcion:focus-visible{background:var(--hover);outline:none}
+.estado-nota{font-size:11px;color:var(--texto-3);padding:8px 10px 6px;border-top:1px solid var(--panel-borde);margin-top:4px;line-height:1.4}
+.estado-nota.naranja{color:var(--naranja-texto);border-top:0;margin-top:0;padding-bottom:2px}
+@media (max-width:900px){.barra-estado{margin:-4px 0 10px}.estado-pill small{display:none}}
 .punto-estado{width:10px;height:10px;border-radius:50%;flex:none;background:var(--texto-3);box-shadow:0 0 0 3px rgba(116,135,160,.18)}
 .punto-estado.conectado{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.2)}
 .punto-estado.refaccion{background:#fbbf24;box-shadow:0 0 0 3px rgba(251,191,36,.2)}

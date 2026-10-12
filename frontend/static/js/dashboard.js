@@ -133,4 +133,4 @@ mostrarTab(location.hash.slice(1));
 $("btnActualizar").onclick = cargar;
 $("btnPeriodo").onclick = () => { cargar(); if (mapas.listo) ["entregas", "recolectas"].forEach(cargarMapa); };
 cargar();
-setInterval(cargar, 120000);
+refrescoAutomatico(cargar, 60000);

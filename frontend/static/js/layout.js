@@ -86,7 +86,6 @@ function iniciarPagina(rolesPermitidos = null) {
     <div class="usuario-lateral">
       <b>${escapar(usuario.nombre)} ${escapar(usuario.apellido)}</b>
       <span>${escapar(NOMBRES_ROL[usuario.rol] || usuario.rol)}</span>
-      ${ROLES_CON_ESTADO.includes(usuario.rol) ? '<div class="estado-personal" id="estadoPersonal"></div>' : ""}
       <button class="btn chico" id="btnSalir">Cerrar sesión</button>
     </div>`;
   $("btnSalir").onclick = () => Sesion.salir();
@@ -103,41 +102,74 @@ function iniciarPagina(rolesPermitidos = null) {
   return usuario;
 }
 
+/* ---------- Actualización automática ----------
+ * Vuelve a cargar los datos cada `ms` mientras la pestaña está a la vista y, además, en cuanto el usuario regresa
+ * a la pestaña o ventana. No interrumpe si hay una ventana de captura abierta o si se está escribiendo en un campo. */
+function refrescoAutomatico(fn, ms) {
+  let ultimo = Date.now();
+  const intentar = (forzar = false) => {
+    const escribiendo = document.activeElement && ["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)
+      && !document.activeElement.closest(".filtros");
+    if (document.hidden || document.querySelector("dialog[open]") || escribiendo) return;
+    if (!forzar && Date.now() - ultimo < ms - 500) return;
+    ultimo = Date.now();
+    fn();
+  };
+  setInterval(() => intentar(), ms);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && Date.now() - ultimo > 3000) intentar(true); });
+  window.addEventListener("focus", () => { if (Date.now() - ultimo > 3000) intentar(true); });
+}
+
 /* ---------- Estado del personal (conectado, refacción, almuerzo, capacitación, desconectado) ---------- */
 const ROLES_CON_ESTADO = ["tecnico", "mensajero", "ingresos", "qa", "facturacion", "logistica"];
 const horaCorta = v => v ? new Date(v).toLocaleTimeString("es-GT", { hour: "2-digit", minute: "2-digit" }) : "";
 
 async function prepararEstado(pagina) {
+  // Menú de estado en la esquina superior derecha del contenido
+  const barra = document.createElement("div");
+  barra.className = "barra-estado";
+  barra.innerHTML = '<div class="estado-menu" id="estadoPersonal"></div>';
+  document.querySelector(".contenido")?.prepend(barra);
   const caja = $("estadoPersonal");
-  let actual = null;
+  let actual = null, abierto = false;
+  const opcion = (valor, texto, clase = valor) =>
+    `<button type="button" class="estado-opcion" data-valor="${valor}"><i class="punto-estado ${clase}"></i>${texto}</button>`;
   const pintar = e => {
     actual = e;
+    const opciones = e.opciones.filter(o => o.valor !== e.estado)
+      .map(o => opcion(o.valor, e.estado === "capacitacion" && o.valor === "conectado" ? "Terminé la capacitación · Conectado" : o.texto)).join("");
     caja.innerHTML = `
-      <div class="estado-fila"><i class="punto-estado ${e.estado}"></i><b>${escapar(e.estado_texto)}</b>
-        <small>${e.desde ? "desde " + horaCorta(e.desde) : ""}</small></div>
-      <select id="selEstado" aria-label="Cambiar mi estado">
-        ${e.estado === "capacitacion" ? '<option value="capacitacion" selected>En capacitación</option>' : ""}
-        ${e.opciones.map(o => `<option value="${o.valor}" ${o.valor === e.estado ? "selected" : ""}>${e.estado === "capacitacion" && o.valor === "conectado" ? "Terminé la capacitación · Conectado" : o.texto}</option>`).join("")}
-        ${e.estado !== "capacitacion" && !e.capacitacion_pendiente ? '<option value="__capacitacion">Solicitar capacitación…</option>' : ""}
-      </select>
-      ${e.capacitacion_pendiente ? '<small class="estado-pendiente">Capacitación solicitada: pendiente de autorizar. <a href="#" id="cancelarCapacitacion">Cancelar</a></small>' : ""}`;
-    $("selEstado").onchange = ev => cambiar(ev.target.value);
-    const cancelar = $("cancelarCapacitacion");
-    if (cancelar) cancelar.onclick = async ev => {
-      ev.preventDefault();
-      try { pintar(await api("DELETE", "/mi-estado/capacitacion")); toast("Solicitud de capacitación cancelada"); }
-      catch (error) { toast(error.message, true); }
-    };
+      <button type="button" class="estado-pill" id="btnEstado" aria-haspopup="true" aria-expanded="${abierto}" title="Cambiar mi estado">
+        <i class="punto-estado ${e.estado}"></i><b>${escapar(e.estado_texto)}</b>
+        ${e.desde ? `<small>desde ${horaCorta(e.desde)}</small>` : ""}
+        ${e.capacitacion_pendiente ? '<span class="badge naranja">Capacitación pendiente</span>' : ""}
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="estado-opciones" ${abierto ? "" : "hidden"} role="menu">
+        <div class="estado-titulo">Mi estado</div>
+        ${opciones}
+        ${e.estado !== "capacitacion" && !e.capacitacion_pendiente ? opcion("__capacitacion", "Solicitar capacitación…", "capacitacion") : ""}
+        ${e.capacitacion_pendiente ? `<div class="estado-nota naranja">Capacitación solicitada: pendiente de autorizar.</div>${opcion("__cancelar", "Cancelar la solicitud", "desconectado")}` : ""}
+        <div class="estado-nota">${e.recibe_trabajo ? "Estás recibiendo trabajo." : "No recibes trabajo nuevo mientras no estés Conectado."} Al cerrar sesión quedas Desconectado.</div>
+      </div>`;
+    $("btnEstado").onclick = ev => { ev.stopPropagation(); abierto = !abierto; pintar(actual); };
+    caja.querySelectorAll(".estado-opcion").forEach(b => b.onclick = ev => { ev.stopPropagation(); abierto = false; elegir(b.dataset.valor); });
     avisoBandeja(e);
   };
-  const cambiar = async valor => {
-    if (valor === "__capacitacion") { $("selEstado").value = actual.estado; return abrirCapacitacion(); }
+  document.addEventListener("click", ev => { if (abierto && !caja.contains(ev.target)) { abierto = false; pintar(actual); } });
+  document.addEventListener("keydown", ev => { if (abierto && ev.key === "Escape") { abierto = false; pintar(actual); } });
+  const elegir = async valor => {
+    if (valor === "__capacitacion") { pintar(actual); return abrirCapacitacion(); }
     try {
+      if (valor === "__cancelar") {
+        pintar(await api("DELETE", "/mi-estado/capacitacion"));
+        return toast("Solicitud de capacitación cancelada");
+      }
       const anterior = actual.recibe_trabajo;
       pintar(await api("PUT", "/mi-estado", { estado: valor }));
       toast(`Tu estado: ${actual.estado_texto}`);
       if (pagina === "bandeja.html" && anterior !== actual.recibe_trabajo) setTimeout(() => location.reload(), 600);
-    } catch (error) { toast(error.message, true); $("selEstado").value = actual.estado; }
+    } catch (error) { toast(error.message, true); pintar(actual); }
   };
   const abrirCapacitacion = () => {
     let modal = $("modalCapacitacion");
@@ -175,12 +207,28 @@ async function prepararEstado(pagina) {
     const aviso = document.createElement("div");
     aviso.className = "aviso-estado";
     aviso.innerHTML = `Estás en <b>${escapar(e.estado_texto)}</b>: el sistema no te asigna trabajo nuevo. Lo que ya tienes sigue siendo tuyo.
-      Cambia tu estado a <b>Conectado</b> en el menú para volver a recibir trabajo.`;
-    document.querySelector(".contenido")?.prepend(aviso);
+      Cambia tu estado a <b>Conectado</b> (arriba a la derecha) para volver a recibir trabajo.`;
+    barra.after(aviso);
   };
-  const cargar = async () => { try { pintar(await api("GET", "/mi-estado")); } catch { /* sin conexión: se reintenta */ } };
+  const cargar = async () => {
+    if (abierto) return;
+    try {
+      const antes = actual?.recibe_trabajo;
+      pintar(await api("GET", "/mi-estado"));
+      // si el supervisor cambió mi estado (ej. autorizó la capacitación), la bandeja se actualiza
+      if (antes !== undefined && antes !== actual.recibe_trabajo && pagina === "bandeja.html") location.reload();
+    } catch { /* sin conexión: se reintenta */ }
+  };
   await cargar();
-  setInterval(cargar, 120000);
+  refrescoAutomatico(cargar, 20000);
+  // Una ventana en segundo plano sigue avisando que está abierta (el navegador la limita a una vez por minuto)
+  setInterval(() => { if (document.hidden) api("GET", "/mi-estado").catch(() => {}); }, 60000);
+  // Al cerrar la ventana o el navegador se avisa al servidor. Si en 3 minutos no hay actividad (otra ventana o una
+  // nueva pantalla), queda Desconectado. Cambiar de pantalla no cuenta: la siguiente registra actividad enseguida.
+  window.addEventListener("pagehide", () => {
+    const token = Sesion.obtener()?.token;
+    if (token && navigator.sendBeacon) navigator.sendBeacon(`${API}/auth/cerrando`, new Blob([token], { type: "text/plain" }));
+  });
 }
 
 /** Diente en malla de líneas y puntos, generado con código (marca de agua). */

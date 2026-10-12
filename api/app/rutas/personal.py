@@ -20,8 +20,13 @@ supervision = requiere_rol("admin", "supervisor")
 
 
 class EstadoIn(BaseModel):
+    estado: Literal["conectado", "refaccion", "almuerzo"] = Field(
+        description="La capacitación se solicita al supervisor; Desconectado se registra al cerrar sesión (POST /auth/salir)")
+
+
+class EstadoSupervisorIn(BaseModel):
     estado: Literal["conectado", "refaccion", "almuerzo", "desconectado"] = Field(
-        description="La capacitación no se elige aquí: se solicita y la autoriza el supervisor")
+        description="Terminar una capacitación (conectado) o corregir un estado, por ejemplo si alguien olvidó cerrar sesión")
 
 
 class SolicitudCapacitacionIn(BaseModel):
@@ -39,7 +44,7 @@ async def mi_estado(u: dict = Depends(usuario_actual)):
     return await llamar("GET", "/mi-estado", u)
 
 
-@router.put("/mi-estado", summary="Cambiar mi estado (conectado, refacción, almuerzo o desconectado)")
+@router.put("/mi-estado", summary="Cambiar mi estado (conectado, refacción o almuerzo)")
 async def cambiar_mi_estado(datos: EstadoIn, u: dict = Depends(usuario_actual)):
     return await llamar("PUT", "/mi-estado", u, json=datos.model_dump())
 
@@ -72,5 +77,5 @@ async def resolver_capacitacion(usuario_id: int, datos: ResolverCapacitacionIn, 
 
 
 @router.put("/personal/{usuario_id}/estado", summary="Cambiar el estado de un empleado (terminar capacitación, corregir)")
-async def asignar_estado(usuario_id: int, datos: EstadoIn, u: dict = Depends(supervision)):
+async def asignar_estado(usuario_id: int, datos: EstadoSupervisorIn, u: dict = Depends(supervision)):
     return await llamar("PUT", f"/personal/{usuario_id}/estado", u, json=datos.model_dump())

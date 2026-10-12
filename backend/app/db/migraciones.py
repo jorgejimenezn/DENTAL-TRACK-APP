@@ -159,6 +159,8 @@ def migrar() -> None:
             "ALTER TABLE usuarios ADD COLUMN capacitacion_solicitada_en TIMESTAMPTZ",
             "ALTER TABLE usuarios ADD COLUMN capacitacion_motivo VARCHAR(200)",
         ]
+    if "cierre_navegador_en" not in usuarios:  # desconexión al cerrar el navegador sin cerrar sesión
+        pasos.append("ALTER TABLE usuarios ADD COLUMN cierre_navegador_en TIMESTAMPTZ")
 
     if not pasos:
         return

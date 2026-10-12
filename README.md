@@ -174,7 +174,7 @@ Administración y supervisión pausan un caso desde su detalle, con **motivo obl
 
 ## Estado del personal
 
-Técnicos, mensajeros, Ingresos, QA, Facturación y Logística tienen un **estado**, que cambian desde el menú lateral: **Conectado**, **Refacción**, **Almuerzo**, **En capacitación** o **Desconectado**. El reparto automático solo asigna trabajo nuevo a quien está **Conectado** (en Ingresos, QA, Facturación y Logística el estado es informativo, porque trabajan con la cola del área).
+Técnicos, mensajeros, Ingresos, QA, Facturación y Logística tienen un **estado**, visible en la esquina superior derecha de cada pantalla: **Conectado**, **Refacción** o **Almuerzo** los elige el empleado; **En capacitación** la solicita y la autoriza el supervisor; **Desconectado** se registra al cerrar sesión (el empleado no lo elige). El reparto automático solo asigna trabajo nuevo a quien está **Conectado** (en Ingresos, QA, Facturación y Logística el estado es informativo, porque trabajan con la cola del área).
 
 | Estado | ¿Recibe trabajo nuevo? | Lo asignado sin iniciar | ¿Cuenta para su meta? |
 |---|---|---|---|
@@ -185,7 +185,8 @@ Técnicos, mensajeros, Ingresos, QA, Facturación y Logística tienen un **estad
 
 - Lo que está **en proceso** siempre sigue siendo de la persona.
 - **Capacitación**: el empleado la solicita con un motivo y sigue Conectado hasta que el supervisor la autoriza (con o sin reparto) o la rechaza. El supervisor también puede poner a alguien en capacitación directamente.
-- **Inicio y fin de turno**: al iniciar sesión queda Conectado; al cerrar sesión, Desconectado. A la hora de cierre de la jornada el sistema desconecta a quien siguió en otro estado y, si vuelve a usar el sistema dentro del horario, lo conecta de nuevo (no a quien eligió Desconectado).
+- **Inicio y fin de turno**: al iniciar sesión queda Conectado; al cerrar sesión, Desconectado. A la hora de cierre de la jornada el sistema desconecta a quien siguió en otro estado y, si vuelve a usar el sistema dentro del horario, lo conecta de nuevo (no a quien cerró sesión o desconectó el supervisor).
+- **Cierre del navegador sin cerrar sesión**: al cerrarse la ventana la página avisa al servidor (`navigator.sendBeacon` a `POST /auth/cerrando`). Si en **3 minutos** no hay actividad de esa persona (otra ventana abierta o una nueva pantalla), queda Desconectado desde la hora en que cerró. Cambiar de pantalla no cuenta, y no se usa inactividad pura para no desconectar a quien tiene la computadora suspendida o el celular bloqueado mientras trabaja. Si el navegador no alcanza a avisar (por ejemplo, se apaga el equipo), lo desconecta el cierre de la jornada o el supervisor.
 - Si todos los de un área están fuera, el trabajo **espera en la cola** del área (no se marca "sin técnico").
 - **Tiempos**: las horas laborales fuera de Conectado se descuentan de la espera y del trabajo de sus pasos de producción, igual que las pausas de casos.
 - **Pantalla Estado del personal** (admin y supervisor gestionan; operaciones y demo consultan): resumen por estado, capacitaciones por autorizar, quién está en cada estado desde qué hora, su trabajo en proceso y asignado (con emergencias), alerta **Excedido** si pasa de los minutos esperados de refacción o almuerzo (se configuran en Calendario y reglas; por defecto 15 y 60) y pestaña **Historial (auditoría)** con los periodos y los minutos fuera de la línea por persona.

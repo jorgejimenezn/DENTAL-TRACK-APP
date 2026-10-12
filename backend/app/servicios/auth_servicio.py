@@ -45,6 +45,14 @@ class AuthServicio:
             self.sesion.commit()
         return self.a_sesion(usuario)
 
+    def navegador_cerrado(self, actor: Actor) -> None:
+        usuario = self.usuarios.por_id(actor.id) if actor.id else None
+        if not usuario or not usuario.activo:
+            return
+        from app.servicios.estados_personal import EstadosPersonal
+        EstadosPersonal(self.sesion, self.auditoria).navegador_cerrado(usuario)
+        self.sesion.commit()
+
     def salir(self, actor: Actor) -> None:
         """Cierre de sesión: el empleado queda Desconectado (sus emergencias asignadas sin iniciar se reparten)."""
         usuario = self.usuarios.por_id(actor.id) if actor.id else None

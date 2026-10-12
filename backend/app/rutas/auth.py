@@ -33,3 +33,9 @@ def registro(datos: RegistroCliente, clientes: ClienteServicio = Depends(servici
 def salir(actor: Actor = Depends(obtener_actor), servicio: AuthServicio = Depends(servicio_auth)):
     servicio.salir(actor)
     return Response(status_code=204)
+
+
+@router.post("/cerrando", status_code=204, summary="La página se cerró (posible cierre del navegador sin cerrar sesión)")
+def cerrando(actor: Actor = Depends(obtener_actor), servicio: AuthServicio = Depends(servicio_auth)):
+    servicio.navegador_cerrado(actor)
+    return Response(status_code=204)

@@ -286,7 +286,11 @@ class Motor:
             paso.estado, paso.tecnico_id = PASO_SIN_TECNICO, None
             return
         # Solo recibe trabajo nuevo quien está Conectado (refacción, almuerzo, capacitación o desconectado esperan)
-        from app.servicios.estados_personal import disponible
+        from app.servicios.estados_personal import EstadosPersonal, disponible
+        if not hasattr(self, "_estados"):
+            self._estados = EstadosPersonal(self.sesion)
+        for u in candidatos:  # estado vigente: fin de jornada o navegador cerrado sin actividad
+            self._estados.normalizar_usuario(u)
         presentes = [u for u in candidatos if disponible(u)]
         if not presentes:
             paso.estado, paso.tecnico_id = PASO_EN_COLA, None

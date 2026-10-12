@@ -197,7 +197,7 @@ $("supervision").addEventListener("click", e => {
   cargar();
 });
 $("btnActualizar").onclick = cargar;
-setInterval(() => { if (!document.querySelector("dialog[open]")) cargar(); }, 60000);
+refrescoAutomatico(cargar, 30000);
 
 /* ---------- Acciones ---------- */
 async function ejecutar(boton, promesa, mensaje) {

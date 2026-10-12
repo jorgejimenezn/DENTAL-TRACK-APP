@@ -62,6 +62,8 @@ class Usuario(Base):
     estado_auto: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     capacitacion_solicitada_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     capacitacion_motivo: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    # Cuándo cerró el navegador sin cerrar sesión: si no vuelve a haber actividad en 3 minutos, queda Desconectado
+    cierre_navegador_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     areas: Mapped[list[Area]] = relationship(secondary=usuario_area, order_by=Area.nombre)
     cliente: Mapped["Cliente | None"] = relationship(back_populates="usuario", uselist=False)

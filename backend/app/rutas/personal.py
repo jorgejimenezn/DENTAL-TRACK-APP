@@ -15,7 +15,11 @@ from app.servicios.estados_personal import EstadosPersonal
 router = APIRouter(tags=["Personal"])
 
 
-class EstadoIn(BaseModel):
+class EstadoIn(BaseModel):  # el empleado: Desconectado ocurre al cerrar sesión
+    estado: Literal["conectado", "refaccion", "almuerzo"]
+
+
+class EstadoSupervisorIn(BaseModel):
     estado: Literal["conectado", "refaccion", "almuerzo", "desconectado"]
 
 
@@ -73,6 +77,6 @@ def resolver_capacitacion(usuario_id: int, datos: ResolverCapacitacionIn, actor:
 
 
 @router.put("/personal/{usuario_id}/estado")
-def asignar_estado(usuario_id: int, datos: EstadoIn, actor: Actor = Depends(obtener_actor),
+def asignar_estado(usuario_id: int, datos: EstadoSupervisorIn, actor: Actor = Depends(obtener_actor),
                    s: EstadosPersonal = Depends(_servicio)):
     return s.asignar_estado(usuario_id, datos.estado, actor)

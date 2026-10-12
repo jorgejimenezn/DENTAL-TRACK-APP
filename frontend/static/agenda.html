@@ -78,7 +78,7 @@ $("fTexto").addEventListener("input", debounce(() => datos && pintar(), 250));
 $("fRiesgo").onchange = () => datos && pintar();
 $("btnActualizar").onclick = cargar;
 cargar();
-setInterval(cargar, 120000);
+refrescoAutomatico(cargar, 60000);
 </script>
 </body>
 </html>

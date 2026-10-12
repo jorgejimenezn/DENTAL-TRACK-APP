@@ -101,7 +101,7 @@ const ROLES = { tecnico: "Técnico", mensajero: "Mensajero", ingresos: "Ingresos
 const ESTADOS = [["conectado", "Conectado", "ok"], ["refaccion", "Refacción", "ambar"], ["almuerzo", "Almuerzo", "naranja"],
                  ["capacitacion", "En capacitación", ""], ["desconectado", "Desconectado", "gris"]];
 const ORIGEN = { usuario: "El empleado", supervisor: "Supervisión", inicio_sesion: "Inició sesión", cierre_sesion: "Cerró sesión",
-                 actividad: "Actividad en horario", automatico: "Fin de jornada" };
+                 actividad: "Actividad en horario", automatico: "Fin de jornada", cierre_navegador: "Cerró el navegador" };
 const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const duracion = m => m == null ? "—" : m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")} min`;
 const kpi = (t, v, s = "", clase = "") => `<div class="kpi ${clase}"><span>${t}</span><b>${v}</b>${s ? `<small>${s}</small>` : ""}</div>`;
@@ -257,7 +257,7 @@ $("fTexto").addEventListener("input", debounce(() => datos && pintarAhora(), 250
 ["hDesde", "hHasta", "hPersona"].forEach(id => $(id).onchange = cargarHistorial);
 $("btnActualizar").onclick = () => pestana === "ahora" ? cargarAhora() : cargarHistorial();
 cargarAhora();
-setInterval(() => { if (pestana === "ahora" && !document.querySelector("dialog[open]")) cargarAhora(); }, 60000);
+refrescoAutomatico(() => pestana === "ahora" ? cargarAhora() : cargarHistorial(), 15000);
 </script>
 </body>
 </html>
