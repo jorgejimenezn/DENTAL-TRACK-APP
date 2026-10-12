@@ -172,7 +172,7 @@ function pintarGuias() {
               <button class="btn chico ${g.activo ? "rojo-borde" : "verde-borde"}" data-accion="estado" data-id="${g.id}">${g.activo ? "Desactivar" : "Activar"}</button>
             </div></div>`).join("")}</div>
       </div>
-      <div class="card" style="background:rgba(0,0,0,.35)">
+      <div class="card" style="background:var(--campo)">
         ${guia ? `
           <h3 style="font-size:15px;margin-bottom:10px">Colores de ${escapar(guia.nombre)}</h3>
           <div class="agregar-linea">
