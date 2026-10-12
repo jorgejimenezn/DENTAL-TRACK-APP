@@ -1,5 +1,5 @@
 """Inicio de sesión: el backend valida credenciales y la API emite el token JWT."""
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 
 from app.backend import llamar
 from app.esquemas import LoginIn, RegistroIn, TokenOut, UsuarioOut
@@ -26,3 +26,9 @@ async def registro(datos: RegistroIn):
 @router.get("/yo", response_model=UsuarioOut, summary="Usuario de la sesión actual")
 async def yo(usuario: dict = Depends(usuario_actual)):
     return usuario
+
+
+@router.post("/salir", status_code=204, summary="Cerrar sesión (el empleado queda Desconectado)")
+async def salir(usuario: dict = Depends(usuario_actual)):
+    await llamar("POST", "/auth/salir", usuario)
+    return Response(status_code=204)

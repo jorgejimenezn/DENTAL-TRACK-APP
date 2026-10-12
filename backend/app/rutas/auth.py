@@ -1,5 +1,7 @@
 """Rutas internas de autenticación (las consume solo el servicio API)."""
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
+
+from app.core.dependencias import Actor, obtener_actor
 
 from app.esquemas.cliente import RegistroCliente
 from app.esquemas.comun import CredencialesIn, UsuarioSesion
@@ -25,3 +27,9 @@ def registro(datos: RegistroCliente, clientes: ClienteServicio = Depends(servici
              auth: AuthServicio = Depends(servicio_auth)):
     cliente = clientes.registrar(datos)
     return auth.usuario_activo(cliente.usuario_id)
+
+
+@router.post("/salir", status_code=204, summary="Cierre de sesión (el empleado queda Desconectado)")
+def salir(actor: Actor = Depends(obtener_actor), servicio: AuthServicio = Depends(servicio_auth)):
+    servicio.salir(actor)
+    return Response(status_code=204)

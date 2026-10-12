@@ -565,3 +565,32 @@ a.btn{text-decoration:none}
 .tabla-lugares th{color:var(--texto-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
 .tabla-lugares td:last-child,.tabla-lugares th:last-child{text-align:right}
 .leaflet-container{font-family:inherit}
+
+/* Estado del personal */
+.estado-personal{margin:10px 0 2px;padding:10px;border:1px solid var(--panel-borde);border-radius:10px;background:var(--campo)}
+.estado-personal .estado-fila{display:flex;align-items:center;gap:7px;margin-bottom:8px;flex-wrap:wrap}
+.estado-personal .estado-fila b{display:inline;font-size:13px;color:var(--texto)}
+.estado-personal .estado-fila small{color:var(--texto-3);font-size:11px;margin-left:auto}
+.estado-personal select{width:100%;padding:7px 9px;border:1px solid var(--campo-borde);border-radius:8px;background:var(--panel-alto);color:var(--texto);font:inherit;font-size:12px}
+.estado-pendiente{display:block;margin-top:7px;font-size:11px;color:var(--naranja-texto);line-height:1.35}
+.punto-estado{width:10px;height:10px;border-radius:50%;flex:none;background:var(--texto-3);box-shadow:0 0 0 3px rgba(116,135,160,.18)}
+.punto-estado.conectado{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.2)}
+.punto-estado.refaccion{background:#fbbf24;box-shadow:0 0 0 3px rgba(251,191,36,.2)}
+.punto-estado.almuerzo{background:#fb923c;box-shadow:0 0 0 3px rgba(251,146,60,.2)}
+.punto-estado.capacitacion{background:#8cbcff;box-shadow:0 0 0 3px rgba(140,188,255,.2)}
+.punto-estado.desconectado{background:#64748b;box-shadow:none}
+.aviso-estado{margin:0 0 16px;padding:12px 14px;border-radius:10px;border:1px solid var(--naranja-borde);background:var(--naranja-suave);color:var(--texto);font-size:13px}
+.badge.estado-conectado{background:var(--verde-suave);color:var(--verde-texto);border:1px solid var(--verde-borde)}
+.badge.estado-refaccion{background:rgba(251,191,36,.14);color:#fcd34d;border:1px solid rgba(251,191,36,.42)}
+.badge.estado-almuerzo{background:rgba(251,146,60,.14);color:#fdba74;border:1px solid rgba(251,146,60,.42)}
+.badge.estado-capacitacion{background:var(--azul-suave);color:var(--azul-texto);border:1px solid var(--azul-borde)}
+.badge.estado-desconectado{background:var(--neutro);color:var(--neutro-texto)}
+.kpi.ok::before{background:#22c55e}.kpi.ambar::before{background:#fbbf24}.kpi.naranja::before{background:#fb923c}.kpi.gris::before{background:#64748b}
+.solicitudes-cap{display:flex;flex-direction:column;gap:8px}
+.solicitud-cap{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--campo);border:1px solid var(--naranja-borde);border-radius:10px;padding:10px 12px}
+.solicitud-cap .quien{flex:1 1 220px;min-width:0}
+.solicitud-cap .quien small{display:block;color:var(--texto-2);font-size:12px;overflow-wrap:anywhere}
+.solicitud-cap .botones{display:flex;gap:6px;flex-wrap:wrap}
+.codigos-mini{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.codigos-mini span{font-family:ui-monospace,Consolas,monospace;font-size:11px;padding:1px 6px;border-radius:5px;background:var(--panel-alto);border:1px solid var(--campo-borde)}
+.codigos-mini span.emergencia{border-color:var(--rojo-borde);color:var(--rojo-texto)}

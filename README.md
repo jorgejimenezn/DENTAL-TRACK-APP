@@ -172,6 +172,26 @@ Administración y supervisión pausan un caso desde su detalle, con **motivo obl
 - El doctor ve "Diseño enviado: pendiente de tu aprobación".
 - Al desplegar, los casos abiertos que aún no llegan a CAM (su siguiente paso de impresión o fresado está pendiente y justo antes va Diseño/CAD) reciben la validación en su recorrido. Se hace una sola vez.
 
+## Estado del personal
+
+Técnicos, mensajeros, Ingresos, QA, Facturación y Logística tienen un **estado**, que cambian desde el menú lateral: **Conectado**, **Refacción**, **Almuerzo**, **En capacitación** o **Desconectado**. El reparto automático solo asigna trabajo nuevo a quien está **Conectado** (en Ingresos, QA, Facturación y Logística el estado es informativo, porque trabajan con la cola del área).
+
+| Estado | ¿Recibe trabajo nuevo? | Lo asignado sin iniciar | ¿Cuenta para su meta? |
+|---|---|---|---|
+| Conectado | Sí | — | Sí |
+| Refacción / Almuerzo | No | Se le queda | No |
+| En capacitación | No | El supervisor elige al autorizar: **con reparto** (pasa a otros) o **sin reparto** | No |
+| Desconectado | No | Se le queda para el siguiente turno, **excepto las emergencias (prioridad 1)**, que se reparten | No |
+
+- Lo que está **en proceso** siempre sigue siendo de la persona.
+- **Capacitación**: el empleado la solicita con un motivo y sigue Conectado hasta que el supervisor la autoriza (con o sin reparto) o la rechaza. El supervisor también puede poner a alguien en capacitación directamente.
+- **Inicio y fin de turno**: al iniciar sesión queda Conectado; al cerrar sesión, Desconectado. A la hora de cierre de la jornada el sistema desconecta a quien siguió en otro estado y, si vuelve a usar el sistema dentro del horario, lo conecta de nuevo (no a quien eligió Desconectado).
+- Si todos los de un área están fuera, el trabajo **espera en la cola** del área (no se marca "sin técnico").
+- **Tiempos**: las horas laborales fuera de Conectado se descuentan de la espera y del trabajo de sus pasos de producción, igual que las pausas de casos.
+- **Pantalla Estado del personal** (admin y supervisor gestionan; operaciones y demo consultan): resumen por estado, capacitaciones por autorizar, quién está en cada estado desde qué hora, su trabajo en proceso y asignado (con emergencias), alerta **Excedido** si pasa de los minutos esperados de refacción o almuerzo (se configuran en Calendario y reglas; por defecto 15 y 60) y pestaña **Historial (auditoría)** con los periodos y los minutos fuera de la línea por persona.
+- Al asignar o reasignar manualmente, la lista muestra el estado de cada persona (la asignación manual sí se permite).
+- Auditoría en la tabla `estados_personal` (un registro por periodo, con quién lo cambió y el origen) y en la bitácora.
+
 ## Agenda de entregas
 
 Pantalla **Agenda de entregas** (admin, supervisor, operaciones, logística, demo) para ver de un vistazo qué está por salir:
@@ -396,6 +416,12 @@ Sin servidor Mongo se puede probar con `MONGO_URL=mongomock://local` (requiere `
 | POST | `/solicitudes/{id}/pausar`, `/solicitudes/{id}/reanudar` | admin, supervisor |
 | GET | `/pausas` | admin, supervisor, operaciones (auditoría; `?abiertas=true` solo las vigentes) |
 | GET | `/agenda-entregas` | admin, supervisor, operaciones, logística, demo |
+| GET / PUT | `/mi-estado` | cada empleado con estado (técnico, mensajero, Ingresos, QA, Facturación, Logística) |
+| POST / DELETE | `/mi-estado/capacitacion` | solicitar o cancelar capacitación (el propio empleado) |
+| GET | `/personal/estados`, `/personal/estados/historial` | admin, supervisor, operaciones, demo |
+| POST | `/personal/{id}/capacitacion` | admin, supervisor: autorizar con o sin reparto, o rechazar |
+| PUT | `/personal/{id}/estado` | admin, supervisor: terminar capacitación o corregir un estado |
+| POST | `/auth/salir` | cerrar sesión (el empleado queda Desconectado) |
 | GET | `/metricas/mapa?capa=entregas\|recolectas` | roles de métricas (filtros `desde`, `hasta`, `tipo_trabajo_id`, `material_id`) |
 | POST | `/pasos/{id}/enviar-cliente`, `/pasos/{id}/cambios-diseno` | supervisión (validación de diseño) |
 | GET | `/validaciones-diseno` | admin, supervisor |

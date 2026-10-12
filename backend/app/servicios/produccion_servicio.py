@@ -631,7 +631,16 @@ class ProduccionServicio:
             lista = [Candidato(id=u.id, nombre=_nombre(u), rol=u.rol, carga=self.motor.carga(u.id),
                                max_trabajos=u.max_trabajos, cubre=u.id in cubren)
                      for u in usuarios if u.id in cubren or u.rol == "tecnico"]
-        return sorted(lista, key=lambda c: (not c.cubre, c.carga, c.nombre))
+        from app.servicios.estados_personal import ESTADOS_PERSONAL, ROLES_CON_ESTADO
+        ausentes = self.motor.ausentes_hoy()
+        personas = {u.id: u for u in self.sesion.scalars(select(Usuario).where(Usuario.id.in_([c.id for c in lista] or [0])))}
+        for c in lista:
+            u = personas.get(c.id)
+            if u and u.rol in ROLES_CON_ESTADO:
+                c.estado, c.estado_texto = u.estado, ESTADOS_PERSONAL.get(u.estado, u.estado)
+            c.recibe_trabajo = bool(u) and (u.rol not in ROLES_CON_ESTADO or u.estado == "conectado") and c.id not in ausentes
+        # primero quien cubre y está disponible; luego por carga
+        return sorted(lista, key=lambda c: (not c.cubre, not c.recibe_trabajo, c.carga, c.nombre))
 
     def asignar(self, paso_id: int, datos: AsignarIn, actor: Actor) -> None:
         paso = self._paso(paso_id)

@@ -161,6 +161,8 @@ class ParametrosIn(BaseModel):
     min_digital: int = Field(ge=0, le=30, examples=[2])
     min_analogo: int = Field(ge=0, le=30, examples=[3])
     min_emergencia: int = Field(ge=0, le=30, examples=[1])
+    max_refaccion: int | None = Field(default=None, ge=1, le=240, examples=[15], description="Minutos esperados de refacción")
+    max_almuerzo: int | None = Field(default=None, ge=1, le=240, examples=[60], description="Minutos esperados de almuerzo")
 
 
 # ---------------- Solicitudes (CN / RP) ----------------

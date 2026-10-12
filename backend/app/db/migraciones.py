@@ -151,6 +151,15 @@ def migrar() -> None:
     if pasos_solicitud and "recolectado_en" not in pasos_solicitud:
         pasos.append("ALTER TABLE solicitud_pasos ADD COLUMN recolectado_en TIMESTAMPTZ")
 
+    if "estado" not in usuarios:  # estados del personal (conectado, refacción, almuerzo, capacitación, desconectado)
+        pasos += [
+            "ALTER TABLE usuarios ADD COLUMN estado VARCHAR(15) NOT NULL DEFAULT 'desconectado'",
+            "ALTER TABLE usuarios ADD COLUMN estado_desde TIMESTAMPTZ",
+            "ALTER TABLE usuarios ADD COLUMN estado_auto BOOLEAN NOT NULL DEFAULT TRUE",
+            "ALTER TABLE usuarios ADD COLUMN capacitacion_solicitada_en TIMESTAMPTZ",
+            "ALTER TABLE usuarios ADD COLUMN capacitacion_motivo VARCHAR(200)",
+        ]
+
     if not pasos:
         return
     with engine.begin() as conexion:

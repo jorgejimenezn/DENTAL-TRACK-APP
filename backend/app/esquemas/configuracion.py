@@ -167,6 +167,8 @@ class Parametros(BaseModel):
     min_digital: int = Field(ge=0, le=30)
     min_analogo: int = Field(ge=0, le=30)
     min_emergencia: int = Field(ge=0, le=30)
+    max_refaccion: int = Field(default=15, ge=1, le=240, description="Minutos esperados de refacción (alerta al supervisor)")
+    max_almuerzo: int = Field(default=60, ge=1, le=240, description="Minutos esperados de almuerzo (alerta al supervisor)")
 
     @field_validator("corte_semana", "corte_sabado", "inicio_jornada")
     @classmethod

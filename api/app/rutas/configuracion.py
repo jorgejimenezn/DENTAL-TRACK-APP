@@ -107,7 +107,7 @@ async def parametros(u: dict = Depends(usuario_actual)):
 
 @router.put("/parametros", summary="Actualizar horas de corte y días mínimos")
 async def guardar_parametros(datos: ParametrosIn, u: dict = Depends(solo_admin)):
-    return await llamar("PUT", "/config/parametros", u, json=datos.model_dump())
+    return await llamar("PUT", "/config/parametros", u, json=datos.model_dump(exclude_none=True))
 
 
 @router.get("/fecha-minima", summary="Primera fecha de entrega posible según las reglas")

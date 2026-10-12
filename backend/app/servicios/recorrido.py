@@ -169,6 +169,14 @@ class Motor:
         produccion = paso.etapa == "produccion"
         # las horas en pausa no cuentan para la meta
         p_espera, p_trabajo = float(paso.pausa_espera or 0), float(paso.pausa_trabajo or 0)
+        if produccion and paso.tecnico_id and paso.iniciado_en:
+            # ni las horas en que el técnico no estuvo Conectado (refacción, almuerzo, capacitación, desconectado)
+            from app.servicios.estados_personal import EstadosPersonal
+            estados = EstadosPersonal(self.sesion)
+            estados._jornada = j
+            asignado = max(paso.asignado_en or paso.activado_en, paso.activado_en) if paso.activado_en else None
+            p_espera += estados.horas_fuera(paso.tecnico_id, asignado, paso.iniciado_en)
+            p_trabajo += estados.horas_fuera(paso.tecnico_id, paso.iniciado_en, paso.terminado_en)
         total = max(j.horas(paso.activado_en, paso.terminado_en) - p_espera - p_trabajo, 0.0)
         meta = float(paso.area.meta_horas or 4)
         if paso.etapa == "recolecta" and s.recolecta_metodo != "transporte":
@@ -277,7 +285,13 @@ class Motor:
         if not candidatos:
             paso.estado, paso.tecnico_id = PASO_SIN_TECNICO, None
             return
-        con_espacio = [(self.carga(u.id), u.id, u) for u in candidatos]
+        # Solo recibe trabajo nuevo quien está Conectado (refacción, almuerzo, capacitación o desconectado esperan)
+        from app.servicios.estados_personal import disponible
+        presentes = [u for u in candidatos if disponible(u)]
+        if not presentes:
+            paso.estado, paso.tecnico_id = PASO_EN_COLA, None
+            return
+        con_espacio = [(self.carga(u.id), u.id, u) for u in presentes]
         con_espacio = [x for x in con_espacio if x[2].max_trabajos is None or x[0] < x[2].max_trabajos]
         if not con_espacio:
             paso.estado, paso.tecnico_id = PASO_EN_COLA, None
@@ -287,7 +301,9 @@ class Motor:
 
     def repartir_colas(self) -> int:
         """Intenta asignar los pasos en cola o sin técnico, por prioridad y fecha de entrega."""
-        liberados = self.liberar_ausentes()
+        from app.servicios.estados_personal import EstadosPersonal
+        liberados = len(EstadosPersonal(self.sesion).normalizar())  # fin de jornada: desconecta a quien sigue
+        liberados += self.liberar_ausentes()
         pendientes = list(self.sesion.execute(
             select(SolicitudPaso, Solicitud).join(Solicitud)
             .where(SolicitudPaso.estado.in_([PASO_EN_COLA, PASO_SIN_TECNICO]), Solicitud.pausada.is_(False))

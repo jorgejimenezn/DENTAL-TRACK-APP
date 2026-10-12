@@ -29,6 +29,8 @@ class AuthServicio:
             raise NoAutorizado("Tu usuario está desactivado. Contacta al administrador.")
 
         usuario.ultimo_acceso = datetime.now(timezone.utc)
+        from app.servicios.estados_personal import EstadosPersonal
+        EstadosPersonal(self.sesion, self.auditoria).al_iniciar_sesion(usuario)  # queda Conectado
         self.sesion.commit()
         self.auditoria.registrar("login_exitoso", "sesion", usuario.id, Actor(usuario.id, usuario.email),
                                  {"rol": usuario.rol})
@@ -38,7 +40,20 @@ class AuthServicio:
         usuario = self.usuarios.por_id(usuario_id)
         if not usuario or not usuario.activo:
             raise NoAutorizado("Sesión no válida")
+        from app.servicios.estados_personal import EstadosPersonal
+        if EstadosPersonal(self.sesion, self.auditoria).con_actividad(usuario):
+            self.sesion.commit()
         return self.a_sesion(usuario)
+
+    def salir(self, actor: Actor) -> None:
+        """Cierre de sesión: el empleado queda Desconectado (sus emergencias asignadas sin iniciar se reparten)."""
+        usuario = self.usuarios.por_id(actor.id) if actor.id else None
+        if not usuario:
+            return
+        from app.servicios.estados_personal import EstadosPersonal
+        EstadosPersonal(self.sesion, self.auditoria).al_cerrar_sesion(usuario)
+        self.sesion.commit()
+        self.auditoria.registrar("logout", "sesion", usuario.id, actor, {"rol": usuario.rol})
 
     @staticmethod
     def a_sesion(usuario) -> UsuarioSesion:

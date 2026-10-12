@@ -359,7 +359,7 @@ async function abrirAsignacion(accion) {
   try {
     const lista = await api("GET", `/pasos/${pasoActivo.paso_id}/candidatos`);
     if (!lista.length) return toast(mensajero ? "No hay mensajeros activos. Créalos en Empleados con el rol Mensajero." : "No hay técnicos activos", true);
-    $("aPersona").innerHTML = lista.map(c => `<option value="${c.id}">${escapar(c.nombre)} · ${c.carga}${c.max_trabajos ? "/" + c.max_trabajos : ""} ${mensajero ? "pendiente(s)" : "trabajo(s)"}${!mensajero && !c.cubre ? " · apoyo" : ""}</option>`).join("");
+    $("aPersona").innerHTML = lista.map(c => `<option value="${c.id}">${escapar(c.nombre)} · ${c.carga}${c.max_trabajos ? "/" + c.max_trabajos : ""} ${mensajero ? "pendiente(s)" : "trabajo(s)"}${!mensajero && !c.cubre ? " · apoyo" : ""}${c.estado_texto && !c.recibe_trabajo ? ` · ${escapar(c.estado_texto)}` : ""}</option>`).join("");
     $("modalAsignar").showModal();
   } catch (error) { toast(error.message, true); }
 }

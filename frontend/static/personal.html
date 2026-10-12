@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estado del personal · DENTAL TRACK</title>
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="marca" id="marca" aria-hidden="true"></div>
+<div class="app">
+  <aside class="lateral" id="lateral"></aside>
+  <main class="contenido">
+    <div class="encabezado">
+      <div>
+        <h1>Estado del personal</h1>
+        <p>Quién está conectado, en refacción, almuerzo o capacitación, desde qué hora y con qué trabajo. Solo recibe trabajo nuevo quien está Conectado.</p>
+      </div>
+      <button class="btn" id="btnActualizar">Actualizar</button>
+    </div>
+    <div class="error-form" id="error" hidden></div>
+    <div class="kpis" id="resumen"></div>
+
+    <div class="card" id="cardSolicitudes" hidden style="margin-bottom:16px;border-color:var(--naranja-borde)">
+      <h2 class="t">Capacitaciones por autorizar</h2>
+      <div class="solicitudes-cap" id="solicitudes"></div>
+      <p class="nota"><b>Con reparto</b>: lo que tiene asignado sin iniciar pasa a otros. <b>Sin reparto</b>: se le queda para cuando regrese. Lo que tiene en proceso siempre sigue siendo suyo.</p>
+    </div>
+
+    <div class="card">
+      <div class="pestanas" id="pestanas">
+        <button data-p="ahora" class="activa">En este momento</button>
+        <button data-p="historial">Historial (auditoría)</button>
+      </div>
+
+      <div id="vistaAhora">
+        <div class="filtros">
+          <div class="campo ancho"><input id="fTexto" placeholder="Buscar por nombre o área"></div>
+          <div class="campo"><select id="fEstado"><option value="">Todos los estados</option></select></div>
+          <div class="campo"><select id="fRol"><option value="">Todos los roles</option></select></div>
+        </div>
+        <div class="tabla-wrap">
+          <table class="responsiva">
+            <thead><tr><th>Persona</th><th>Estado</th><th>Trabajo</th><th>Recibe trabajo</th><th id="thAcciones"></th></tr></thead>
+            <tbody id="tabla"><tr><td colspan="5" class="cargando">Cargando…</td></tr></tbody>
+          </table>
+        </div>
+        <p class="nota" id="notaMaximos"></p>
+      </div>
+
+      <div id="vistaHistorial" hidden>
+        <div class="filtros">
+          <div class="campo"><label>Desde</label><input type="date" id="hDesde"></div>
+          <div class="campo"><label>Hasta</label><input type="date" id="hHasta"></div>
+          <div class="campo"><label>Persona</label><select id="hPersona"><option value="">Todas</option></select></div>
+        </div>
+        <h2 class="t" style="font-size:15px;margin:6px 0 10px">Tiempo fuera de la línea por persona</h2>
+        <div class="tabla-wrap">
+          <table class="responsiva">
+            <thead><tr><th>Persona</th><th>Refacción</th><th>Almuerzo</th><th>Capacitación</th><th>Veces</th></tr></thead>
+            <tbody id="tablaResumen"></tbody>
+          </table>
+        </div>
+        <h2 class="t" style="font-size:15px;margin:20px 0 10px">Registros</h2>
+        <div class="tabla-wrap">
+          <table class="responsiva">
+            <thead><tr><th>Persona</th><th>Estado</th><th>Desde</th><th>Hasta</th><th>Duración</th><th>Origen</th></tr></thead>
+            <tbody id="tablaHistorial"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<dialog class="modal chico" id="modalCapacitacion">
+  <form id="formCapacitacion" novalidate>
+    <div class="modal-cabecera"><h2 id="tituloCap">Poner en capacitación</h2><button type="button" class="cerrar" data-cerrar>&times;</button></div>
+    <div class="modal-cuerpo">
+      <div class="error-form" id="errorCap" hidden></div>
+      <div class="campo"><label>Motivo <span class="req">*</span></label><textarea id="capMotivo" maxlength="200" rows="3" placeholder="Ej. Inducción al nuevo horno de sinterizado"></textarea></div>
+      <div class="campo" style="margin-top:12px"><label>Lo que tiene asignado sin iniciar</label>
+        <div class="opciones-radio">
+          <label><input type="radio" name="capReparto" value="no" checked> <span><b>Sin reparto</b><br><small style="color:var(--texto-2)">Se le queda para cuando regrese (capacitación corta).</small></span></label>
+          <label><input type="radio" name="capReparto" value="si"> <span><b>Con reparto</b><br><small style="color:var(--texto-2)">Pasa a otros técnicos ahora (capacitación larga).</small></span></label>
+        </div>
+      </div>
+      <p class="ayuda" id="capAsignados" style="margin-top:8px"></p>
+    </div>
+    <div class="modal-pie"><button type="button" class="btn" data-cerrar>Cancelar</button><button type="submit" class="btn primario">Poner en capacitación</button></div>
+  </form>
+</dialog>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script>
+const usuario = iniciarPagina(["admin", "supervisor", "operaciones", "demo"]);
+if (!usuario) throw new Error("sin acceso");
+const ROLES = { tecnico: "Técnico", mensajero: "Mensajero", ingresos: "Ingresos", qa: "QA", facturacion: "Facturación", logistica: "Logística" };
+const ESTADOS = [["conectado", "Conectado", "ok"], ["refaccion", "Refacción", "ambar"], ["almuerzo", "Almuerzo", "naranja"],
+                 ["capacitacion", "En capacitación", ""], ["desconectado", "Desconectado", "gris"]];
+const ORIGEN = { usuario: "El empleado", supervisor: "Supervisión", inicio_sesion: "Inició sesión", cierre_sesion: "Cerró sesión",
+                 actividad: "Actividad en horario", automatico: "Fin de jornada" };
+const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const duracion = m => m == null ? "—" : m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")} min`;
+const kpi = (t, v, s = "", clase = "") => `<div class="kpi ${clase}"><span>${t}</span><b>${v}</b>${s ? `<small>${s}</small>` : ""}</div>`;
+const badgeEstado = (e, t) => `<span class="badge estado-${e}">${escapar(t)}</span>`;
+let datos = null, pestana = "ahora", personaCap = null;
+const hoy = new Date(), hace = new Date(); hace.setDate(hoy.getDate() - 6);
+$("hDesde").value = ymd(hace); $("hHasta").value = ymd(hoy);
+$("fEstado").innerHTML += ESTADOS.map(([v, t]) => `<option value="${v}">${t}</option>`).join("");
+$("fRol").innerHTML += Object.entries(ROLES).map(([v, t]) => `<option value="${v}">${t}</option>`).join("");
+
+function pintarSolicitudes() {
+  const pendientes = datos.personas.filter(p => p.capacitacion_pendiente);
+  $("cardSolicitudes").hidden = !pendientes.length;
+  $("solicitudes").innerHTML = pendientes.map(p => `
+    <div class="solicitud-cap">
+      <div class="quien"><b>${escapar(p.nombre)}</b> <span class="badge gris">${ROLES[p.rol] || p.rol}</span>
+        <small>${escapar(p.capacitacion_motivo || "")} · solicitada a las ${horaCorta(p.capacitacion_solicitada_en)}</small>
+        <small>${p.asignados.length} asignado(s) sin iniciar · ${p.en_proceso.length} en proceso</small></div>
+      ${datos.puede_gestionar ? `<div class="botones">
+        <button class="btn chico primario" data-cap="${p.id}" data-reparto="si">Autorizar con reparto</button>
+        <button class="btn chico" data-cap="${p.id}" data-reparto="no">Autorizar sin reparto</button>
+        <button class="btn chico rojo-borde" data-rechazar="${p.id}">Rechazar</button></div>` : ""}
+    </div>`).join("");
+}
+
+function pintarAhora() {
+  const r = datos.resumen;
+  $("resumen").innerHTML = ESTADOS.map(([v, t, c]) => kpi(t, r[v] || 0, v === "conectado" ? "reciben trabajo" : "", c)).join("")
+    + kpi("Por autorizar", r.pendientes, "capacitaciones", r.pendientes ? "alerta" : "")
+    + kpi("Tiempo excedido", r.excedidos, "refacción o almuerzo", r.excedidos ? "alerta" : "");
+  pintarSolicitudes();
+  $("thAcciones").textContent = datos.puede_gestionar ? "Acciones" : "";
+  const texto = $("fTexto").value.trim().toLowerCase(), est = $("fEstado").value, rol = $("fRol").value;
+  const orden = Object.fromEntries(ESTADOS.map(([v], i) => [v, i]));
+  // primero lo que requiere atención (solicitudes y tiempos excedidos), luego por estado y nombre
+  const lista = datos.personas.filter(p => (!est || p.estado === est) && (!rol || p.rol === rol)
+    && (!texto || [p.nombre, ...p.areas].some(v => (v || "").toLowerCase().includes(texto))))
+    .sort((x, y) => (y.capacitacion_pendiente + y.excedido) - (x.capacitacion_pendiente + x.excedido)
+      || orden[x.estado] - orden[y.estado] || x.nombre.localeCompare(y.nombre));
+  $("tabla").innerHTML = lista.length ? lista.map(p => `<tr>
+    <td class="principal"><b>${escapar(p.nombre)}</b><span class="sub">${ROLES[p.rol] || p.rol}${p.areas.length ? " · " + escapar(p.areas.join(", ")) : ""}</span></td>
+    <td data-label="Estado">${badgeEstado(p.estado, p.estado_texto)}${p.ausente_hoy ? ' <span class="badge rojo">Ausente hoy</span>' : ""}
+      ${p.excedido ? ' <span class="badge rojo">Excedido</span>' : ""}
+      <span class="sub">${p.desde ? `desde ${horaCorta(p.desde)} · ${duracion(p.minutos)}${p.maximo ? ` de ${p.maximo} min` : ""}` : "sin registro"}</span>
+      ${p.capacitacion_pendiente ? '<span class="sub" style="color:var(--naranja-texto)">Solicitó capacitación</span>' : ""}</td>
+    <td data-label="Trabajo">${p.en_proceso.length || p.asignados.length ? `
+      ${p.en_proceso.length ? `<span class="sub">En proceso</span><div class="codigos-mini">${p.en_proceso.map(c => `<span>${escapar(c)}</span>`).join("")}</div>` : ""}
+      ${p.asignados.length ? `<span class="sub">${p.asignados.length} asignado(s) sin iniciar${p.emergencias_asignadas ? ` · <b style="color:var(--rojo-texto)">${p.emergencias_asignadas} emergencia(s)</b>` : ""}</span>` : ""}`
+      : '<span class="sub">Sin trabajo asignado</span>'}</td>
+    <td data-label="Recibe trabajo">${p.recibe_trabajo ? '<span class="badge verde">Sí</span>' : '<span class="badge gris">No</span>'}</td>
+    <td class="acciones">${datos.puede_gestionar ? `
+      <select class="btn chico" data-estado="${p.id}" aria-label="Cambiar estado de ${escapar(p.nombre)}">
+        <option value="">Cambiar estado…</option>
+        ${ESTADOS.filter(([v]) => v !== "capacitacion" && v !== p.estado).map(([v, t]) => `<option value="${v}">${p.estado === "capacitacion" && v === "conectado" ? "Terminar capacitación" : t}</option>`).join("")}
+        ${p.estado !== "capacitacion" ? '<option value="__capacitacion">Poner en capacitación…</option>' : ""}
+      </select>` : ""}</td></tr>`).join("")
+    : '<tr><td colspan="5" class="vacio">Nadie con estos filtros.</td></tr>';
+  $("notaMaximos").innerHTML = `Tiempos esperados: refacción ${datos.maximos.refaccion} min y almuerzo ${datos.maximos.almuerzo} min (se configuran en Calendario y reglas).
+    Al cerrar sesión o al terminar la jornada el sistema los pasa a Desconectado; lo asignado se les queda para el siguiente turno, excepto las emergencias, que se reparten.`;
+}
+
+async function cargarAhora() {
+  $("error").hidden = true;
+  try { datos = await api("GET", "/personal/estados"); pintarAhora(); llenarPersonas(); }
+  catch (error) { mostrarErrores($("error"), error); }
+}
+function llenarPersonas() {
+  const sel = $("hPersona"), valor = sel.value;
+  sel.innerHTML = '<option value="">Todas</option>' + datos.personas.map(p => `<option value="${p.id}">${escapar(p.nombre)}</option>`).join("");
+  sel.value = valor;
+}
+async function cargarHistorial() {
+  const q = new URLSearchParams({ desde: $("hDesde").value, hasta: $("hHasta").value });
+  if ($("hPersona").value) q.set("usuario_id", $("hPersona").value);
+  try {
+    const h = await api("GET", `/personal/estados/historial?${q}`);
+    $("tablaResumen").innerHTML = h.por_persona.length ? h.por_persona.map(p => `<tr>
+      <td class="principal"><b>${escapar(p.nombre)}</b><span class="sub">${ROLES[p.rol] || p.rol}</span></td>
+      <td data-label="Refacción">${duracion(p.refaccion)}</td><td data-label="Almuerzo">${duracion(p.almuerzo)}</td>
+      <td data-label="Capacitación">${duracion(p.capacitacion)}</td><td data-label="Veces">${p.veces}</td></tr>`).join("")
+      : '<tr><td colspan="5" class="vacio">Nadie salió de la línea en este periodo.</td></tr>';
+    $("tablaHistorial").innerHTML = h.registros.length ? h.registros.map(r => `<tr>
+      <td class="principal"><b>${escapar(r.nombre)}</b><span class="sub">${ROLES[r.rol] || r.rol}</span></td>
+      <td data-label="Estado">${badgeEstado(r.estado, r.estado_texto)}${r.nota ? `<span class="sub">${escapar(r.nota)}${r.con_reparto != null ? (r.con_reparto ? " · con reparto" : " · sin reparto") : ""}</span>` : ""}</td>
+      <td data-label="Desde">${escapar(fechaHora(r.desde))}</td>
+      <td data-label="Hasta">${r.hasta ? escapar(fechaHora(r.hasta)) : '<span class="badge verde">Actual</span>'}</td>
+      <td data-label="Duración">${duracion(r.minutos)}</td>
+      <td data-label="Origen">${ORIGEN[r.origen] || r.origen}${r.registrado_por && r.origen === "supervisor" ? `<span class="sub">${escapar(r.registrado_por)}</span>` : ""}</td></tr>`).join("")
+      : '<tr><td colspan="6" class="vacio">Sin registros en este periodo.</td></tr>';
+  } catch (error) { toast(error.message, true); }
+}
+
+function abrirCapacitacion(p) {
+  personaCap = p;
+  $("tituloCap").textContent = `Poner en capacitación · ${p.nombre}`;
+  $("capMotivo").value = p.capacitacion_motivo || ""; $("errorCap").hidden = true;
+  document.querySelector('input[name="capReparto"][value="no"]').checked = true;
+  $("capAsignados").textContent = `Tiene ${p.asignados.length} trabajo(s) asignado(s) sin iniciar y ${p.en_proceso.length} en proceso.`;
+  $("modalCapacitacion").showModal();
+}
+$("formCapacitacion").onsubmit = async e => {
+  e.preventDefault();
+  try {
+    const r = await api("POST", `/personal/${personaCap.id}/capacitacion`, {
+      autorizar: true, con_reparto: document.querySelector('input[name="capReparto"]:checked').value === "si",
+      motivo: $("capMotivo").value.trim() || null });
+    $("modalCapacitacion").close();
+    toast(`${personaCap.nombre} en capacitación${r.liberados ? ` · ${r.liberados} trabajo(s) repartido(s)` : ""}`);
+    cargarAhora();
+  } catch (error) { mostrarErrores($("errorCap"), error); }
+};
+document.querySelectorAll("[data-cerrar]").forEach(b => b.onclick = () => b.closest("dialog").close());
+
+document.addEventListener("click", async e => {
+  const cap = e.target.closest("[data-cap]"), rechazar = e.target.closest("[data-rechazar]");
+  if (!cap && !rechazar) return;
+  const id = Number((cap || rechazar).dataset.cap || (cap || rechazar).dataset.rechazar);
+  const p = datos.personas.find(x => x.id === id);
+  try {
+    if (rechazar) {
+      if (!confirm(`¿Rechazar la capacitación de ${p.nombre}?`)) return;
+      await api("POST", `/personal/${id}/capacitacion`, { autorizar: false });
+      toast("Solicitud rechazada");
+    } else {
+      const r = await api("POST", `/personal/${id}/capacitacion`, { autorizar: true, con_reparto: cap.dataset.reparto === "si" });
+      toast(`${p.nombre} en capacitación${r.liberados ? ` · ${r.liberados} trabajo(s) repartido(s)` : ""}`);
+    }
+    cargarAhora();
+  } catch (error) { toast(error.message, true); }
+});
+document.addEventListener("change", async e => {
+  const sel = e.target.closest("[data-estado]");
+  if (!sel || !sel.value) return;
+  const id = Number(sel.dataset.estado), p = datos.personas.find(x => x.id === id), valor = sel.value;
+  sel.value = "";
+  if (valor === "__capacitacion") return abrirCapacitacion(p);
+  try {
+    await api("PUT", `/personal/${id}/estado`, { estado: valor });
+    toast(`${p.nombre}: ${ESTADOS.find(x => x[0] === valor)[1]}`);
+    cargarAhora();
+  } catch (error) { toast(error.message, true); }
+});
+
+$("pestanas").onclick = e => {
+  const b = e.target.closest("[data-p]"); if (!b) return;
+  pestana = b.dataset.p;
+  document.querySelectorAll("#pestanas button").forEach(x => x.classList.toggle("activa", x === b));
+  $("vistaAhora").hidden = pestana !== "ahora"; $("vistaHistorial").hidden = pestana !== "historial";
+  if (pestana === "historial") cargarHistorial();
+};
+["fEstado", "fRol"].forEach(id => $(id).onchange = () => datos && pintarAhora());
+$("fTexto").addEventListener("input", debounce(() => datos && pintarAhora(), 250));
+["hDesde", "hHasta", "hPersona"].forEach(id => $(id).onchange = cargarHistorial);
+$("btnActualizar").onclick = () => pestana === "ahora" ? cargarAhora() : cargarHistorial();
+cargarAhora();
+setInterval(() => { if (pestana === "ahora" && !document.querySelector("dialog[open]")) cargarAhora(); }, 60000);
+</script>
+</body>
+</html>

@@ -17,6 +17,7 @@ const ICONOS = {
   cobros: '<rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h4"/>',
   validacion: '<path d="M4 5h16v11H4z"/><path d="M9 20h6M12 16v4"/><path d="M8.5 10.5l2.5 2.5 4.5-5"/>',
   pausa: '<circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/>',
+  personal: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6 1.4 0 2.6.4 3.6 1.2"/><circle cx="17.5" cy="16.5" r="3.5"/><path d="M17.5 15v1.7l1.1.8"/>',
   casos: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
 };
 
@@ -35,6 +36,7 @@ const MENU = [
   { grupo: "Operación", roles: ["admin", "supervisor", "operaciones", "facturacion", "demo", "logistica"] },
   { href: "dashboard.html", texto: "Dashboard", icono: "dashboard", roles: ["admin", "supervisor", "operaciones", "demo"] },
   { href: "ausencias.html", texto: "Ausencias", icono: "ausencias", roles: ["admin", "supervisor", "demo"] },
+  { href: "personal.html", texto: "Estado del personal", icono: "personal", roles: ["admin", "supervisor", "operaciones", "demo"] },
   { href: "agenda.html", texto: "Agenda de entregas", icono: "calendario", roles: ["admin", "supervisor", "operaciones", "demo", "logistica"] },
   { href: "validaciones.html", texto: "Validación de diseño", icono: "validacion", roles: ["admin", "supervisor", "demo"] },
   { href: "pausas.html", texto: "Pausas", icono: "pausa", roles: ["admin", "supervisor", "operaciones", "demo"] },
@@ -84,9 +86,11 @@ function iniciarPagina(rolesPermitidos = null) {
     <div class="usuario-lateral">
       <b>${escapar(usuario.nombre)} ${escapar(usuario.apellido)}</b>
       <span>${escapar(NOMBRES_ROL[usuario.rol] || usuario.rol)}</span>
+      ${ROLES_CON_ESTADO.includes(usuario.rol) ? '<div class="estado-personal" id="estadoPersonal"></div>' : ""}
       <button class="btn chico" id="btnSalir">Cerrar sesión</button>
     </div>`;
-  $("btnSalir").onclick = () => Sesion.cerrar();
+  $("btnSalir").onclick = () => Sesion.salir();
+  if (ROLES_CON_ESTADO.includes(usuario.rol)) prepararEstado(pagina);
   prepararMenuMovil(visibles.find(m => m.href === pagina)?.texto || document.title.split("·")[0].trim());
   if (usuario.rol === "demo" && SOLO_LECTURA_DEMO.includes(pagina)) {
     document.body.classList.add("solo-lectura");
@@ -97,6 +101,86 @@ function iniciarPagina(rolesPermitidos = null) {
   }
   dibujarMarcaAgua();
   return usuario;
+}
+
+/* ---------- Estado del personal (conectado, refacción, almuerzo, capacitación, desconectado) ---------- */
+const ROLES_CON_ESTADO = ["tecnico", "mensajero", "ingresos", "qa", "facturacion", "logistica"];
+const horaCorta = v => v ? new Date(v).toLocaleTimeString("es-GT", { hour: "2-digit", minute: "2-digit" }) : "";
+
+async function prepararEstado(pagina) {
+  const caja = $("estadoPersonal");
+  let actual = null;
+  const pintar = e => {
+    actual = e;
+    caja.innerHTML = `
+      <div class="estado-fila"><i class="punto-estado ${e.estado}"></i><b>${escapar(e.estado_texto)}</b>
+        <small>${e.desde ? "desde " + horaCorta(e.desde) : ""}</small></div>
+      <select id="selEstado" aria-label="Cambiar mi estado">
+        ${e.estado === "capacitacion" ? '<option value="capacitacion" selected>En capacitación</option>' : ""}
+        ${e.opciones.map(o => `<option value="${o.valor}" ${o.valor === e.estado ? "selected" : ""}>${e.estado === "capacitacion" && o.valor === "conectado" ? "Terminé la capacitación · Conectado" : o.texto}</option>`).join("")}
+        ${e.estado !== "capacitacion" && !e.capacitacion_pendiente ? '<option value="__capacitacion">Solicitar capacitación…</option>' : ""}
+      </select>
+      ${e.capacitacion_pendiente ? '<small class="estado-pendiente">Capacitación solicitada: pendiente de autorizar. <a href="#" id="cancelarCapacitacion">Cancelar</a></small>' : ""}`;
+    $("selEstado").onchange = ev => cambiar(ev.target.value);
+    const cancelar = $("cancelarCapacitacion");
+    if (cancelar) cancelar.onclick = async ev => {
+      ev.preventDefault();
+      try { pintar(await api("DELETE", "/mi-estado/capacitacion")); toast("Solicitud de capacitación cancelada"); }
+      catch (error) { toast(error.message, true); }
+    };
+    avisoBandeja(e);
+  };
+  const cambiar = async valor => {
+    if (valor === "__capacitacion") { $("selEstado").value = actual.estado; return abrirCapacitacion(); }
+    try {
+      const anterior = actual.recibe_trabajo;
+      pintar(await api("PUT", "/mi-estado", { estado: valor }));
+      toast(`Tu estado: ${actual.estado_texto}`);
+      if (pagina === "bandeja.html" && anterior !== actual.recibe_trabajo) setTimeout(() => location.reload(), 600);
+    } catch (error) { toast(error.message, true); $("selEstado").value = actual.estado; }
+  };
+  const abrirCapacitacion = () => {
+    let modal = $("modalCapacitacion");
+    if (!modal) {
+      modal = document.createElement("dialog");
+      modal.className = "modal chico"; modal.id = "modalCapacitacion";
+      modal.innerHTML = `<form id="formCapacitacion" novalidate>
+        <div class="modal-cabecera"><h2>Solicitar capacitación</h2><button type="button" class="cerrar" data-cerrar-cap>&times;</button></div>
+        <div class="modal-cuerpo">
+          <div class="error-form" id="errorCapacitacion" hidden></div>
+          <p style="color:var(--texto-2);margin-bottom:12px">El supervisor debe autorizarla. Mientras tanto sigues Conectado y recibiendo trabajo.</p>
+          <div class="campo"><label>Motivo <span class="req">*</span></label>
+            <textarea id="capMotivo" maxlength="200" rows="3" placeholder="Ej. Capacitación en el nuevo escáner intraoral"></textarea></div>
+        </div>
+        <div class="modal-pie"><button type="button" class="btn" data-cerrar-cap>Cancelar</button><button type="submit" class="btn primario">Enviar solicitud</button></div>
+      </form>`;
+      document.body.appendChild(modal);
+      modal.querySelectorAll("[data-cerrar-cap]").forEach(b => b.onclick = () => modal.close());
+      $("formCapacitacion").onsubmit = async ev => {
+        ev.preventDefault();
+        $("errorCapacitacion").hidden = true;
+        try {
+          pintar(await api("POST", "/mi-estado/capacitacion", { motivo: $("capMotivo").value.trim() }));
+          modal.close(); toast("Solicitud enviada al supervisor");
+        } catch (error) { mostrarErrores($("errorCapacitacion"), error); }
+      };
+    }
+    $("capMotivo").value = ""; $("errorCapacitacion").hidden = true;
+    modal.showModal();
+  };
+  const avisoBandeja = e => {
+    if (pagina !== "bandeja.html") return;
+    document.querySelector(".aviso-estado")?.remove();
+    if (e.recibe_trabajo) return;
+    const aviso = document.createElement("div");
+    aviso.className = "aviso-estado";
+    aviso.innerHTML = `Estás en <b>${escapar(e.estado_texto)}</b>: el sistema no te asigna trabajo nuevo. Lo que ya tienes sigue siendo tuyo.
+      Cambia tu estado a <b>Conectado</b> en el menú para volver a recibir trabajo.`;
+    document.querySelector(".contenido")?.prepend(aviso);
+  };
+  const cargar = async () => { try { pintar(await api("GET", "/mi-estado")); } catch { /* sin conexión: se reintenta */ } };
+  await cargar();
+  setInterval(cargar, 120000);
 }
 
 /** Diente en malla de líneas y puntos, generado con código (marca de agua). */

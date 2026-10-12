@@ -194,6 +194,9 @@ class Candidato(BaseModel):
     carga: int
     max_trabajos: int | None
     cubre: bool  # tiene el área y el tipo de trabajo (producción) o es mensajero (rutas)
+    estado: str | None = None        # estado del personal (conectado, almuerzo...)
+    estado_texto: str | None = None
+    recibe_trabajo: bool = True      # conectado y sin ausencia hoy
 
 
 class AsignarIn(BaseModel):

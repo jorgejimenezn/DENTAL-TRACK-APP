@@ -13,6 +13,11 @@ const Sesion = {
     try { localStorage.removeItem(CLAVE_SESION); } catch { /* nada */ }
     location.href = "login.html";
   },
+  /** Cerrar sesión desde el menú: el empleado queda Desconectado antes de salir. */
+  async salir() {
+    try { await api("POST", "/auth/salir"); } catch { /* si falla, igual se cierra la sesión */ }
+    this.cerrar();
+  },
 };
 
 /** Convierte cualquier error de la API en un texto (o lista) legible. */

@@ -55,6 +55,13 @@ class Usuario(Base):
     max_trabajos: Mapped[int | None] = mapped_column(Integer, nullable=True)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     ultimo_acceso: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Estado del personal (conectado, refaccion, almuerzo, capacitacion, desconectado): solo se asigna a "conectado"
+    estado: Mapped[str] = mapped_column(String(15), default="desconectado", server_default="desconectado")
+    estado_desde: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # True si el estado lo puso el sistema (inicio o fin de jornada): con actividad en horario se vuelve a conectar solo
+    estado_auto: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    capacitacion_solicitada_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    capacitacion_motivo: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     areas: Mapped[list[Area]] = relationship(secondary=usuario_area, order_by=Area.nombre)
     cliente: Mapped["Cliente | None"] = relationship(back_populates="usuario", uselist=False)
@@ -110,6 +117,23 @@ class Ausencia(Base):
     creado_por_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     usuario: Mapped[Usuario] = relationship(foreign_keys=[usuario_id])
+
+
+class EstadoPersonal(Base):
+    """Auditoría de estados del personal: un registro por periodo (hasta = NULL mientras sigue en ese estado)."""
+    __tablename__ = "estados_personal"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id", ondelete="CASCADE"), index=True)
+    estado: Mapped[str] = mapped_column(String(15))
+    desde: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    hasta: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # usuario | supervisor | inicio_sesion | cierre_sesion | actividad | automatico
+    origen: Mapped[str] = mapped_column(String(20))
+    nota: Mapped[str | None] = mapped_column(String(200), nullable=True)   # motivo de la capacitación
+    con_reparto: Mapped[bool | None] = mapped_column(Boolean, nullable=True)  # capacitación: se repartió lo asignado
+    registrado_por_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
+    usuario: Mapped[Usuario] = relationship(foreign_keys=[usuario_id])
+    registrado_por: Mapped["Usuario | None"] = relationship(foreign_keys=[registrado_por_id])
 
 
 # Modelos de configuración (catálogos, flujos, calendario...). Se importan aquí para registrarlos.

@@ -50,6 +50,7 @@
            + tarjeta("calendario.html", "Calendario y reglas", "Horas de corte, días mínimos y días no laborables.")
            + tarjeta("areas.html", "Áreas y metas", "Trabajo por lote, simultáneos y meta de horas por área.")
            + tarjeta("dashboard.html", "Dashboard", "Operación en vivo y desempeño del laboratorio.")
+           + tarjeta("personal.html", "Estado del personal", "Quién está conectado, en refacción, almuerzo o capacitación.")
            + tarjeta("cobros.html", "Cobros", "Facturas pendientes de pago por antigüedad.")
            + tarjeta("bandeja.html", "Bandeja del laboratorio", "Carga de cada área, colas y casos sin técnico.")
            + tarjeta("casos.html", "Solicitudes", "Casos nuevos (CN) y reaperturas (RP) de todos los clientes.")
@@ -62,11 +63,13 @@
       html = tarjeta("dashboard.html", "Dashboard de operación", "Carga en vivo, cumplimiento de metas, puntualidad, retrabajos, reaperturas y mapas de entregas y recolectas.")
            + tarjeta("agenda.html", "Agenda de entregas", "Atrasados, lo que sale hoy y los próximos días.")
            + tarjeta("pausas.html", "Pausas", "Casos detenidos y su historial.")
+           + tarjeta("personal.html", "Estado del personal", "Quién está en la línea en este momento y tiempos fuera de ella.")
            + tarjeta("cobros.html", "Cobros", "Facturas pendientes de pago por antigüedad.")
            + tarjeta("casos.html", "Solicitudes", "Consulta de casos nuevos y reaperturas.");
     } else if (usuario.rol === "supervisor") {
       html = tarjeta("dashboard.html", "Dashboard", "Operación en vivo y cumplimiento de metas.")
            + tarjeta("bandeja.html", "Bandeja del laboratorio", "Carga de cada área, colas y casos sin técnico.")
+           + tarjeta("personal.html", "Estado del personal", "Quién está conectado, en refacción, almuerzo o capacitación, y capacitaciones por autorizar.")
            + tarjeta("agenda.html", "Agenda de entregas", "Atrasados, lo que sale hoy, el siguiente día hábil y lo que está listo.")
            + tarjeta("validaciones.html", "Validación de diseño", "Diseños por enviar al cliente y los que esperan su respuesta.")
            + tarjeta("pausas.html", "Pausas", "Casos detenidos por falta de algo y su historial.")
@@ -79,16 +82,17 @@
            + tarjeta("nueva-solicitud.html", "Nueva solicitud", "Capturar un caso a nombre de un cliente para la demostración.")
            + tarjeta("tablero.html", "Tablero por cliente", "La vista Kanban que ve el doctor.")
            + tarjeta("dashboard.html", "Dashboard", "Operación en vivo y desempeño (consulta).")
+           + tarjeta("personal.html", "Estado del personal", "Quién está conectado, en refacción, almuerzo o capacitación (consulta).")
            + tarjeta("casos.html", "Solicitudes", "Todos los casos con su recorrido.")
            + tarjeta("clientes.html", "Clientes", "Consulta de clientes y datos comerciales.")
            + tarjeta("empleados.html", "Empleados", "Consulta de usuarios, roles y áreas.")
            + tarjeta("flujos.html", "Flujos de trabajo", "Consulta de los pasos por tipo de trabajo.")
            + tarjeta("cobros.html", "Cobros", "Consulta de facturas pendientes.");
     } else if (usuario.rol === "mensajero") {
-      html = tarjeta("bandeja.html", "Mis rutas", "Recolectas y entregas que te asignó Logística.")
+      html = tarjeta("bandeja.html", "Mis rutas", "Recolectas y entregas que te asignó Logística. Cambia tu estado en el menú (Conectado, Refacción, Almuerzo).")
            + tarjeta("casos.html", "Solicitudes", "Consulta de casos.");
     } else {
-      html = tarjeta("bandeja.html", "Mi bandeja", usuario.rol === "tecnico" ? "Tu trabajo actual y el siguiente que te entrega el sistema por prioridad." : "Casos que esperan a tu área.")
+      html = tarjeta("bandeja.html", "Mi bandeja", usuario.rol === "tecnico" ? "Tu trabajo actual y el siguiente que te entrega el sistema por prioridad. Solo recibes trabajo nuevo con tu estado en Conectado." : "Casos que esperan a tu área.")
            + tarjeta("mis-metricas.html", "Mis métricas", "Tu avance: terminados, tiempos frente a la meta y próximos vencimientos.")
            + (usuario.rol === "facturacion" ? tarjeta("cobros.html", "Cobros", "Facturas pendientes de pago por antigüedad.") : "")
            + tarjeta("casos.html", "Solicitudes", "Consulta de casos nuevos y reaperturas.")

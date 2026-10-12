@@ -12,6 +12,7 @@ async function cargarReglas() {
     $("pInicio").value = p.inicio_jornada || "08:00";
     $("pCorteSemana").value = p.corte_semana; $("pCorteSabado").value = p.corte_sabado;
     $("pMinDigital").value = p.min_digital; $("pMinAnalogo").value = p.min_analogo; $("pMinEmergencia").value = p.min_emergencia;
+    $("pMaxRefaccion").value = p.max_refaccion ?? 15; $("pMaxAlmuerzo").value = p.max_almuerzo ?? 60;
   } catch (error) { mostrarErrores($("errorReglas"), error); }
 }
 
@@ -23,6 +24,7 @@ $("formReglas").onsubmit = async e => {
       corte_semana: $("pCorteSemana").value, corte_sabado: $("pCorteSabado").value, inicio_jornada: $("pInicio").value,
       min_digital: Number($("pMinDigital").value), min_analogo: Number($("pMinAnalogo").value),
       min_emergencia: Number($("pMinEmergencia").value),
+      max_refaccion: Number($("pMaxRefaccion").value), max_almuerzo: Number($("pMaxAlmuerzo").value),
     });
     toast("Reglas guardadas"); probar();
   } catch (error) { mostrarErrores($("errorReglas"), error); }
